@@ -5,9 +5,9 @@
 
 **Project Dashboard:** HomeKeeper Revolutionary Home Maintenance App  
 **Architecture:** Supabase + Model Context Protocol with Cursor AI  
-**Timeline:** 24-28 weeks (reduced from 32 weeks)  
+**Timeline:** 26-30 weeks (includes strategic UX phases)  
 **Developer:** Solo developer with AI assistance  
-**Last Updated:** June 8, 2025
+**Last Updated:** June 9, 2025
 
 ---
 
@@ -32,7 +32,7 @@
 **Next Milestone:** Supabase Project Setup  
 
 **Key Metrics:**
-- ⏱️ **Timeline:** 24-28 weeks (4-8 weeks faster than original)
+- ⏱️ **Timeline:** 26-30 weeks (includes 3 strategic UX phases)
 - 🏗️ **Architecture:** Single service (Supabase) vs. 5+ services
 - 🤖 **AI Integration:** Full Cursor AI integration
 - 📱 **Platform:** React Native + Expo (iOS & Android) with real-time capabilities
@@ -108,6 +108,36 @@
 
 **Notes:**
 *Real-time capabilities built-in from day one, unlike traditional development*
+
+---
+
+#### **Week 2.5: Minimal UX Foundation**
+**Status:** ⏳ Not Started  
+**Focus:** Essential design foundation for efficient development
+
+**Tasks:**
+- [ ] Create basic wireframes for core screens (onboarding, task list, task detail)
+- [ ] Define minimal design system (colors, typography, basic spacing)
+- [ ] Sketch key interaction patterns and gestures
+- [ ] Create simple component library wireframes
+- [ ] Define basic navigation structure
+- [ ] Document core user flows for development reference
+- [ ] Create quick style guide for Week 3 implementation
+
+**Success Criteria:**
+- ✅ Core screens wireframed and ready for development
+- ✅ Basic design system defined and documented
+- ✅ Key interaction patterns clearly specified
+- ✅ Navigation structure established
+
+**Cursor AI Integration:**
+- Use UX wireframing prompts for rapid design
+- Generate component specifications with AI assistance
+- Create user flow documentation
+- Implement design system foundations
+
+**Notes:**
+*Minimal but strategic UX work to enable efficient development without over-designing*
 
 ---
 
@@ -202,6 +232,36 @@
 
 ---
 
+#### **Week 5.5: UX Refinement for MVP**
+**Status:** ⏳ Not Started  
+**Focus:** Polish the working MVP for user testing and feedback
+
+**Tasks:**
+- [ ] Refine task management UX based on development learnings
+- [ ] Improve onboarding flow visual design and micro-interactions
+- [ ] Add micro-interactions and loading states throughout app
+- [ ] Implement accessibility improvements and screen reader support
+- [ ] Create task completion celebrations and feedback animations
+- [ ] Refine gesture interactions based on user testing
+- [ ] Prepare user testing materials and scenarios
+
+**Success Criteria:**
+- ✅ Task management feels intuitive and delightful
+- ✅ Onboarding flow is smooth and engaging
+- ✅ Accessibility compliance verified for core features
+- ✅ App ready for meaningful user feedback collection
+
+**Cursor AI Integration:**
+- Use UX refinement prompts for polishing interfaces
+- Generate micro-interaction specifications
+- Implement accessibility improvements with AI guidance
+- Create user testing scenarios and feedback collection
+
+**Notes:**
+*Strategic UX polish informed by actual implementation learnings and user behavior*
+
+---
+
 #### **Week 6: Foundation Testing & Optimization**
 **Status:** ⏳ Not Started  
 **Focus:** Quality assurance and performance optimization
@@ -229,6 +289,36 @@
 
 **Notes:**
 *Foundation phase complete with production-ready core functionality*
+
+---
+
+#### **Week 12.5: Comprehensive UX Design**
+**Status:** ⏳ Not Started  
+**Focus:** Complete UX design system for intelligence and community features
+
+**Tasks:**
+- [ ] Complete full UX documentation from outline template
+- [ ] Design all intelligence feature interfaces (behavioral learning, weather, predictive)
+- [ ] Create community features UX design and interaction patterns
+- [ ] Develop complete design system with comprehensive component library
+- [ ] Create production-ready visual designs for all remaining features
+- [ ] Design data visualization and insight presentation interfaces
+- [ ] Prepare comprehensive design handoff documentation
+
+**Success Criteria:**
+- ✅ Complete UX documentation covering all features
+- ✅ Intelligence features have intuitive, trustworthy interfaces
+- ✅ Community features designed with privacy and value focus
+- ✅ Comprehensive design system ready for Phase 3-4 development
+
+**Cursor AI Integration:**
+- Use comprehensive UX design prompts
+- Generate complete design system specifications
+- Create advanced interaction patterns for intelligence features
+- Implement privacy-focused community feature designs
+
+**Notes:**
+*Complete UX foundation for sophisticated features, informed by MVP learnings and user feedback*
 
 ---
 
@@ -658,7 +748,7 @@
 ## 🔧 **Technical Specifications**
 
 ### **Architecture Overview**
-- **Frontend:** iOS SwiftUI with MVVM + Combine
+- **Frontend:** React Native + Expo with hooks and context
 - **Backend:** Supabase (PostgreSQL + Real-time + Auth + Storage + Edge Functions)
 - **AI Integration:** Cursor with Model Context Protocol
 - **Development:** AI-assisted with human creativity and vision
@@ -723,7 +813,7 @@
 - **Testing:** Use testing prompts for quality assurance
 
 ### **Quality Standards**
-- **Code Quality:** TypeScript strict mode, SwiftUI best practices
+- **Code Quality:** TypeScript strict mode, React Native best practices
 - **Performance:** 60fps, optimized queries, efficient subscriptions
 - **Security:** RLS policies, encryption, privacy protection
 - **User Experience:** Immediate feedback, smooth animations, accessibility
@@ -734,7 +824,7 @@
 
 ### **Architecture Decisions**
 - **Supabase + MCP:** Chosen for simplified development and AI integration
-- **SwiftUI:** Selected for modern iOS development and real-time capabilities
+- **React Native + Expo:** Selected for cross-platform development and real-time capabilities
 - **Real-time First:** Built-in from foundation for community features
 - **Privacy First:** RLS and aggregation protect user data
 

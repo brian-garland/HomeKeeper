@@ -25,7 +25,7 @@ Help homeowners answer three fundamental questions:
 3. HOW: How do I do it properly?
 
 ARCHITECTURE OVERVIEW:
-- Frontend: iOS SwiftUI with MVVM + Combine
+- Frontend: React Native + Expo with hooks and context
 - Backend: Supabase (PostgreSQL + Real-time + Auth + Storage + Edge Functions)
 - AI Integration: Cursor with Model Context Protocol for database-aware development
 - Development Philosophy: AI-assisted creation with human vision and creativity
@@ -54,7 +54,7 @@ DIFFERENTIATION FROM COMPETITORS:
 - All others: Feature bloat → HomeKeeper focuses on essential value
 
 DEVELOPMENT STANDARDS:
-- Code Quality: TypeScript strict mode, SwiftUI best practices
+- Code Quality: TypeScript strict mode, React Native best practices
 - Security: Row Level Security policies for all data access
 - Performance: Optimized queries, efficient real-time subscriptions
 - User Experience: Every interaction feels immediate and delightful
@@ -256,7 +256,7 @@ HomeKeeperApp/
 │   └── utils/
 │       ├── constants.ts
 │       └── helpers.ts
-│   ├── Extensions/ (Swift extensions)
+│   ├── hooks/ (Custom React hooks)
 │   └── Utilities/ (helper functions)
 └── Resources/
     ├── Assets.xcassets
@@ -286,7 +286,7 @@ USER EXPERIENCE REQUIREMENTS:
 - Accessibility support for all users
 - Dark mode and Dynamic Type support
 
-Generate the complete iOS app foundation including:
+Generate the complete React Native app foundation including:
 1. Main app structure with dependency injection
 2. Supabase manager classes with type safety
 3. Authentication flow with social login
@@ -296,7 +296,7 @@ Generate the complete iOS app foundation including:
 7. Error handling and loading state management
 8. Performance optimization utilities
 
-Ensure all code follows SwiftUI best practices and integrates seamlessly with Supabase.
+Ensure all code follows React Native best practices and integrates seamlessly with Supabase.
 ```
 
 #### Task Management System Prompt
@@ -304,14 +304,14 @@ Ensure all code follows SwiftUI best practices and integrates seamlessly with Su
 ```
 HOMEKEEPER TASK MANAGEMENT WITH REAL-TIME UPDATES
 
-You are implementing the core task management system for HomeKeeper using SwiftUI and Supabase real-time capabilities.
+You are implementing the core task management system for HomeKeeper using React Native and Supabase real-time capabilities.
 
 SYSTEM REQUIREMENTS:
 The task management system is the heart of HomeKeeper's value proposition. It must automatically generate intelligent maintenance schedules, provide real-time updates across devices, and make task completion feel rewarding and educational.
 
 CORE COMPONENTS:
 1. Task Generation Engine (Supabase Edge Function)
-2. Task List Views (SwiftUI with real-time updates)
+2. Task List Views (React Native with real-time updates)
 3. Task Detail Views (comprehensive guidance)
 4. Task Completion Flow (celebration and tracking)
 5. Scheduling Intelligence (behavioral learning)
@@ -358,7 +358,7 @@ BEHAVIORAL LEARNING:
 Generate the complete task management system including:
 1. Task data models with relationships
 2. Task generation Edge Function with intelligent algorithms
-3. SwiftUI views with real-time updates
+3. React Native components with real-time updates
 4. Task completion flow with celebrations
 5. Scheduling optimization logic
 6. Progress tracking and analytics
@@ -389,7 +389,7 @@ ONBOARDING FLOW:
 6. Calendar Reveal: The "wow moment" - personalized schedule ready
 
 TECHNICAL REQUIREMENTS:
-- SwiftUI with smooth page transitions
+- React Native with smooth page transitions
 - MapKit integration for address autocomplete
 - Core ML for equipment photo recognition
 - Supabase integration for data storage
@@ -441,7 +441,7 @@ CALENDAR REVEAL:
 - Celebration of successful setup completion
 
 Generate the complete onboarding experience including:
-1. SwiftUI views with beautiful animations
+1. React Native components with beautiful animations
 2. Address lookup and property data integration
 3. Photo capture and equipment identification
 4. Preference collection and validation
@@ -1208,7 +1208,7 @@ SUPABASE-SPECIFIC TESTING:
    - Performance and scalability testing
 
 MOBILE APP TESTING:
-1. SwiftUI Testing
+1. React Native Testing
    - User interface component validation
    - Navigation and state management
    - Animation and transition quality
@@ -1220,7 +1220,7 @@ MOBILE APP TESTING:
    - Battery life impact assessment
    - Network condition handling
 
-3. iOS Integration Testing
+3. Cross-Platform Integration Testing
    - Camera and photo capture functionality
    - Location services and privacy handling
    - Notification delivery and management
@@ -1355,7 +1355,7 @@ REAL-TIME ARCHITECTURE:
 The system must provide immediate updates for task changes, community interactions, and expert communications while being selective about subscriptions to maintain performance.
 
 SUBSCRIPTION MANAGEMENT:
-```swift
+```typescript
 // Intelligent subscription management for optimal performance
 class RealtimeSubscriptionManager: ObservableObject {
     private var activeSubscriptions: [String: RealtimeChannel] = [:]

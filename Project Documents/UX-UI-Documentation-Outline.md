@@ -24,7 +24,7 @@ This document will provide complete visual and interaction specifications for Ho
 - [ ] Color psychology - why each color supports home maintenance confidence
 
 ### **1.3 Typography**
-- [ ] Primary font family (iOS: SF Pro, Android: Roboto, or custom)
+- [ ] Primary font family (System fonts or custom cross-platform font)
 - [ ] Typography scale (headings, body, captions)
 - [ ] Font weights (light, regular, medium, bold)
 - [ ] Line heights and letter spacing
@@ -153,7 +153,7 @@ This document will provide complete visual and interaction specifications for Ho
 ### **5.1 iOS Design Considerations**
 - [ ] Safe area handling (notch, dynamic island)
 - [ ] iOS-specific navigation patterns
-- [ ] SF Symbols icon usage
+- [ ] SF Symbols icon usage (where appropriate)
 - [ ] iOS accessibility features (VoiceOver, Dynamic Type)
 
 ### **5.2 Android Design Considerations**

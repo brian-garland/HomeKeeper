@@ -68,7 +68,7 @@ The HomeKeeper experience centers on a single, beautiful home screen that immedi
 
 The primary interface will feature a clean, card-based design where each maintenance task is presented as a beautifully designed card containing the task name, urgency level, estimated time requirement, and a single-tap action to mark completion or get detailed guidance. The visual hierarchy will be immediately obvious: urgent tasks appear at the top with warm, attention-grabbing colors, while routine tasks use cooler, calming tones that suggest importance without urgency.
 
-Navigation will be gesture-based and intuitive, following iOS design patterns that users already understand. Swiping left on a task card will reveal options to reschedule, get help, or mark as complete. Swiping right will show the educational content explaining why the task matters and how to do it properly. Tapping a card will open the detailed task view with step-by-step guidance, safety information, and completion tracking.
+Navigation will be gesture-based and intuitive, following native platform design patterns that users already understand. Swiping left on a task card will reveal options to reschedule, get help, or mark as complete. Swiping right will show the educational content explaining why the task matters and how to do it properly. Tapping a card will open the detailed task view with step-by-step guidance, safety information, and completion tracking.
 
 #### Intelligent Onboarding System
 
@@ -216,7 +216,7 @@ Week 1 focuses on Supabase project setup and Cursor AI integration, establishing
 
 Week 2 implements the core data models and relationships using Cursor AI to generate type-safe database operations and real-time subscription management. The AI assistance ensures that all database interactions follow best practices while maintaining the performance characteristics necessary for mobile application responsiveness.
 
-Week 3 develops the iOS application foundation with SwiftUI and Supabase SDK integration, creating the reactive architecture that will support all user interface components. The real-time integration is established during this week, enabling immediate synchronization between database changes and user interface updates.
+Week 3 develops the React Native application foundation with Expo and Supabase SDK integration, creating the reactive architecture that will support all user interface components. The real-time integration is established during this week, enabling immediate synchronization between database changes and user interface updates.
 
 Week 4 implements the intelligent onboarding flow that demonstrates HomeKeeper's commitment to simplicity and immediate value delivery. The onboarding process leverages Supabase's authentication system and real-time capabilities to create a seamless experience that feels magical rather than technical.
 
@@ -294,13 +294,13 @@ Database performance testing validates that all queries execute within acceptabl
 
 Real-time feature testing validates that subscription management and live updates perform optimally under various network conditions and usage patterns. The testing ensures that real-time features enhance the user experience when available but never block core functionality when connectivity is limited.
 
-Mobile application performance testing validates that the iOS application maintains smooth 60fps performance across all supported devices and usage scenarios. The testing includes memory usage validation, battery life impact assessment, and offline functionality verification to ensure excellent mobile user experience.
+Mobile application performance testing validates that the React Native application maintains smooth 60fps performance across all supported devices and usage scenarios. The testing includes memory usage validation, battery life impact assessment, and offline functionality verification to ensure excellent mobile user experience.
 
 #### User Experience and Accessibility Testing
 
 User experience testing validates that HomeKeeper delivers on its promise of making complex home maintenance feel simple and delightful. The testing strategy includes both expert evaluation and real user testing with homeowners who represent the target user demographic.
 
-Accessibility testing ensures that HomeKeeper provides an excellent experience for users with disabilities, following iOS accessibility guidelines and best practices. The testing includes VoiceOver compatibility, Dynamic Type support, and motor accessibility validation to ensure inclusive design.
+Accessibility testing ensures that HomeKeeper provides an excellent experience for users with disabilities, following platform accessibility guidelines and best practices. The testing includes screen reader compatibility, dynamic text sizing support, and motor accessibility validation to ensure inclusive design.
 
 Usability testing validates that new users can successfully complete the onboarding process and begin receiving value from HomeKeeper within minutes of first use. The testing focuses on the critical first-use experience that determines whether users will continue using the application long-term.
 
