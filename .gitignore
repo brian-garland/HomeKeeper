@@ -1,0 +1,119 @@
+# HomeKeeper .gitignore
+# Created: June 9, 2025
+
+# ================================================================
+# Environment and Secrets
+# ================================================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Supabase secrets (if we add them later)
+supabase/.env
+
+# ================================================================
+# Node.js
+# ================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ================================================================
+# React Native / Expo
+# ================================================================
+.expo/
+dist/
+web-build/
+
+# iOS
+ios/Pods/
+ios/build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Android
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# Metro
+.metro-health-check*
+metro.config.js.bak
+
+# ================================================================
+# Development Tools
+# ================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ================================================================
+# Logs
+# ================================================================
+logs
+*.log
+
+# ================================================================
+# Temporary files
+# ================================================================
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ================================================================
+# Database files (if we add local development)
+# ================================================================
+*.sqlite
+*.sqlite3
+*.db
+
+# ================================================================
+# Build outputs
+# ================================================================
+build/
+dist/
+out/
+
+# ================================================================
+# Testing
+# ================================================================
+coverage/
+.nyc_output
+
+# ================================================================
+# Comments for future reference
+# ================================================================
+
+# NOTE: Supabase configuration is kept in version control since it only contains
+# public URLs and anon keys (no secrets). Any real secrets will be in .env files.
+
+# NOTE: Our database/ folder contains SQL scripts that should be version controlled
+# since they represent our schema and are not secrets.
+
+# NOTE: Project Documents/ folder should be kept in version control as documentation. 
