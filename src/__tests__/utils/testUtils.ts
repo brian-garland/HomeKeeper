@@ -1,4 +1,4 @@
-import { testClient } from '../setup';
+import { supabase } from '../../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
 export interface TestUser extends User {
@@ -27,15 +27,26 @@ export interface TestEquipment {
 }
 
 export const createTestUser = async (): Promise<TestUser> => {
-  const { data, error } = await testClient.auth.signUp({
-    email: `test-${Date.now()}@example.com`,
-    password: 'test-password'
+  const email = `test-${Date.now()}@example.com`;
+  const password = 'test-password';
+  
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password
   });
   
   if (error) throw error;
   
+  // Sign in the user to set authentication context
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  
+  if (signInError) throw signInError;
+  
   // Create matching user profile
-  const { error: profileError } = await testClient
+  const { error: profileError } = await supabase
     .from('user_profiles')
     .insert([{
       id: data.user!.id,
@@ -50,14 +61,17 @@ export const createTestUser = async (): Promise<TestUser> => {
 };
 
 export const createTestHome = async (userId: string): Promise<TestHome> => {
-  const { data, error } = await testClient
+  const { data, error } = await supabase
     .from('homes')
     .insert([{
       owner_id: userId,
+      name: 'Test Home',
       address: '123 Test St',
       city: 'Test City',
       state: 'TS',
-      zip_code: '12345'
+      zip_code: '12345',
+      country: 'US',
+      home_type: 'house'
     }])
     .select()
     .single();
@@ -68,15 +82,16 @@ export const createTestHome = async (userId: string): Promise<TestHome> => {
 
 export const createTestEquipment = async (
   homeId: string,
-  category: string = 'hvac'
+  category: string = 'HVAC'
 ): Promise<TestEquipment> => {
-  const { data, error } = await testClient
+  const { data, error } = await supabase
     .from('equipment')
     .insert([{
       home_id: homeId,
       name: 'Test Equipment',
       category,
       type: 'Test Type',
+      brand: 'Test Brand',
       model: 'Test Model',
       serial_number: `TEST-${Date.now()}`
     }])
@@ -88,10 +103,10 @@ export const createTestEquipment = async (
 };
 
 export const cleanupTestData = async () => {
-  await testClient.from('task_completions').delete().neq('id', 'dummy');
-  await testClient.from('tasks').delete().neq('id', 'dummy');
-  await testClient.from('equipment').delete().neq('id', 'dummy');
-  await testClient.from('homes').delete().neq('id', 'dummy');
-  await testClient.from('user_profiles').delete().neq('id', 'dummy');
+  await supabase.from('task_completions').delete().neq('id', 'dummy');
+  await supabase.from('tasks').delete().neq('id', 'dummy');
+  await supabase.from('equipment').delete().neq('id', 'dummy');
+  await supabase.from('homes').delete().neq('id', 'dummy');
+  await supabase.from('user_profiles').delete().neq('id', 'dummy');
   // Note: Auth user cleanup might require admin privileges
 }; 
