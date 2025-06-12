@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "allowJs": true,
     "outDir": "./dist",
     "rootDir": "./src",
@@ -25,18 +28,22 @@
     "moduleResolution": "node",
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "jsx": "react-native"
   },
   "include": [
     "src/**/*",
-    "src/**/*.test.ts"
+    "src/**/*.test.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "node_modules",
@@ -45,5 +52,6 @@
   ],
   "ts-node": {
     "esm": true
-  }
-} 
+  },
+  "extends": "expo/tsconfig.base"
+}
