@@ -1,5 +1,10 @@
 import { supabase } from '../supabase'
-import { Task, TaskInsert, TaskUpdate } from '../../types/database.types'
+import { Tables, TablesInsert, TablesUpdate } from '../../types/database.types'
+
+// Type aliases for better readability
+type Task = Tables<'tasks'>
+type TaskInsert = TablesInsert<'tasks'>
+type TaskUpdate = TablesUpdate<'tasks'>
 
 // Result type for consistent error handling
 export type TaskResult<T> = {
