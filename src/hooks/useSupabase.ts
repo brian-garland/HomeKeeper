@@ -5,6 +5,7 @@ import type { Database, Json } from '../types/database.types';
 type Home = Database['public']['Tables']['homes']['Row'];
 type Task = Database['public']['Tables']['tasks']['Row'];
 type Equipment = Database['public']['Tables']['equipment']['Row'];
+type Maintenance = Database['public']['Tables']['maintenance']['Row'];
 
 interface DashboardStats {
   homeCount: number;
@@ -18,6 +19,7 @@ interface UseSupabaseReturn {
   homes: Home[];
   tasks: Task[];
   equipment: Equipment[];
+  maintenance: Maintenance[];
   dashboardStats: DashboardStats;
   
   // Loading states
@@ -59,12 +61,18 @@ const MOCK_HOMES: Home[] = [
     bedrooms: 3,
     bathrooms: 2,
     lot_size: 0.25,
-    stories: 2,
-    garage_spaces: 2,
-    hvac_type: 'gas',
-    roof_type: 'asphalt_shingle',
-    foundation_type: 'concrete_slab',
-    siding_type: 'vinyl'
+    floors: 2,
+    heating_type: 'gas',
+    cooling_type: 'central_air',
+    water_heater_type: 'gas',
+    latitude: null,
+    longitude: null,
+    location: null,
+    maintenance_season_start: null,
+    high_maintenance_mode: null,
+    active: true,
+    notes: null,
+    photo_url: null
   }
 ];
 
@@ -176,6 +184,93 @@ const MOCK_EQUIPMENT: Equipment[] = [
   }
 ];
 
+const MOCK_MAINTENANCE: Maintenance[] = [
+  {
+    id: 'demo-maintenance-1',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    home_id: 'demo-home-1',
+    equipment_id: null,
+    title: 'HVAC System Service',
+    description: 'Annual HVAC system maintenance and inspection',
+    category: 'hvac',
+    status: 'scheduled',
+    scheduled_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
+    completed_date: null,
+    estimated_cost: 150,
+    actual_cost: null,
+    vendor_name: 'ABC HVAC Services',
+    vendor_contact: null,
+    vendor_rating: null,
+    maintenance_type: null,
+    priority: 2,
+    recurring: false,
+    recurring_frequency_months: null,
+    next_due_date: null,
+    warranty_work: false,
+    notes: null,
+    photo_urls: null,
+    receipt_urls: null,
+    active: true
+  },
+  {
+    id: 'demo-maintenance-2',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    home_id: 'demo-home-1',
+    equipment_id: null,
+    title: 'Plumbing Inspection',
+    description: 'Check all faucets, pipes, and water pressure',
+    category: 'plumbing',
+    status: 'completed',
+    scheduled_date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
+    completed_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
+    estimated_cost: 85,
+    actual_cost: 85,
+    vendor_name: 'Pro Plumbing Co',
+    vendor_contact: null,
+    vendor_rating: 4,
+    maintenance_type: null,
+    priority: 2,
+    recurring: false,
+    recurring_frequency_months: null,
+    next_due_date: null,
+    warranty_work: false,
+    notes: null,
+    photo_urls: null,
+    receipt_urls: null,
+    active: true
+  },
+  {
+    id: 'demo-maintenance-3',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    home_id: 'demo-home-1',
+    equipment_id: null,
+    title: 'Electrical Panel Check',
+    description: 'Inspect electrical panel and test GFCI outlets',
+    category: 'electrical',
+    status: 'overdue',
+    scheduled_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
+    completed_date: null,
+    estimated_cost: 120,
+    actual_cost: null,
+    vendor_name: 'Elite Electric',
+    vendor_contact: null,
+    vendor_rating: null,
+    maintenance_type: null,
+    priority: 3,
+    recurring: false,
+    recurring_frequency_months: null,
+    next_due_date: null,
+    warranty_work: false,
+    notes: null,
+    photo_urls: null,
+    receipt_urls: null,
+    active: true
+  }
+];
+
 export const useSupabase = (): UseSupabaseReturn => {
   // Check if we're in development mode (using fallback config)
   const isDevelopmentMode = !process.env.SUPABASE_URL && !process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -184,6 +279,7 @@ export const useSupabase = (): UseSupabaseReturn => {
   const [homes, setHomes] = useState<Home[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [maintenance, setMaintenance] = useState<Maintenance[]>([]);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     homeCount: 0,
     activeTasks: 0,
@@ -283,6 +379,44 @@ export const useSupabase = (): UseSupabaseReturn => {
     }
   };
 
+  // Fetch Maintenance
+  const fetchMaintenance = async () => {
+    if (isDevelopmentMode) {
+      setMaintenance(MOCK_MAINTENANCE);
+      return;
+    }
+    
+    try {
+      setError(null);
+      
+      const { data, error: fetchError } = await supabase
+        .from('maintenance')
+        .select(`
+          *,
+          homes (
+            id,
+            name,
+            address
+          ),
+          equipment (
+            id,
+            name,
+            category
+          )
+        `)
+        .order('scheduled_date', { ascending: true });
+
+      if (fetchError) throw fetchError;
+      
+      setMaintenance(data || []);
+    } catch (err) {
+      console.error('Error fetching maintenance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch maintenance');
+      // Fallback to mock data if database query fails
+      setMaintenance(MOCK_MAINTENANCE);
+    }
+  };
+
   // Fetch Dashboard Stats
   const fetchDashboardStats = async () => {
     if (isDevelopmentMode) {
@@ -341,6 +475,7 @@ export const useSupabase = (): UseSupabaseReturn => {
         fetchHomes(),
         fetchTasks(),
         fetchEquipment(),
+        fetchMaintenance(),
         fetchDashboardStats(),
       ]);
     } finally {
@@ -358,6 +493,7 @@ export const useSupabase = (): UseSupabaseReturn => {
     homes,
     tasks,
     equipment,
+    maintenance,
     dashboardStats,
     
     // Loading state

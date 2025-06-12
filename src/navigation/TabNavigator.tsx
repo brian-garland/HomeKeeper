@@ -7,38 +7,12 @@ import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import { TabParamList } from './types';
 import { DashboardScreen } from '../screens/DashboardScreen';
+import { PropertiesScreen } from '../screens/PropertiesScreen';
+import { TasksScreen } from '../screens/TasksScreen';
+import { MaintenanceScreen } from '../screens/MaintenanceScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
-
-// Placeholder screens - will be replaced with actual screens
-
-const PropertiesScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.title}>Properties</Text>
-    <Text style={styles.subtitle}>Manage your properties</Text>
-  </View>
-);
-
-const TasksScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.title}>Tasks</Text>
-    <Text style={styles.subtitle}>Stay on top of your tasks</Text>
-  </View>
-);
-
-const MaintenanceScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.title}>Maintenance</Text>
-    <Text style={styles.subtitle}>Keep everything running smoothly</Text>
-  </View>
-);
-
-const ProfileScreen = () => (
-  <View style={styles.screen}>
-    <Text style={styles.title}>Profile</Text>
-    <Text style={styles.subtitle}>Your account and preferences</Text>
-  </View>
-);
 
 export const TabNavigator: React.FC = () => {
   return (
