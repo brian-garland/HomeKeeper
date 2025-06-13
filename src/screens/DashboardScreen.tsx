@@ -163,11 +163,9 @@ export const DashboardScreen: React.FC = () => {
         });
         break;
       case '4': // Completed Tasks
-        // For completed tasks, we'll show all tasks since we don't have a completed filter yet
-        // This can be enhanced in Phase 2
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
-          params: { filter: 'all' } 
+          params: { filter: 'completed' } 
         });
         break;
       default:

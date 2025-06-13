@@ -50,16 +50,41 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
     }
   };
 
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+  const isCompleted = !!task.completed_at;
+  const isOverdue = !isCompleted && task.due_date && new Date(task.due_date) < new Date();
   const priorityColor = getPriorityColor(task.priority);
 
   return (
-    <TouchableOpacity style={styles.taskCard} onPress={onPress}>
+    <TouchableOpacity 
+      style={[
+        styles.taskCard, 
+        isCompleted && styles.taskCardCompleted
+      ]} 
+      onPress={onPress}
+    >
       <View style={styles.taskHeader}>
-        <View style={[styles.priorityIndicator, { backgroundColor: priorityColor }]} />
+        <View style={[
+          styles.priorityIndicator, 
+          { backgroundColor: isCompleted ? Colors.success : priorityColor }
+        ]} />
         <View style={styles.taskInfo}>
-          <Text style={styles.taskTitle}>{task.title}</Text>
-          <Text style={styles.taskDescription} numberOfLines={2}>
+          <View style={styles.taskTitleRow}>
+            <Text style={[
+              styles.taskTitle,
+              isCompleted && styles.taskTitleCompleted
+            ]}>
+              {task.title}
+            </Text>
+            {isCompleted && (
+              <View style={styles.completedBadge}>
+                <Icon name="check" size="sm" color={Colors.white} />
+              </View>
+            )}
+          </View>
+          <Text style={[
+            styles.taskDescription,
+            isCompleted && styles.taskDescriptionCompleted
+          ]} numberOfLines={2}>
             {task.description}
           </Text>
         </View>
@@ -70,26 +95,51 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
         <View style={styles.metaRow}>
           <View style={styles.metaItem}>
             <Icon name="calendar" size="sm" color={Colors.textSecondary} />
-            <Text style={[styles.metaText, isOverdue && styles.overdueText]}>
-              {isOverdue ? 'Overdue' : new Date(task.due_date).toLocaleDateString()}
+            <Text style={[
+              styles.metaText, 
+              isOverdue && styles.overdueText,
+              isCompleted && styles.metaTextCompleted
+            ]}>
+              {isCompleted 
+                ? `Completed ${new Date(task.completed_at).toLocaleDateString()}`
+                : isOverdue 
+                  ? 'Overdue' 
+                  : new Date(task.due_date).toLocaleDateString()
+              }
             </Text>
           </View>
           <View style={styles.metaItem}>
             <Icon name="clock" size="sm" color={Colors.textSecondary} />
-            <Text style={styles.metaText}>
+            <Text style={[
+              styles.metaText,
+              isCompleted && styles.metaTextCompleted
+            ]}>
               {task.estimated_duration_minutes || 'N/A'} min
             </Text>
           </View>
         </View>
         
         <View style={styles.metaRow}>
-          <View style={[styles.priorityBadge, { backgroundColor: `${priorityColor}20` }]}>
-            <Text style={[styles.priorityText, { color: priorityColor }]}>
-              {getPriorityLabel(task.priority)}
-            </Text>
-          </View>
-          <View style={styles.difficultyBadge}>
-            <Text style={styles.difficultyText}>
+          {!isCompleted && (
+            <View style={[styles.priorityBadge, { backgroundColor: `${priorityColor}20` }]}>
+              <Text style={[styles.priorityText, { color: priorityColor }]}>
+                {getPriorityLabel(task.priority)}
+              </Text>
+            </View>
+          )}
+          {isCompleted && (
+            <View style={styles.completedStatusBadge}>
+              <Text style={styles.completedStatusText}>COMPLETED</Text>
+            </View>
+          )}
+          <View style={[
+            styles.difficultyBadge,
+            isCompleted && styles.difficultyBadgeCompleted
+          ]}>
+            <Text style={[
+              styles.difficultyText,
+              isCompleted && styles.difficultyTextCompleted
+            ]}>
               {getDifficultyLabel(task.difficulty_level)}
             </Text>
           </View>
@@ -106,11 +156,11 @@ export const TasksScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'overdue'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'overdue' | 'completed'>('all');
 
   // Set initial filter from route params
   useEffect(() => {
-    const params = route.params as { filter?: 'all' | 'pending' | 'overdue' } | undefined;
+    const params = route.params as { filter?: 'all' | 'pending' | 'overdue' | 'completed' } | undefined;
     if (params?.filter) {
       setFilter(params.filter);
     }
@@ -139,16 +189,37 @@ export const TasksScreen: React.FC = () => {
   };
 
   const getFilteredTasks = () => {
-    if (filter === 'all') return tasks;
-    if (filter === 'pending') return tasks.filter(task => task.status === 'pending');
-    if (filter === 'overdue') {
-      return tasks.filter(task => 
-        task.status === 'pending' && 
+    let filtered: any[] = [];
+    
+    if (filter === 'all') {
+      filtered = tasks;
+    } else if (filter === 'pending') {
+      filtered = tasks.filter(task => !task.completed_at);
+    } else if (filter === 'overdue') {
+      filtered = tasks.filter(task => 
+        !task.completed_at && 
         task.due_date && 
         new Date(task.due_date) < new Date()
       );
+    } else if (filter === 'completed') {
+      filtered = tasks.filter(task => !!task.completed_at);
     }
-    return tasks;
+
+    // Sort tasks: pending first, then completed at the bottom
+    return filtered.sort((a, b) => {
+      const aCompleted = !!a.completed_at;
+      const bCompleted = !!b.completed_at;
+      
+      // If one is completed and other isn't, put completed at bottom
+      if (aCompleted !== bCompleted) {
+        return aCompleted ? 1 : -1;
+      }
+      
+      // If both have same completion status, sort by due date
+      const aDate = new Date(a.due_date || '9999-12-31');
+      const bDate = new Date(b.due_date || '9999-12-31');
+      return aDate.getTime() - bDate.getTime();
+    });
   };
 
   const filteredTasks = getFilteredTasks();
@@ -201,7 +272,7 @@ export const TasksScreen: React.FC = () => {
               onPress={() => setFilter('pending')}
             >
               <Text style={[styles.filterButtonText, filter === 'pending' && styles.filterButtonTextActive]}>
-                Pending ({tasks.filter(t => t.status === 'pending').length})
+                Pending ({tasks.filter(t => !t.completed_at).length})
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -209,7 +280,15 @@ export const TasksScreen: React.FC = () => {
               onPress={() => setFilter('overdue')}
             >
               <Text style={[styles.filterButtonText, filter === 'overdue' && styles.filterButtonTextActive]}>
-                Overdue ({tasks.filter(t => t.status === 'pending' && t.due_date && new Date(t.due_date) < new Date()).length})
+                Overdue ({tasks.filter(t => !t.completed_at && t.due_date && new Date(t.due_date) < new Date()).length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterButton, filter === 'completed' && styles.filterButtonActive]}
+              onPress={() => setFilter('completed')}
+            >
+              <Text style={[styles.filterButtonText, filter === 'completed' && styles.filterButtonTextActive]}>
+                Completed ({tasks.filter(t => !!t.completed_at).length})
               </Text>
             </TouchableOpacity>
           </View>
@@ -416,6 +495,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  taskCardCompleted: {
+    backgroundColor: Colors.surface,
+  },
   taskHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -430,13 +512,23 @@ const styles = StyleSheet.create({
   taskInfo: {
     flex: 1,
   },
+  taskTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   taskTitle: {
     ...Typography.titleMedium,
     marginBottom: Spacing.xs,
   },
+  taskTitleCompleted: {
+    textDecorationLine: 'line-through',
+  },
   taskDescription: {
     ...Typography.bodyMedium,
     color: Colors.textSecondary,
+  },
+  taskDescriptionCompleted: {
+    textDecorationLine: 'line-through',
   },
   taskMeta: {
     gap: Spacing.sm,
@@ -454,6 +546,9 @@ const styles = StyleSheet.create({
   metaText: {
     ...Typography.caption,
     color: Colors.textSecondary,
+  },
+  metaTextCompleted: {
+    textDecorationLine: 'line-through',
   },
   overdueText: {
     color: Colors.error,
@@ -475,10 +570,33 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: Colors.surface,
   },
+  difficultyBadgeCompleted: {
+    backgroundColor: Colors.surface,
+  },
   difficultyText: {
     ...Typography.caption,
     color: Colors.textSecondary,
     fontSize: 10,
+  },
+  difficultyTextCompleted: {
+    textDecorationLine: 'line-through',
+  },
+  completedBadge: {
+    backgroundColor: Colors.success,
+    borderRadius: 12,
+    padding: Spacing.xs,
+    marginLeft: Spacing.sm,
+  },
+  completedStatusBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: 4,
+    backgroundColor: Colors.success,
+  },
+  completedStatusText: {
+    ...Typography.caption,
+    fontWeight: '600',
+    color: Colors.white,
   },
   bottomSpacing: {
     height: Spacing.xl,

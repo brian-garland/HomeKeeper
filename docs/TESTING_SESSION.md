@@ -107,13 +107,29 @@
 
 ## 🐛 Issues Found
 
-### Issue #1: [Title]
-**Severity:** High/Medium/Low  
-**Description:** ___  
-**Steps to Reproduce:** ___  
-**Expected:** ___  
-**Actual:** ___  
-**Status:** Open/Fixed  
+### Issue #1: Properties Tab - "My Home" Not Clickable
+**Severity:** Medium  
+**Description:** Clicking on "My Home" property card did nothing  
+**Steps to Reproduce:** Go to Properties tab, tap on "My Home" card  
+**Expected:** Should show property details or navigate somewhere  
+**Actual:** No response, function was empty  
+**Status:** ✅ FIXED - Added alert with property details and Phase 2 notice  
+
+### Issue #2: Properties Tab - "Add Property" Button Not Working
+**Severity:** Medium  
+**Description:** "Add Property" button did nothing when tapped  
+**Steps to Reproduce:** Go to Properties tab, tap "Add Property" button  
+**Expected:** Should navigate to add property screen or show some response  
+**Actual:** No response, function was empty  
+**Status:** ✅ FIXED - Added alert explaining Phase 2 features  
+
+### Issue #3: Dashboard Navigation to Wrong Task Filter
+**Severity:** Medium  
+**Description:** Clicking "Overdue" or "Completed" stats took user to "All Tasks" instead of filtered view  
+**Steps to Reproduce:** Go to Dashboard, tap "Overdue Tasks" or "Completed Tasks" stat cards  
+**Expected:** Should show filtered task list (overdue/completed only)  
+**Actual:** Showed all tasks with "All" filter selected  
+**Status:** ✅ FIXED - Added route parameter support and proper navigation with filters
 
 ---
 
