@@ -1,0 +1,477 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Icon } from '../components/icons/Icon';
+import { Colors } from '../theme/colors';
+import { Typography } from '../theme/typography';
+import { Spacing } from '../theme/spacing';
+import PrimaryButton from '../components/buttons/PrimaryButton';
+import SecondaryButton from '../components/buttons/SecondaryButton';
+import { useDataContext } from '../contexts/DataContext';
+
+interface TaskDetailRouteParams {
+  task: any;
+}
+
+export const TaskDetailScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { task } = route.params as TaskDetailRouteParams;
+  const { updateTask, deleteTask } = useDataContext();
+  
+  const [loading, setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTask, setEditedTask] = useState(task);
+
+  const getPriorityColor = (priority: number) => {
+    switch (priority) {
+      case 3: return Colors.error;
+      case 2: return Colors.warning;
+      case 1: return Colors.info;
+      default: return Colors.textSecondary;
+    }
+  };
+
+  const getPriorityLabel = (priority: number) => {
+    switch (priority) {
+      case 3: return 'HIGH';
+      case 2: return 'MEDIUM';
+      case 1: return 'LOW';
+      default: return 'NORMAL';
+    }
+  };
+
+  const getDifficultyLabel = (difficulty: number) => {
+    switch (difficulty) {
+      case 3: return 'Hard';
+      case 2: return 'Medium';
+      case 1: return 'Easy';
+      default: return 'Normal';
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    Alert.alert(
+      'Mark Complete',
+      'Are you sure you want to mark this task as complete?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Complete',
+          style: 'default',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await updateTask(task.id, {
+                status: 'completed',
+                completed_at: new Date().toISOString(),
+              });
+              Alert.alert('Success', 'Task marked as complete!', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to mark task as complete');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSaveEdit = async () => {
+    setLoading(true);
+    try {
+      await updateTask(task.id, editedTask);
+      Alert.alert('Success', 'Task updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update task');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    Alert.alert(
+      'Delete Task',
+      'Are you sure you want to delete this task? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await deleteTask(task.id);
+              Alert.alert('Success', 'Task deleted successfully!', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete task');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+  const priorityColor = getPriorityColor(task.priority);
+  const isCompleted = task.status === 'completed';
+
+  return (
+    <View style={styles.container}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <Icon name="back" size="lg" color={Colors.primary} />
+            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {!isCompleted && (
+                <TouchableOpacity onPress={() => setIsEditing(!isEditing)} style={styles.actionButton}>
+                  <Icon name={isEditing ? "close" : "edit"} size="md" color={Colors.primary} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
+                <Icon name="delete" size="md" color={Colors.error} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {isEditing ? (
+            <TextInput
+              style={styles.titleInput}
+              value={editedTask.title}
+              onChangeText={(text) => setEditedTask((prev: any) => ({ ...prev, title: text }))}
+              placeholder="Task title"
+            />
+          ) : (
+            <Text style={styles.title}>{task.title}</Text>
+          )}
+          
+          {isCompleted && (
+            <View style={styles.completedBanner}>
+              <Icon name="check" size="sm" color={Colors.success} />
+              <Text style={styles.completedText}>
+                Completed {task.completed_at ? new Date(task.completed_at).toLocaleDateString() : ''}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          {isEditing ? (
+            <TextInput
+              style={[styles.textInput, styles.textArea]}
+              value={editedTask.description}
+                             onChangeText={(text) => setEditedTask((prev: any) => ({ ...prev, description: text }))}
+              placeholder="Task description"
+              multiline
+              numberOfLines={4}
+            />
+          ) : (
+            <Text style={styles.description}>{task.description}</Text>
+          )}
+        </View>
+
+        {/* Task Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Details</Text>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Icon name="calendar" size="sm" color={Colors.textSecondary} />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Due Date</Text>
+                <Text style={[styles.detailValue, isOverdue && styles.overdueText]}>
+                  {isOverdue ? 'Overdue - ' : ''}{new Date(task.due_date).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailItem}>
+              <Icon name="clock" size="sm" color={Colors.textSecondary} />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Duration</Text>
+                <Text style={styles.detailValue}>{task.estimated_duration_minutes} minutes</Text>
+              </View>
+            </View>
+
+            <View style={styles.detailItem}>
+              <View style={[styles.priorityIndicator, { backgroundColor: priorityColor }]} />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Priority</Text>
+                <Text style={[styles.detailValue, { color: priorityColor }]}>
+                  {getPriorityLabel(task.priority)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailItem}>
+              <Icon name="settings" size="sm" color={Colors.textSecondary} />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Difficulty</Text>
+                <Text style={styles.detailValue}>{getDifficultyLabel(task.difficulty_level)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.detailItem}>
+              <Icon name="properties" size="sm" color={Colors.textSecondary} />
+              <View style={styles.detailContent}>
+                <Text style={styles.detailLabel}>Category</Text>
+                <Text style={styles.detailValue}>{task.category?.toUpperCase()}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Instructions */}
+        {task.instructions && Array.isArray(task.instructions) && task.instructions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Instructions</Text>
+            <View style={styles.instructionsList}>
+              {task.instructions.map((instruction: string, index: number) => (
+                <View key={index} style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>{index + 1}</Text>
+                  <Text style={styles.instructionText}>{instruction}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Notes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notes</Text>
+          {isEditing ? (
+            <TextInput
+              style={[styles.textInput, styles.textArea]}
+              value={editedTask.notes || ''}
+                             onChangeText={(text) => setEditedTask((prev: any) => ({ ...prev, notes: text }))}
+              placeholder="Add notes..."
+              multiline
+              numberOfLines={3}
+            />
+          ) : (
+            <Text style={styles.notes}>{task.notes || 'No notes added'}</Text>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Action Buttons */}
+      <View style={styles.actions}>
+        {isEditing ? (
+          <>
+            <SecondaryButton
+              title="Cancel"
+              onPress={() => {
+                setIsEditing(false);
+                setEditedTask(task);
+              }}
+              style={styles.actionButtonStyle}
+            />
+            <PrimaryButton
+              title={loading ? "Saving..." : "Save Changes"}
+              onPress={handleSaveEdit}
+              disabled={loading}
+              style={styles.actionButtonStyle}
+            />
+          </>
+        ) : (
+          !isCompleted && (
+            <PrimaryButton
+              title={loading ? "Completing..." : "Mark Complete"}
+              onPress={handleMarkComplete}
+              disabled={loading}
+              style={styles.completeButton}
+            />
+          )
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  content: {
+    flex: 1,
+  },
+  header: {
+    padding: Spacing.lg,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  backButton: {
+    padding: Spacing.xs,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  actionButton: {
+    padding: Spacing.xs,
+  },
+  title: {
+    fontFamily: Typography.titleLarge.fontFamily,
+    fontSize: Typography.titleLarge.fontSize,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  titleInput: {
+    fontFamily: Typography.titleLarge.fontFamily,
+    fontSize: Typography.titleLarge.fontSize,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: Spacing.md,
+    backgroundColor: Colors.background,
+    marginBottom: Spacing.sm,
+  },
+  completedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.success + '20',
+    padding: Spacing.sm,
+    borderRadius: 8,
+    gap: Spacing.xs,
+  },
+  completedText: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.success,
+  },
+  section: {
+    padding: Spacing.lg,
+    backgroundColor: Colors.white,
+    marginTop: Spacing.sm,
+  },
+  sectionTitle: {
+    fontFamily: Typography.titleMedium.fontFamily,
+    fontSize: Typography.titleMedium.fontSize,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
+  },
+  description: {
+    fontFamily: Typography.bodyLarge.fontFamily,
+    fontSize: Typography.bodyLarge.fontSize,
+    color: Colors.textSecondary,
+    lineHeight: 24,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: Spacing.md,
+    fontFamily: Typography.bodyLarge.fontFamily,
+    fontSize: Typography.bodyLarge.fontSize,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  detailsGrid: {
+    gap: Spacing.md,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  detailContent: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontFamily: Typography.labelSmall.fontFamily,
+    fontSize: Typography.labelSmall.fontSize,
+    color: Colors.textTertiary,
+    marginBottom: Spacing.xs,
+  },
+  detailValue: {
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textPrimary,
+  },
+  overdueText: {
+    color: Colors.error,
+  },
+  priorityIndicator: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  instructionsList: {
+    gap: Spacing.sm,
+  },
+  instructionItem: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  instructionNumber: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.primary,
+    backgroundColor: Colors.primary + '20',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  instructionText: {
+    flex: 1,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textSecondary,
+    lineHeight: 24,
+  },
+  notes: {
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
+  },
+  actions: {
+    flexDirection: 'row',
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    backgroundColor: Colors.white,
+  },
+  actionButtonStyle: {
+    flex: 1,
+  },
+  completeButton: {
+    flex: 1,
+  },
+}); 

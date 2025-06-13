@@ -34,4 +34,16 @@ export type OnboardingStackParamList = {
   PropertySetup: undefined;
   TaskPreferences: undefined;
   Complete: undefined;
+};
+
+export type TaskStackParamList = {
+  TasksList: undefined;
+  AddTask: undefined;
+  TaskDetail: { task: any };
+};
+
+export type MaintenanceStackParamList = {
+  MaintenanceList: undefined;
+  AddMaintenance: undefined;
+  MaintenanceDetail: { maintenance: any };
 }; 

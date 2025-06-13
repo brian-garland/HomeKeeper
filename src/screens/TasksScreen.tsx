@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,14 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
-import { useSupabase } from '../hooks/useSupabase';
+import { useDataContext } from '../contexts/DataContext';
 
 interface TaskCardProps {
   task: any;
@@ -99,24 +100,33 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
 };
 
 export const TasksScreen: React.FC = () => {
-  const { tasks, loading, error, refresh, isDevelopmentMode } = useSupabase();
+  const navigation = useNavigation();
+  const { tasks } = useDataContext();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'overdue'>('all');
 
+  // Refresh tasks when screen comes into focus (e.g., after adding a task)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('TasksScreen focused, current tasks count:', tasks.length);
+      // Don't auto-refresh to avoid infinite loops
+    }, [tasks.length])
+  );
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await refresh();
+    // In MVP mode, refresh just updates the UI - no data fetching needed
     setRefreshing(false);
   };
 
   const handleAddTask = () => {
-    console.log('Add Task pressed');
-    // TODO: Navigate to Add Task screen
+    (navigation as any).navigate('AddTask');
   };
 
   const handleTaskPress = (task: any) => {
-    console.log('Task pressed:', task.title);
-    // TODO: Navigate to Task Detail screen
+    (navigation as any).navigate('TaskDetail', { task });
   };
 
   const getFilteredTasks = () => {
@@ -133,6 +143,8 @@ export const TasksScreen: React.FC = () => {
   };
 
   const filteredTasks = getFilteredTasks();
+
+  // Debug logging - Removed for MVP production
 
   return (
     <View style={styles.container}>
@@ -152,15 +164,7 @@ export const TasksScreen: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Development Mode Banner */}
-        {isDevelopmentMode && (
-          <View style={styles.devBanner}>
-            <Icon name="info" size="sm" color={Colors.warning} />
-            <Text style={styles.devBannerText}>
-              Development Mode - Using demo data
-            </Text>
-          </View>
-        )}
+        {/* Development Mode Banner - Removed for MVP */}
 
         {/* Add Task Button */}
         <View style={styles.addSection}>

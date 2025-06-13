@@ -8,8 +8,8 @@ import { Spacing } from '../theme/spacing';
 import { TabParamList } from './types';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { PropertiesScreen } from '../screens/PropertiesScreen';
-import { TasksScreen } from '../screens/TasksScreen';
-import { MaintenanceScreen } from '../screens/MaintenanceScreen';
+import { TaskStackNavigator } from './TaskStackNavigator';
+import { MaintenanceStackNavigator } from './MaintenanceStackNavigator';
 import { ProfileScreen } from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -89,7 +89,7 @@ export const TabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="Tasks" 
-        component={TasksScreen}
+        component={TaskStackNavigator}
         options={{
           title: 'Tasks',
           headerTitle: 'My Tasks'
@@ -97,7 +97,7 @@ export const TabNavigator: React.FC = () => {
       />
       <Tab.Screen 
         name="Maintenance" 
-        component={MaintenanceScreen}
+        component={MaintenanceStackNavigator}
         options={{
           title: 'Maintenance',
           headerTitle: 'Maintenance'

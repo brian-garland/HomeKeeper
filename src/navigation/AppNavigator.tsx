@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MagicalOnboardingScreen } from '../screens/MagicalOnboardingScreen';
 import { TabNavigator } from './TabNavigator';
+import { DataProvider } from '../contexts/DataContext';
 
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -47,14 +48,16 @@ export const AppNavigator: React.FC = () => {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isFirstLaunch ? (
-        <Stack.Screen name="Onboarding">
-          {() => <MagicalOnboardingScreen onComplete={completeOnboarding} />}
-        </Stack.Screen>
-      ) : (
-        <Stack.Screen name="MainApp" component={TabNavigator} />
-      )}
-    </Stack.Navigator>
+    <DataProvider>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isFirstLaunch ? (
+          <Stack.Screen name="Onboarding">
+            {() => <MagicalOnboardingScreen onComplete={completeOnboarding} />}
+          </Stack.Screen>
+        ) : (
+          <Stack.Screen name="MainApp" component={TabNavigator} />
+        )}
+      </Stack.Navigator>
+    </DataProvider>
   );
 }; 

@@ -33,6 +33,12 @@ interface UseSupabaseReturn {
   
   // Actions
   refresh: () => Promise<void>;
+  addTask: (taskData: Partial<Task>) => Promise<void>;
+  updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  addMaintenance: (maintenanceData: Partial<Maintenance>) => Promise<void>;
+  updateMaintenance: (id: string, updates: Partial<Maintenance>) => Promise<void>;
+  deleteMaintenance: (id: string) => Promise<void>;
 }
 
 // Mock data for development mode
@@ -271,15 +277,32 @@ const MOCK_MAINTENANCE: Maintenance[] = [
   }
 ];
 
+// Global state to share between components - start clean for MVP
+let globalTasks: Task[] = [];
+let globalMaintenance: Maintenance[] = [];
+let globalHomes: Home[] = [];
+let globalEquipment: Equipment[] = [];
+
+// Global state update callbacks
+let globalStateCallbacks: (() => void)[] = [];
+
+// Function to notify all hook instances of state changes
+const notifyGlobalStateChange = () => {
+  // Use setTimeout to avoid updating components during render
+  setTimeout(() => {
+    globalStateCallbacks.forEach(callback => callback());
+  }, 0);
+};
+
 export const useSupabase = (): UseSupabaseReturn => {
   // Check if we're in development mode (using fallback config)
   const isDevelopmentMode = !process.env.SUPABASE_URL && !process.env.EXPO_PUBLIC_SUPABASE_URL;
   
-  // State
-  const [homes, setHomes] = useState<Home[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
-  const [maintenance, setMaintenance] = useState<Maintenance[]>([]);
+  // State - initialize with global state
+  const [homes, setHomes] = useState<Home[]>(globalHomes);
+  const [tasks, setTasks] = useState<Task[]>(globalTasks);
+  const [equipment, setEquipment] = useState<Equipment[]>(globalEquipment);
+  const [maintenance, setMaintenance] = useState<Maintenance[]>(globalMaintenance);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     homeCount: 0,
     activeTasks: 0,
@@ -293,10 +316,28 @@ export const useSupabase = (): UseSupabaseReturn => {
   // Error state
   const [error, setError] = useState<string | null>(null);
 
+  // Register this hook instance for global state updates
+  useEffect(() => {
+    const updateLocalState = () => {
+      console.log('updateLocalState called - globalTasks length:', globalTasks.length);
+      setTasks([...globalTasks]);
+      setHomes([...globalHomes]);
+      setEquipment([...globalEquipment]);
+      setMaintenance([...globalMaintenance]);
+    };
+
+    globalStateCallbacks.push(updateLocalState);
+
+    return () => {
+      globalStateCallbacks = globalStateCallbacks.filter(cb => cb !== updateLocalState);
+    };
+  }, []);
+
   // Fetch Homes
   const fetchHomes = async () => {
     if (isDevelopmentMode) {
-      setHomes(MOCK_HOMES);
+      // For MVP: In development mode, preserve existing homes during refresh
+      setHomes([...globalHomes]);
       return;
     }
     
@@ -320,7 +361,11 @@ export const useSupabase = (): UseSupabaseReturn => {
   // Fetch Tasks
   const fetchTasks = async () => {
     if (isDevelopmentMode) {
-      setTasks(MOCK_TASKS);
+      // For MVP: In development mode, preserve existing tasks during refresh
+      // Don't reset to empty - keep whatever tasks the user has created
+      console.log('fetchTasks called - globalTasks length:', globalTasks.length);
+      console.log('fetchTasks - setting tasks to:', globalTasks.map(t => t.title));
+      setTasks([...globalTasks]);
       return;
     }
     
@@ -351,7 +396,8 @@ export const useSupabase = (): UseSupabaseReturn => {
   // Fetch Equipment
   const fetchEquipment = async () => {
     if (isDevelopmentMode) {
-      setEquipment(MOCK_EQUIPMENT);
+      // For MVP: In development mode, preserve existing equipment during refresh
+      setEquipment([...globalEquipment]);
       return;
     }
     
@@ -382,7 +428,8 @@ export const useSupabase = (): UseSupabaseReturn => {
   // Fetch Maintenance
   const fetchMaintenance = async () => {
     if (isDevelopmentMode) {
-      setMaintenance(MOCK_MAINTENANCE);
+      // For MVP: In development mode, preserve existing maintenance during refresh
+      setMaintenance([...globalMaintenance]);
       return;
     }
     
@@ -420,7 +467,21 @@ export const useSupabase = (): UseSupabaseReturn => {
   // Fetch Dashboard Stats
   const fetchDashboardStats = async () => {
     if (isDevelopmentMode) {
-      setDashboardStats(MOCK_DASHBOARD_STATS);
+      // For MVP: Calculate stats from actual user data
+      const activeTasks = globalTasks.filter(task => task.status === 'pending').length;
+      const overdueTasks = globalTasks.filter(task => 
+        task.status === 'pending' && 
+        task.due_date && 
+        new Date(task.due_date) < new Date()
+      ).length;
+      const completedTasks = globalTasks.filter(task => task.status === 'completed').length;
+      
+      setDashboardStats({
+        homeCount: globalHomes.length,
+        activeTasks,
+        overdueTasks,
+        completedTasks,
+      });
       return;
     }
     
@@ -469,6 +530,7 @@ export const useSupabase = (): UseSupabaseReturn => {
 
   // Refresh all data
   const refresh = async () => {
+    console.log('refresh() called - globalTasks before:', globalTasks.length);
     setLoading(true);
     try {
       await Promise.all([
@@ -478,15 +540,262 @@ export const useSupabase = (): UseSupabaseReturn => {
         fetchMaintenance(),
         fetchDashboardStats(),
       ]);
+      console.log('refresh() completed - globalTasks after:', globalTasks.length);
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial data fetch
-  useEffect(() => {
-    refresh();
-  }, []);
+  // Add Task
+  const addTask = async (taskData: Partial<Task>) => {
+    // Always use development mode for now since we don't have auth set up
+    if (true || isDevelopmentMode) {
+      // In development mode, just add to local state
+      const newTask: Task = {
+        id: `demo-task-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        home_id: taskData.home_id || 'demo-home-1',
+        equipment_id: null,
+        template_id: null,
+        title: taskData.title || '',
+        description: taskData.description || '',
+        category: taskData.category || 'general',
+        due_date: taskData.due_date || new Date().toISOString().split('T')[0]!,
+        priority: taskData.priority || 2,
+        estimated_duration_minutes: taskData.estimated_duration_minutes || 30,
+        difficulty_level: taskData.difficulty_level || 1,
+        instructions: null,
+        status: 'pending',
+        completed_at: null,
+        completed_by: null,
+        auto_generated: false,
+        reschedule_count: 0,
+        weather_dependent: false,
+        notes: null,
+        tags: []
+      };
+      setTasks(prev => {
+        console.log('addTask - prev tasks length:', prev.length);
+        const updatedTasks = [newTask, ...prev];
+        console.log('addTask - new tasks length:', updatedTasks.length);
+        console.log('addTask - task titles:', updatedTasks.map(t => t.title));
+        
+        // Update global state so other components can see it
+        globalTasks = updatedTasks;
+        console.log('addTask - globalTasks updated to length:', globalTasks.length);
+        
+        // Notify other hook instances
+        notifyGlobalStateChange();
+        
+        return updatedTasks;
+      });
+      
+      // Recalculate dashboard stats after adding task
+      await fetchDashboardStats();
+      return;
+    }
+
+    try {
+      setError(null);
+      const { error: insertError } = await supabase
+        .from('tasks')
+        .insert(taskData as any);
+
+      if (insertError) throw insertError;
+      
+      // Refresh tasks to get the new one
+      await fetchTasks();
+    } catch (err) {
+      console.error('Error adding task:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add task');
+      throw err;
+    }
+  };
+
+  // Update Task
+  const updateTask = async (id: string, updates: Partial<Task>) => {
+    if (true || isDevelopmentMode) {
+      setTasks(prev => {
+        const updatedTasks = prev.map(task => 
+          task.id === id ? { ...task, ...updates, updated_at: new Date().toISOString() } : task
+        );
+        
+        // Update global state so other components can see the change
+        globalTasks = updatedTasks;
+        
+        // Notify other hook instances
+        notifyGlobalStateChange();
+        
+        return updatedTasks;
+      });
+      
+      // Recalculate dashboard stats after task update
+      await fetchDashboardStats();
+      return;
+    }
+
+    try {
+      setError(null);
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update(updates)
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+      
+      // Refresh tasks to get the updated one
+      await fetchTasks();
+    } catch (err) {
+      console.error('Error updating task:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update task');
+      throw err;
+    }
+  };
+
+  // Delete Task
+  const deleteTask = async (id: string) => {
+    if (isDevelopmentMode) {
+      setTasks(prev => {
+        const updatedTasks = prev.filter(task => task.id !== id);
+        
+        // Update global state so other components can see the change
+        globalTasks = updatedTasks;
+        
+        // Notify other hook instances
+        notifyGlobalStateChange();
+        
+        return updatedTasks;
+      });
+      
+      // Recalculate dashboard stats after task deletion
+      await fetchDashboardStats();
+      return;
+    }
+
+    try {
+      setError(null);
+      const { error: deleteError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      
+      // Refresh tasks to remove the deleted one
+      await fetchTasks();
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete task');
+      throw err;
+    }
+  };
+
+  // Add Maintenance
+  const addMaintenance = async (maintenanceData: Partial<Maintenance>) => {
+    // Always use development mode for now since we don't have auth set up
+    if (true || isDevelopmentMode) {
+      const newMaintenance: Maintenance = {
+        id: `demo-maintenance-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        home_id: maintenanceData.home_id || 'demo-home-1',
+        equipment_id: null,
+        title: maintenanceData.title || '',
+        description: maintenanceData.description || '',
+        category: maintenanceData.category || 'general',
+        status: 'scheduled',
+        scheduled_date: maintenanceData.scheduled_date || new Date().toISOString().split('T')[0]!,
+        completed_date: null,
+        estimated_cost: maintenanceData.estimated_cost || null,
+        actual_cost: null,
+        vendor_name: maintenanceData.vendor_name || null,
+        vendor_contact: null,
+        notes: null,
+        photo_urls: null,
+        receipt_urls: null,
+        warranty_work: null,
+        active: true,
+        maintenance_type: null,
+        next_due_date: null,
+        priority: 2,
+        recurring_frequency_months: null,
+
+      };
+      setMaintenance(prev => [newMaintenance, ...prev]);
+      return;
+    }
+
+    try {
+      setError(null);
+      const { error: insertError } = await supabase
+        .from('maintenance')
+        .insert(maintenanceData as any);
+
+      if (insertError) throw insertError;
+      
+      await fetchMaintenance();
+    } catch (err) {
+      console.error('Error adding maintenance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add maintenance');
+      throw err;
+    }
+  };
+
+  // Update Maintenance
+  const updateMaintenance = async (id: string, updates: Partial<Maintenance>) => {
+    if (isDevelopmentMode) {
+      setMaintenance(prev => prev.map(maintenance => 
+        maintenance.id === id ? { ...maintenance, ...updates, updated_at: new Date().toISOString() } : maintenance
+      ));
+      return;
+    }
+
+    try {
+      setError(null);
+      const { error: updateError } = await supabase
+        .from('maintenance')
+        .update(updates)
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+      
+      await fetchMaintenance();
+    } catch (err) {
+      console.error('Error updating maintenance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update maintenance');
+      throw err;
+    }
+  };
+
+  // Delete Maintenance
+  const deleteMaintenance = async (id: string) => {
+    if (isDevelopmentMode) {
+      setMaintenance(prev => prev.filter(maintenance => maintenance.id !== id));
+      return;
+    }
+
+    try {
+      setError(null);
+      const { error: deleteError } = await supabase
+        .from('maintenance')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      
+      await fetchMaintenance();
+    } catch (err) {
+      console.error('Error deleting maintenance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete maintenance');
+      throw err;
+    }
+  };
+
+  // Initial data fetch - Removed automatic refresh to prevent state reset
+  // useEffect(() => {
+  //   refresh();
+  // }, []);
 
   return {
     // Data
@@ -507,5 +816,11 @@ export const useSupabase = (): UseSupabaseReturn => {
     
     // Actions
     refresh,
+    addTask,
+    updateTask,
+    deleteTask,
+    addMaintenance,
+    updateMaintenance,
+    deleteMaintenance,
   };
 }; 

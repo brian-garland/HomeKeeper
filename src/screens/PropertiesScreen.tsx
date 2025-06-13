@@ -13,7 +13,7 @@ import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
-import { useSupabase } from '../hooks/useSupabase';
+import { useDataContext } from '../contexts/DataContext';
 
 interface PropertyCardProps {
   property: any;
@@ -60,13 +60,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, onPress }) => {
 };
 
 export const PropertiesScreen: React.FC = () => {
-  const { homes, loading, error, refresh, isDevelopmentMode } = useSupabase();
+  const { homes } = useDataContext();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
+    // In development mode, we don't need to refresh from server
+    // The data is already managed by the DataContext
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   const handleAddProperty = () => {
@@ -97,16 +98,6 @@ export const PropertiesScreen: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Development Mode Banner */}
-        {isDevelopmentMode && (
-          <View style={styles.devBanner}>
-            <Icon name="info" size="sm" color={Colors.warning} />
-            <Text style={styles.devBannerText}>
-              Development Mode - Using demo data
-            </Text>
-          </View>
-        )}
-
         {/* Add Property Button */}
         <View style={styles.addSection}>
           <PrimaryButton
@@ -120,20 +111,7 @@ export const PropertiesScreen: React.FC = () => {
         <View style={styles.propertiesSection}>
           <Text style={styles.sectionTitle}>Your Properties</Text>
           
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading properties...</Text>
-            </View>
-          )}
-
-          {error && (
-            <View style={styles.errorContainer}>
-              <Icon name="warning" size="md" color={Colors.error} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          {!loading && !error && homes.length === 0 && (
+          {homes.length === 0 && (
             <View style={styles.emptyContainer}>
               <Icon name="properties" size="xl" color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>No Properties Yet</Text>
@@ -143,7 +121,7 @@ export const PropertiesScreen: React.FC = () => {
             </View>
           )}
 
-          {!loading && !error && homes.length > 0 && (
+          {homes.length > 0 && (
             <View style={styles.propertiesList}>
               {homes.map((property) => (
                 <PropertyCard

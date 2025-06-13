@@ -8,13 +8,14 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
-import { useSupabase } from '../hooks/useSupabase';
+import { useDataContext } from '../contexts/DataContext';
 
 interface QuickStat {
   id: string;
@@ -42,8 +43,17 @@ interface WeatherData {
 }
 
 export const DashboardScreen: React.FC = () => {
-  const { homes, tasks, dashboardStats, loading, error, refresh, isDevelopmentMode } = useSupabase();
+  const navigation = useNavigation();
+  const { homes, tasks } = useDataContext();
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Calculate dashboard stats from tasks
+  const dashboardStats = {
+    homeCount: homes.length,
+    activeTasks: tasks.filter(task => !task.completed_at).length,
+    overdueTasks: tasks.filter(task => !task.completed_at && task.due_date && new Date(task.due_date) < new Date()).length,
+    completedTasks: tasks.filter(task => task.completed_at).length,
+  };
   const [weather, setWeather] = useState<WeatherData>({
     temperature: 72,
     condition: 'Partly Cloudy',
@@ -112,8 +122,9 @@ export const DashboardScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
+    // In development mode, we don't need to refresh from server
+    // The data is already managed by the DataContext
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   const getStatusColor = (status: string) => {
@@ -134,6 +145,25 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
+  const handleStatPress = (statId: string) => {
+    switch (statId) {
+      case '1': // Homes
+        navigation.navigate('Properties' as never);
+        break;
+      case '2': // Active Tasks
+        navigation.navigate('Tasks' as never);
+        break;
+      case '3': // Overdue Tasks
+        navigation.navigate('Tasks' as never);
+        break;
+      case '4': // Completed Tasks
+        navigation.navigate('Tasks' as never);
+        break;
+      default:
+        break;
+    }
+  };
+
   return (
     <ScrollView 
       style={styles.container}
@@ -143,15 +173,7 @@ export const DashboardScreen: React.FC = () => {
       }
       showsVerticalScrollIndicator={false}
     >
-      {/* Development Mode Banner */}
-      {isDevelopmentMode && (
-        <View style={styles.devBanner}>
-          <Icon name="info" size="sm" color={Colors.warning} />
-          <Text style={styles.devBannerText}>
-            Development Mode - Using demo data
-          </Text>
-        </View>
-      )}
+
 
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
@@ -182,7 +204,11 @@ export const DashboardScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Quick Overview</Text>
         <View style={styles.statsGrid}>
           {quickStats.map((stat) => (
-            <TouchableOpacity key={stat.id} style={styles.statCard}>
+            <TouchableOpacity 
+              key={stat.id} 
+              style={styles.statCard}
+              onPress={() => handleStatPress(stat.id)}
+            >
               <View style={styles.statHeader}>
                 <Icon name={stat.icon} size="lg" color={stat.color} />
                 <Text style={[styles.statValue, { color: stat.color }]}>
@@ -204,13 +230,13 @@ export const DashboardScreen: React.FC = () => {
         <View style={styles.actionButtons}>
           <PrimaryButton
             title="Add Task"
-            onPress={() => console.log('Add Task')}
+            onPress={() => (navigation as any).navigate('Tasks', { screen: 'AddTask' })}
             size="small"
             style={styles.actionButton}
           />
           <SecondaryButton
             title="Schedule Maintenance"
-            onPress={() => console.log('Schedule Maintenance')}
+            onPress={() => (navigation as any).navigate('Maintenance', { screen: 'AddMaintenance' })}
             size="small"
             style={styles.actionButton}
           />

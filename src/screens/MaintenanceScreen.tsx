@@ -8,12 +8,13 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
-import { useSupabase } from '../hooks/useSupabase';
+import { useDataContext } from '../contexts/DataContext';
 
 interface MaintenanceCardProps {
   maintenance: any;
@@ -127,24 +128,25 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = ({ maintenance, onPress 
 };
 
 export const MaintenanceScreen: React.FC = () => {
-  const { maintenance, loading, error, refresh, isDevelopmentMode } = useSupabase();
+  const navigation = useNavigation();
+  const { maintenance } = useDataContext();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'overdue'>('all');
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refresh();
-    setRefreshing(false);
+    // In development mode, we don't need to refresh from server
+    // The data is already managed by the DataContext
+    setTimeout(() => setRefreshing(false), 500);
   };
 
   const handleAddMaintenance = () => {
-    console.log('Add Maintenance pressed');
-    // TODO: Navigate to Add Maintenance screen
+    (navigation as any).navigate('AddMaintenance');
   };
 
   const handleMaintenancePress = (maintenanceItem: any) => {
     console.log('Maintenance pressed:', maintenanceItem.title);
-    // TODO: Navigate to Maintenance Detail screen
+    // TODO: Navigate to Maintenance Detail screen (not implemented yet)
   };
 
   const getFilteredMaintenance = () => {
@@ -183,15 +185,7 @@ export const MaintenanceScreen: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Development Mode Banner */}
-        {isDevelopmentMode && (
-          <View style={styles.devBanner}>
-            <Icon name="info" size="sm" color={Colors.warning} />
-            <Text style={styles.devBannerText}>
-              Development Mode - Using demo data
-            </Text>
-          </View>
-        )}
+
 
         {/* Add Maintenance Button */}
         <View style={styles.addSection}>
@@ -267,20 +261,7 @@ export const MaintenanceScreen: React.FC = () => {
         <View style={styles.maintenanceSection}>
           <Text style={styles.sectionTitle}>Maintenance History</Text>
           
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading maintenance...</Text>
-            </View>
-          )}
-
-          {error && (
-            <View style={styles.errorContainer}>
-              <Icon name="warning" size="md" color={Colors.error} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          {!loading && !error && filteredMaintenance.length === 0 && (
+          {filteredMaintenance.length === 0 && (
             <View style={styles.emptyContainer}>
               <Icon name="maintenance" size="xl" color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>
@@ -295,7 +276,7 @@ export const MaintenanceScreen: React.FC = () => {
             </View>
           )}
 
-          {!loading && !error && filteredMaintenance.length > 0 && (
+          {filteredMaintenance.length > 0 && (
             <View style={styles.maintenanceList}>
               {filteredMaintenance.map((maintenanceItem) => (
                 <MaintenanceCard
