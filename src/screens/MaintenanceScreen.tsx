@@ -52,33 +52,44 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = ({ maintenance, onPress 
     }
   };
 
-  const categoryColor = getCategoryColor(maintenance.category || '');
-  const statusColor = getStatusColor(maintenance.status || '');
-  const isOverdue = maintenance.status === 'overdue';
-  const isCompleted = maintenance.status === 'completed';
+  // Safely get values with fallbacks
+  const title = maintenance?.title || 'Untitled';
+  const description = maintenance?.description || 'No description';
+  const category = maintenance?.category || 'general';
+  const status = maintenance?.status || 'scheduled';
+  const scheduledDate = maintenance?.scheduled_date || '';
+  const actualCost = maintenance?.actual_cost || 0;
+  const estimatedCost = maintenance?.estimated_cost || 0;
+  const vendorName = maintenance?.vendor_name || '';
+  const completedDate = maintenance?.completed_date || '';
+
+  const categoryColor = getCategoryColor(category);
+  const statusColor = getStatusColor(status);
+  const isOverdue = status === 'overdue';
+  const isCompleted = status === 'completed';
 
   return (
     <TouchableOpacity style={styles.maintenanceCard} onPress={onPress}>
       <View style={styles.cardHeader}>
         <View style={[styles.categoryIcon, { backgroundColor: `${categoryColor}20` }]}>
           <Icon 
-            name={getCategoryIcon(maintenance.category || '')} 
+            name={getCategoryIcon(category)} 
             size="md" 
             color={categoryColor} 
           />
         </View>
         <View style={styles.maintenanceInfo}>
-          <Text style={styles.maintenanceTitle}>{maintenance.title || 'Untitled'}</Text>
+          <Text style={styles.maintenanceTitle}>{title}</Text>
           <Text style={styles.maintenanceDescription} numberOfLines={2}>
-            {maintenance.description || 'No description'}
+            {description}
           </Text>
           <View style={styles.metaInfo}>
             <Text style={styles.categoryText}>
-              {(maintenance.category || 'GENERAL').toUpperCase()}
+              {category.toUpperCase()}
             </Text>
             <Text style={styles.metaDivider}>•</Text>
             <Text style={[styles.statusText, { color: statusColor }]}>
-              {(maintenance.status || 'scheduled').replace('_', ' ').toUpperCase()}
+              {status.replace('_', ' ').toUpperCase()}
             </Text>
           </View>
         </View>
@@ -89,37 +100,37 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = ({ maintenance, onPress 
         <View style={styles.footerItem}>
           <Icon name="calendar" size="sm" color={Colors.textSecondary} />
           <Text style={[styles.footerText, isOverdue && styles.overdueText]}>
-            {maintenance.scheduled_date 
-              ? new Date(maintenance.scheduled_date).toLocaleDateString()
+            {scheduledDate 
+              ? new Date(scheduledDate).toLocaleDateString()
               : 'No date set'
             }
           </Text>
         </View>
         
-        {(maintenance.actual_cost || maintenance.estimated_cost) && (
+        {(actualCost > 0 || estimatedCost > 0) && (
           <View style={styles.footerItem}>
             <Icon name="settings" size="sm" color={Colors.textSecondary} />
             <Text style={styles.footerText}>
-              ${maintenance.actual_cost || maintenance.estimated_cost || '0'}
+              ${actualCost > 0 ? actualCost.toString() : estimatedCost.toString()}
             </Text>
           </View>
         )}
 
-        {maintenance.vendor_name && (
+        {vendorName && (
           <View style={styles.footerItem}>
             <Icon name="user" size="sm" color={Colors.textSecondary} />
             <Text style={styles.footerText} numberOfLines={1}>
-              {maintenance.vendor_name}
+              {vendorName}
             </Text>
           </View>
         )}
       </View>
 
-      {isCompleted && maintenance.completed_date && (
+      {isCompleted && completedDate && (
         <View style={styles.completedBanner}>
           <Icon name="check" size="sm" color={Colors.success} />
           <Text style={styles.completedText}>
-            Completed {new Date(maintenance.completed_date).toLocaleDateString()}
+            Completed {new Date(completedDate).toLocaleDateString()}
           </Text>
         </View>
       )}
@@ -169,6 +180,10 @@ export const MaintenanceScreen: React.FC = () => {
 
   const filterCounts = getFilterCounts();
 
+  const handleStatPress = (filterType: 'scheduled' | 'completed' | 'overdue') => {
+    setFilter(filterType);
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -202,61 +217,52 @@ export const MaintenanceScreen: React.FC = () => {
         <View style={styles.statsSection}>
           <Text style={styles.sectionTitle}>Overview</Text>
           <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
+            <TouchableOpacity 
+              style={[
+                styles.statCard,
+                filter === 'scheduled' && styles.statCardActive
+              ]}
+              onPress={() => handleStatPress('scheduled')}
+            >
               <Icon name="calendar" size="lg" color={Colors.info} />
               <Text style={styles.statValue}>{filterCounts.scheduled}</Text>
               <Text style={styles.statLabel}>Scheduled</Text>
-            </View>
-            <View style={styles.statCard}>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.statCard,
+                filter === 'completed' && styles.statCardActive
+              ]}
+              onPress={() => handleStatPress('completed')}
+            >
               <Icon name="check" size="lg" color={Colors.success} />
               <Text style={styles.statValue}>{filterCounts.completed}</Text>
               <Text style={styles.statLabel}>Completed</Text>
-            </View>
-            <View style={styles.statCard}>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.statCard,
+                filter === 'overdue' && styles.statCardActive
+              ]}
+              onPress={() => handleStatPress('overdue')}
+            >
               <Icon name="warning" size="lg" color={Colors.error} />
               <Text style={styles.statValue}>{filterCounts.overdue}</Text>
               <Text style={styles.statLabel}>Overdue</Text>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Filter Buttons */}
-        <View style={styles.filterSection}>
-          <Text style={styles.filterTitle}>Filter Maintenance</Text>
-          <View style={styles.filterButtons}>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
-              onPress={() => setFilter('all')}
-            >
-              <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
-                All ({filterCounts.all})
-              </Text>
+        {/* Current Filter Indicator */}
+        <View style={styles.filterIndicatorSection}>
+          <Text style={styles.filterIndicatorText}>
+            Showing: {filter === 'all' ? 'All Maintenance' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Maintenance`} ({filteredMaintenance.length})
+          </Text>
+          {filter !== 'all' && (
+            <TouchableOpacity onPress={() => setFilter('all')} style={styles.showAllButton}>
+              <Text style={styles.showAllText}>Show All</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'scheduled' && styles.filterButtonActive]}
-              onPress={() => setFilter('scheduled')}
-            >
-              <Text style={[styles.filterButtonText, filter === 'scheduled' && styles.filterButtonTextActive]}>
-                Scheduled ({filterCounts.scheduled})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'completed' && styles.filterButtonActive]}
-              onPress={() => setFilter('completed')}
-            >
-              <Text style={[styles.filterButtonText, filter === 'completed' && styles.filterButtonTextActive]}>
-                Done ({filterCounts.completed})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'overdue' && styles.filterButtonActive]}
-              onPress={() => setFilter('overdue')}
-            >
-              <Text style={[styles.filterButtonText, filter === 'overdue' && styles.filterButtonTextActive]}>
-                Overdue ({filterCounts.overdue})
-              </Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
 
         {/* Maintenance List */}
@@ -369,6 +375,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: Spacing.lg,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
     ...Platform.select({
       ios: {
         shadowColor: Colors.gray900,
@@ -381,6 +389,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  statCardActive: {
+    borderColor: Colors.primary,
+  },
   statValue: {
     ...Typography.displaySmall,
     color: Colors.textPrimary,
@@ -392,40 +403,26 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
   },
-  filterSection: {
+  filterIndicatorSection: {
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
-  },
-  filterTitle: {
-    ...Typography.titleMedium,
-    marginBottom: Spacing.md,
-    color: Colors.textPrimary,
-  },
-  filterButtons: {
     flexDirection: 'row',
-    gap: Spacing.xs,
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  filterButton: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+  filterIndicatorText: {
+    ...Typography.bodyMedium,
+    color: Colors.textSecondary,
+  },
+  showAllButton: {
+    padding: Spacing.sm,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    minWidth: 80,
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.primary,
     borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
   },
-  filterButtonText: {
+  showAllText: {
     ...Typography.labelMedium,
-    color: Colors.textSecondary,
-    fontSize: 12,
-  },
-  filterButtonTextActive: {
     color: Colors.white,
   },
   maintenanceSection: {

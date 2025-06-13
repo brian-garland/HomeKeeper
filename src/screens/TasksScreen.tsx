@@ -156,11 +156,11 @@ export const TasksScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'open' | 'done'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'done' | 'overdue'>('all');
 
   // Set initial filter from route params
   useEffect(() => {
-    const params = route.params as { filter?: 'all' | 'open' | 'done' } | undefined;
+    const params = route.params as { filter?: 'all' | 'open' | 'done' | 'overdue' } | undefined;
     if (params?.filter) {
       setFilter(params.filter);
     }
@@ -197,28 +197,47 @@ export const TasksScreen: React.FC = () => {
       filtered = tasks.filter(task => !task.completed_at);
     } else if (filter === 'done') {
       filtered = tasks.filter(task => !!task.completed_at);
+    } else if (filter === 'overdue') {
+      filtered = tasks.filter(task => 
+        !task.completed_at && 
+        task.due_date && 
+        new Date(task.due_date) < new Date()
+      );
     }
 
-    // Sort tasks: pending first, then completed at the bottom
+    // Sort tasks: pending first, completed last
     return filtered.sort((a, b) => {
       const aCompleted = !!a.completed_at;
       const bCompleted = !!b.completed_at;
       
-      // If one is completed and other isn't, put completed at bottom
-      if (aCompleted !== bCompleted) {
-        return aCompleted ? 1 : -1;
-      }
-      
-      // If both have same completion status, sort by due date
-      const aDate = new Date(a.due_date || '9999-12-31');
-      const bDate = new Date(b.due_date || '9999-12-31');
-      return aDate.getTime() - bDate.getTime();
+      if (aCompleted && !bCompleted) return 1;
+      if (!aCompleted && bCompleted) return -1;
+      return 0;
     });
   };
 
   const filteredTasks = getFilteredTasks();
 
-  // Debug logging - Removed for MVP production
+  const getTaskCounts = () => {
+    const openTasks = tasks.filter(task => !task.completed_at);
+    const completedTasks = tasks.filter(task => !!task.completed_at);
+    const overdueTasks = openTasks.filter(task => 
+      task.due_date && new Date(task.due_date) < new Date()
+    );
+
+    return {
+      all: tasks.length,
+      open: openTasks.length,
+      done: completedTasks.length,
+      overdue: overdueTasks.length,
+    };
+  };
+
+  const taskCounts = getTaskCounts();
+
+  const handleStatPress = (filterType: 'open' | 'done' | 'overdue') => {
+    setFilter(filterType);
+  };
 
   return (
     <View style={styles.container}>
@@ -238,8 +257,6 @@ export const TasksScreen: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Development Mode Banner - Removed for MVP */}
-
         {/* Add Task Button */}
         <View style={styles.addSection}>
           <PrimaryButton
@@ -249,70 +266,80 @@ export const TasksScreen: React.FC = () => {
           />
         </View>
 
-        {/* Filter Buttons */}
-        <View style={styles.filterSection}>
-          <Text style={styles.filterTitle}>Filter Tasks</Text>
-          <View style={styles.filterButtons}>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
-              onPress={() => setFilter('all')}
+        {/* Overview Stats */}
+        <View style={styles.statsSection}>
+          <Text style={styles.sectionTitle}>Overview</Text>
+          <View style={styles.statsGrid}>
+            <TouchableOpacity 
+              style={[
+                styles.statCard,
+                filter === 'open' && styles.statCardActive
+              ]}
+              onPress={() => handleStatPress('open')}
             >
-              <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
-                All ({tasks.length})
-              </Text>
+              <Icon name="calendar" size="lg" color={Colors.info} />
+              <Text style={styles.statValue}>{taskCounts.open}</Text>
+              <Text style={styles.statLabel}>Open</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'open' && styles.filterButtonActive]}
-              onPress={() => setFilter('open')}
+            <TouchableOpacity 
+              style={[
+                styles.statCard,
+                filter === 'done' && styles.statCardActive
+              ]}
+              onPress={() => handleStatPress('done')}
             >
-              <Text style={[styles.filterButtonText, filter === 'open' && styles.filterButtonTextActive]}>
-                Open ({tasks.filter(t => !t.completed_at).length})
-              </Text>
+              <Icon name="check" size="lg" color={Colors.success} />
+              <Text style={styles.statValue}>{taskCounts.done}</Text>
+              <Text style={styles.statLabel}>Completed</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'done' && styles.filterButtonActive]}
-              onPress={() => setFilter('done')}
+            <TouchableOpacity 
+              style={[
+                styles.statCard,
+                filter === 'overdue' && styles.statCardActive
+              ]}
+              onPress={() => handleStatPress('overdue')}
             >
-              <Text style={[styles.filterButtonText, filter === 'done' && styles.filterButtonTextActive]}>
-                Done ({tasks.filter(t => !!t.completed_at).length})
-              </Text>
+              <Icon name="warning" size="lg" color={Colors.error} />
+              <Text style={styles.statValue}>{taskCounts.overdue}</Text>
+              <Text style={styles.statLabel}>Overdue</Text>
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Current Filter Indicator */}
+        <View style={styles.filterIndicatorSection}>
+          <Text style={styles.filterIndicatorText}>
+            Showing: {filter === 'all' ? 'All Tasks' : filter === 'open' ? 'Open Tasks' : filter === 'done' ? 'Completed Tasks' : 'Overdue Tasks'} ({filteredTasks.length})
+          </Text>
+          {filter !== 'all' && (
+            <TouchableOpacity onPress={() => setFilter('all')} style={styles.showAllButton}>
+              <Text style={styles.showAllText}>Show All</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Tasks List */}
         <View style={styles.tasksSection}>
-          <Text style={styles.sectionTitle}>Your Tasks</Text>
-          
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading tasks...</Text>
-            </View>
-          )}
-
-          {error && (
-            <View style={styles.errorContainer}>
-              <Icon name="warning" size="md" color={Colors.error} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          {!loading && !error && filteredTasks.length === 0 && (
+          {filteredTasks.length === 0 && (
             <View style={styles.emptyContainer}>
               <Icon name="tasks" size="xl" color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>
-                {filter === 'all' ? 'No Tasks Yet' : `No ${filter} Tasks`}
+                {filter === 'all' ? 'No Tasks Yet' : filter === 'open' ? 'No Open Tasks' : filter === 'done' ? 'No Completed Tasks' : 'No Overdue Tasks'}
               </Text>
               <Text style={styles.emptySubtitle}>
                 {filter === 'all' 
                   ? 'Add your first task to get started'
-                  : `You don't have any ${filter} tasks right now`
+                  : filter === 'open'
+                    ? 'All your tasks are completed! Great job!'
+                    : filter === 'done'
+                      ? 'Complete some tasks to see them here'
+                      : 'Great! No overdue tasks right now'
                 }
               </Text>
             </View>
           )}
 
-          {!loading && !error && filteredTasks.length > 0 && (
+          {filteredTasks.length > 0 && (
             <View style={styles.tasksList}>
               {filteredTasks.map((task) => (
                 <TaskCard
@@ -384,40 +411,6 @@ const styles = StyleSheet.create({
   addButton: {
     width: '100%',
   },
-  filterSection: {
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-  },
-  filterTitle: {
-    ...Typography.titleMedium,
-    marginBottom: Spacing.md,
-    color: Colors.textPrimary,
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  filterButtonText: {
-    ...Typography.labelMedium,
-    color: Colors.textSecondary,
-  },
-  filterButtonTextActive: {
-    color: Colors.white,
-  },
   tasksSection: {
     paddingHorizontal: Spacing.xl,
   },
@@ -425,27 +418,6 @@ const styles = StyleSheet.create({
     ...Typography.headlineMedium,
     marginBottom: Spacing.lg,
     color: Colors.textPrimary,
-  },
-  loadingContainer: {
-    padding: Spacing.xl,
-    alignItems: 'center',
-  },
-  loadingText: {
-    ...Typography.bodyMedium,
-    color: Colors.textSecondary,
-  },
-  errorContainer: {
-    padding: Spacing.xl,
-    alignItems: 'center',
-    backgroundColor: Colors.errorLight,
-    borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  errorText: {
-    ...Typography.bodyMedium,
-    color: Colors.error,
-    marginLeft: Spacing.sm,
   },
   emptyContainer: {
     padding: Spacing.xl,
@@ -586,5 +558,68 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: Spacing.xl,
+  },
+  statsSection: {
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  statCard: {
+    flex: 1,
+    padding: Spacing.lg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.gray900,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  statCardActive: {
+    borderColor: Colors.primary,
+  },
+  statValue: {
+    ...Typography.displaySmall,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+    color: Colors.textPrimary,
+  },
+  statLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+  },
+  filterIndicatorSection: {
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  filterIndicatorText: {
+    ...Typography.bodyMedium,
+    color: Colors.textPrimary,
+  },
+  showAllButton: {
+    padding: Spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  showAllText: {
+    ...Typography.labelMedium,
+    color: Colors.white,
   },
 }); 
