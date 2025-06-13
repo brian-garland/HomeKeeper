@@ -156,11 +156,11 @@ export const TasksScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'overdue' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'done'>('all');
 
   // Set initial filter from route params
   useEffect(() => {
-    const params = route.params as { filter?: 'all' | 'pending' | 'overdue' | 'completed' } | undefined;
+    const params = route.params as { filter?: 'all' | 'open' | 'done' } | undefined;
     if (params?.filter) {
       setFilter(params.filter);
     }
@@ -193,15 +193,9 @@ export const TasksScreen: React.FC = () => {
     
     if (filter === 'all') {
       filtered = tasks;
-    } else if (filter === 'pending') {
+    } else if (filter === 'open') {
       filtered = tasks.filter(task => !task.completed_at);
-    } else if (filter === 'overdue') {
-      filtered = tasks.filter(task => 
-        !task.completed_at && 
-        task.due_date && 
-        new Date(task.due_date) < new Date()
-      );
-    } else if (filter === 'completed') {
+    } else if (filter === 'done') {
       filtered = tasks.filter(task => !!task.completed_at);
     }
 
@@ -268,27 +262,19 @@ export const TasksScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, filter === 'pending' && styles.filterButtonActive]}
-              onPress={() => setFilter('pending')}
+              style={[styles.filterButton, filter === 'open' && styles.filterButtonActive]}
+              onPress={() => setFilter('open')}
             >
-              <Text style={[styles.filterButtonText, filter === 'pending' && styles.filterButtonTextActive]}>
-                Pending ({tasks.filter(t => !t.completed_at).length})
+              <Text style={[styles.filterButtonText, filter === 'open' && styles.filterButtonTextActive]}>
+                Open ({tasks.filter(t => !t.completed_at).length})
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, filter === 'overdue' && styles.filterButtonActive]}
-              onPress={() => setFilter('overdue')}
+              style={[styles.filterButton, filter === 'done' && styles.filterButtonActive]}
+              onPress={() => setFilter('done')}
             >
-              <Text style={[styles.filterButtonText, filter === 'overdue' && styles.filterButtonTextActive]}>
-                Overdue ({tasks.filter(t => !t.completed_at && t.due_date && new Date(t.due_date) < new Date()).length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterButton, filter === 'completed' && styles.filterButtonActive]}
-              onPress={() => setFilter('completed')}
-            >
-              <Text style={[styles.filterButtonText, filter === 'completed' && styles.filterButtonTextActive]}>
-                Completed ({tasks.filter(t => !!t.completed_at).length})
+              <Text style={[styles.filterButtonText, filter === 'done' && styles.filterButtonTextActive]}>
+                Done ({tasks.filter(t => !!t.completed_at).length})
               </Text>
             </TouchableOpacity>
           </View>

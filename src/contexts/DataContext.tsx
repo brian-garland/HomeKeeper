@@ -120,9 +120,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const updateTask = (id: string, updates: Partial<Task>) => {
+    console.log('DataContext updateTask called with id:', id, 'updates:', updates);
     const newTasks = tasks.map(task => 
       task.id === id ? { ...task, ...updates, updated_at: new Date().toISOString() } : task
     );
+    console.log('Updated tasks array length:', newTasks.length);
     setTasks(newTasks);
     saveToStorage(STORAGE_KEYS.TASKS, newTasks);
   };
@@ -135,7 +137,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // Maintenance operations
   const addMaintenance = (maintenanceItem: Maintenance) => {
+    console.log('DataContext addMaintenance called with:', maintenanceItem.title);
     const newMaintenance = [maintenanceItem, ...maintenance];
+    console.log('New maintenance array length:', newMaintenance.length);
     setMaintenance(newMaintenance);
     saveToStorage(STORAGE_KEYS.MAINTENANCE, newMaintenance);
   };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
@@ -43,7 +43,7 @@ export const AddMaintenanceScreen: React.FC = () => {
   const { addMaintenance, homes } = useDataContext();
   const [loading, setLoading] = useState(false);
   
-  const [formData, setFormData] = useState<MaintenanceFormData>({
+  const getInitialFormData = (): MaintenanceFormData => ({
     title: '',
     description: '',
     category: 'general',
@@ -51,6 +51,16 @@ export const AddMaintenanceScreen: React.FC = () => {
     estimated_cost: 0,
     vendor_name: '',
   });
+
+  const [formData, setFormData] = useState<MaintenanceFormData>(getInitialFormData());
+
+  // Reset form when screen is focused (when navigating to this screen)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('AddMaintenanceScreen focused - resetting form');
+      setFormData(getInitialFormData());
+    }, [])
+  );
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
@@ -66,7 +76,7 @@ export const AddMaintenanceScreen: React.FC = () => {
     setLoading(true);
     try {
       const maintenanceData = {
-        id: crypto.randomUUID(),
+        id: `maintenance_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         title: formData.title,
         description: formData.description,
         category: formData.category,
@@ -96,8 +106,15 @@ export const AddMaintenanceScreen: React.FC = () => {
       };
 
       await addMaintenance(maintenanceData);
+      
       Alert.alert('Success', 'Maintenance scheduled successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { 
+          text: 'OK', 
+          onPress: () => {
+            // Navigate specifically to MaintenanceList screen
+            (navigation as any).navigate('MaintenanceList');
+          }
+        }
       ]);
     } catch (error) {
       console.error('Error scheduling maintenance:', error);
@@ -112,12 +129,18 @@ export const AddMaintenanceScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
-    >
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+              <KeyboardAvoidingView 
+          style={styles.keyboardAvoidingView} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 140 : 0}
+        >
+        <ScrollView 
+          style={styles.content} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Title Input */}
         <View style={styles.section}>
           <Text style={styles.label}>Maintenance Title *</Text>
@@ -222,25 +245,26 @@ export const AddMaintenanceScreen: React.FC = () => {
           </Text>
         </View>
         
-        {/* Extra spacing to ensure form is scrollable above keyboard */}
+        {/* Action Buttons - Inside ScrollView */}
+        <View style={styles.actions}>
+          <SecondaryButton
+            title="Cancel"
+            onPress={() => navigation.goBack()}
+            style={styles.cancelButton}
+          />
+          <PrimaryButton
+            title={loading ? "Scheduling..." : "Schedule Maintenance"}
+            onPress={handleSave}
+            disabled={loading}
+            style={styles.saveButton}
+          />
+        </View>
+        
+        {/* Extra spacing to ensure buttons are scrollable above keyboard */}
         <View style={styles.keyboardSpacer} />
       </ScrollView>
-
-      {/* Action Buttons */}
-      <View style={styles.actions}>
-        <SecondaryButton
-          title="Cancel"
-          onPress={() => navigation.goBack()}
-          style={styles.cancelButton}
-        />
-        <PrimaryButton
-          title={loading ? "Scheduling..." : "Schedule Maintenance"}
-          onPress={handleSave}
-          disabled={loading}
-          style={styles.saveButton}
-        />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -350,10 +374,8 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     padding: Spacing.lg,
+    paddingTop: Spacing.xl,
     gap: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    backgroundColor: Colors.white,
   },
   cancelButton: {
     flex: 1,
@@ -362,6 +384,12 @@ const styles = StyleSheet.create({
     flex: 2,
   },
   keyboardSpacer: {
-    height: 200, // Extra space to ensure content is scrollable above keyboard
+    height: 200, // Extra space to ensure buttons are scrollable above keyboard
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
 }); 

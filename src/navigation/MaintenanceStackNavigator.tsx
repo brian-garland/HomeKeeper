@@ -11,6 +11,7 @@ const Stack = createStackNavigator<MaintenanceStackParamList>();
 export const MaintenanceStackNavigator: React.FC = () => {
   return (
     <Stack.Navigator
+      initialRouteName="MaintenanceList"
       screenOptions={{
         headerStyle: {
           backgroundColor: Colors.white,

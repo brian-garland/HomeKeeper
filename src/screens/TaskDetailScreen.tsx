@@ -17,6 +17,29 @@ import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
 
+const categories = [
+  { id: 'hvac', label: 'HVAC', icon: 'wrench' as const },
+  { id: 'plumbing', label: 'Plumbing', icon: 'plumbing' as const },
+  { id: 'electrical', label: 'Electrical', icon: 'electrical' as const },
+  { id: 'exterior', label: 'Exterior', icon: 'home' as const },
+  { id: 'interior', label: 'Interior', icon: 'house' as const },
+  { id: 'appliances', label: 'Appliances', icon: 'settings' as const },
+  { id: 'safety', label: 'Safety', icon: 'warning' as const },
+  { id: 'general', label: 'General', icon: 'hammer' as const },
+];
+
+const priorities = [
+  { value: 1, label: 'Low', color: Colors.info },
+  { value: 2, label: 'Medium', color: Colors.warning },
+  { value: 3, label: 'High', color: Colors.error },
+];
+
+const difficulties = [
+  { value: 1, label: 'Easy', description: 'Basic task, minimal tools' },
+  { value: 2, label: 'Medium', description: 'Some experience needed' },
+  { value: 3, label: 'Hard', description: 'Advanced skills required' },
+];
+
 interface TaskDetailRouteParams {
   task: any;
 }
@@ -24,12 +47,20 @@ interface TaskDetailRouteParams {
 export const TaskDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { task } = route.params as TaskDetailRouteParams;
-  const { updateTask, deleteTask } = useDataContext();
+  const { task: initialTask } = route.params as TaskDetailRouteParams;
+  const { updateTask, deleteTask, tasks } = useDataContext();
+  
+  // Get the current task from the global state (in case it was updated)
+  const task = tasks.find(t => t.id === initialTask.id) || initialTask;
   
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState(task);
+
+  // Update editedTask when task changes or when entering edit mode
+  React.useEffect(() => {
+    setEditedTask(task);
+  }, [task]);
 
   const getPriorityColor = (priority: number) => {
     switch (priority) {
@@ -91,10 +122,25 @@ export const TaskDetailScreen: React.FC = () => {
   const handleSaveEdit = async () => {
     setLoading(true);
     try {
-      await updateTask(task.id, editedTask);
+      // Only pass the fields that can be updated
+      const updates = {
+        title: editedTask.title,
+        description: editedTask.description,
+        due_date: editedTask.due_date,
+        estimated_duration_minutes: editedTask.estimated_duration_minutes,
+        category: editedTask.category,
+        priority: editedTask.priority,
+        difficulty_level: editedTask.difficulty_level,
+        notes: editedTask.notes,
+      };
+      
+      console.log('Updating task with:', updates);
+      updateTask(task.id, updates);
+      console.log('Task updated successfully');
       Alert.alert('Success', 'Task updated successfully!');
       setIsEditing(false);
     } catch (error) {
+      console.error('Error updating task:', error);
       Alert.alert('Error', 'Failed to update task');
     } finally {
       setLoading(false);
@@ -194,51 +240,161 @@ export const TaskDetailScreen: React.FC = () => {
         {/* Task Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Details</Text>
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailItem}>
-              <Icon name="calendar" size="sm" color={Colors.textSecondary} />
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Due Date</Text>
-                <Text style={[styles.detailValue, isOverdue && styles.overdueText]}>
-                  {isOverdue ? 'Overdue - ' : ''}{new Date(task.due_date).toLocaleDateString()}
-                </Text>
+          
+          {isEditing ? (
+            <View style={styles.editDetailsContainer}>
+              {/* Due Date */}
+              <View style={styles.editDetailItem}>
+                <Text style={styles.editDetailLabel}>Due Date</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  value={editedTask.due_date}
+                  onChangeText={(text) => setEditedTask((prev: any) => ({ ...prev, due_date: text }))}
+                  placeholder="YYYY-MM-DD"
+                />
               </View>
-            </View>
 
-            <View style={styles.detailItem}>
-              <Icon name="clock" size="sm" color={Colors.textSecondary} />
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Duration</Text>
-                <Text style={styles.detailValue}>{task.estimated_duration_minutes} minutes</Text>
+              {/* Duration */}
+              <View style={styles.editDetailItem}>
+                <Text style={styles.editDetailLabel}>Duration (minutes)</Text>
+                <TextInput
+                  style={styles.numberInput}
+                  value={editedTask.estimated_duration_minutes?.toString() || ''}
+                  onChangeText={(text) => setEditedTask((prev: any) => ({ ...prev, estimated_duration_minutes: parseInt(text) || 0 }))}
+                  placeholder="30"
+                  keyboardType="numeric"
+                />
               </View>
-            </View>
 
-            <View style={styles.detailItem}>
-              <View style={[styles.priorityIndicator, { backgroundColor: priorityColor }]} />
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Priority</Text>
-                <Text style={[styles.detailValue, { color: priorityColor }]}>
-                  {getPriorityLabel(task.priority)}
-                </Text>
+              {/* Category */}
+              <View style={styles.editDetailItem}>
+                <Text style={styles.editDetailLabel}>Category</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.categoryButton,
+                        editedTask.category === category.id && styles.categoryButtonActive
+                      ]}
+                      onPress={() => setEditedTask((prev: any) => ({ ...prev, category: category.id }))}
+                    >
+                      <Icon 
+                        name={category.icon} 
+                        size="sm" 
+                        color={editedTask.category === category.id ? Colors.white : Colors.textSecondary} 
+                      />
+                      <Text style={[
+                        styles.categoryButtonText,
+                        editedTask.category === category.id && styles.categoryButtonTextActive
+                      ]}>
+                        {category.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
-            </View>
 
-            <View style={styles.detailItem}>
-              <Icon name="settings" size="sm" color={Colors.textSecondary} />
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Difficulty</Text>
-                <Text style={styles.detailValue}>{getDifficultyLabel(task.difficulty_level)}</Text>
+              {/* Priority */}
+              <View style={styles.editDetailItem}>
+                <Text style={styles.editDetailLabel}>Priority</Text>
+                <View style={styles.priorityContainer}>
+                  {priorities.map((priority) => (
+                    <TouchableOpacity
+                      key={priority.value}
+                      style={[
+                        styles.priorityButton,
+                        editedTask.priority === priority.value && { backgroundColor: `${priority.color}20` }
+                      ]}
+                      onPress={() => setEditedTask((prev: any) => ({ ...prev, priority: priority.value }))}
+                    >
+                      <View style={[
+                        styles.priorityIndicator,
+                        { backgroundColor: priority.color }
+                      ]} />
+                      <Text style={[
+                        styles.priorityButtonText,
+                        editedTask.priority === priority.value && { color: priority.color }
+                      ]}>
+                        {priority.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-            </View>
 
-            <View style={styles.detailItem}>
-              <Icon name="properties" size="sm" color={Colors.textSecondary} />
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Category</Text>
-                <Text style={styles.detailValue}>{task.category?.toUpperCase()}</Text>
+              {/* Difficulty */}
+              <View style={styles.editDetailItem}>
+                <Text style={styles.editDetailLabel}>Difficulty</Text>
+                <View style={styles.difficultyContainer}>
+                  {difficulties.map((difficulty) => (
+                    <TouchableOpacity
+                      key={difficulty.value}
+                      style={[
+                        styles.difficultyButton,
+                        editedTask.difficulty_level === difficulty.value && styles.difficultyButtonActive
+                      ]}
+                      onPress={() => setEditedTask((prev: any) => ({ ...prev, difficulty_level: difficulty.value }))}
+                    >
+                      <Text style={[
+                        styles.difficultyButtonText,
+                        editedTask.difficulty_level === difficulty.value && styles.difficultyButtonTextActive
+                      ]}>
+                        {difficulty.label}
+                      </Text>
+                      <Text style={styles.difficultyDescription}>{difficulty.description}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
             </View>
-          </View>
+          ) : (
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailItem}>
+                <Icon name="calendar" size="sm" color={Colors.textSecondary} />
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Due Date</Text>
+                  <Text style={[styles.detailValue, isOverdue && styles.overdueText]}>
+                    {isOverdue ? 'Overdue - ' : ''}{new Date(task.due_date).toLocaleDateString()}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.detailItem}>
+                <Icon name="clock" size="sm" color={Colors.textSecondary} />
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Duration</Text>
+                  <Text style={styles.detailValue}>{task.estimated_duration_minutes} minutes</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailItem}>
+                <View style={[styles.priorityIndicator, { backgroundColor: priorityColor }]} />
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Priority</Text>
+                  <Text style={[styles.detailValue, { color: priorityColor }]}>
+                    {getPriorityLabel(task.priority)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.detailItem}>
+                <Icon name="settings" size="sm" color={Colors.textSecondary} />
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Difficulty</Text>
+                  <Text style={styles.detailValue}>{getDifficultyLabel(task.difficulty_level)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.detailItem}>
+                <Icon name="properties" size="sm" color={Colors.textSecondary} />
+                <View style={styles.detailContent}>
+                  <Text style={styles.detailLabel}>Category</Text>
+                  <Text style={styles.detailValue}>{task.category?.toUpperCase()}</Text>
+                </View>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Instructions */}
@@ -473,5 +629,113 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     flex: 1,
+  },
+  // Edit mode styles
+  editDetailsContainer: {
+    gap: Spacing.lg,
+  },
+  editDetailItem: {
+    marginBottom: Spacing.md,
+  },
+  editDetailLabel: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: Spacing.md,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+  },
+  numberInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: Spacing.md,
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+  },
+  categoryScroll: {
+    marginTop: Spacing.xs,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginRight: Spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+    gap: Spacing.xs,
+  },
+  categoryButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  categoryButtonText: {
+    fontFamily: Typography.labelSmall.fontFamily,
+    fontSize: Typography.labelSmall.fontSize,
+    color: Colors.textSecondary,
+  },
+  categoryButtonTextActive: {
+    color: Colors.white,
+  },
+  priorityContainer: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  priorityButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+    gap: Spacing.xs,
+  },
+  priorityButtonText: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.textSecondary,
+  },
+  difficultyContainer: {
+    gap: Spacing.sm,
+  },
+  difficultyButton: {
+    padding: Spacing.md,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  difficultyButtonActive: {
+    backgroundColor: Colors.primary + '20',
+    borderColor: Colors.primary,
+  },
+  difficultyButtonText: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  difficultyButtonTextActive: {
+    color: Colors.primary,
+  },
+  difficultyDescription: {
+    fontFamily: Typography.labelSmall.fontFamily,
+    fontSize: Typography.labelSmall.fontSize,
+    color: Colors.textTertiary,
   },
 }); 

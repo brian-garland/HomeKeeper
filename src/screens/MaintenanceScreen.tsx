@@ -52,8 +52,8 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = ({ maintenance, onPress 
     }
   };
 
-  const categoryColor = getCategoryColor(maintenance.category);
-  const statusColor = getStatusColor(maintenance.status);
+  const categoryColor = getCategoryColor(maintenance.category || '');
+  const statusColor = getStatusColor(maintenance.status || '');
   const isOverdue = maintenance.status === 'overdue';
   const isCompleted = maintenance.status === 'completed';
 
@@ -62,23 +62,23 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = ({ maintenance, onPress 
       <View style={styles.cardHeader}>
         <View style={[styles.categoryIcon, { backgroundColor: `${categoryColor}20` }]}>
           <Icon 
-            name={getCategoryIcon(maintenance.category)} 
+            name={getCategoryIcon(maintenance.category || '')} 
             size="md" 
             color={categoryColor} 
           />
         </View>
         <View style={styles.maintenanceInfo}>
-          <Text style={styles.maintenanceTitle}>{maintenance.title}</Text>
+          <Text style={styles.maintenanceTitle}>{maintenance.title || 'Untitled'}</Text>
           <Text style={styles.maintenanceDescription} numberOfLines={2}>
-            {maintenance.description}
+            {maintenance.description || 'No description'}
           </Text>
           <View style={styles.metaInfo}>
             <Text style={styles.categoryText}>
-              {maintenance.category?.toUpperCase()}
+              {(maintenance.category || 'GENERAL').toUpperCase()}
             </Text>
             <Text style={styles.metaDivider}>•</Text>
             <Text style={[styles.statusText, { color: statusColor }]}>
-              {maintenance.status?.replace('_', ' ').toUpperCase()}
+              {(maintenance.status || 'scheduled').replace('_', ' ').toUpperCase()}
             </Text>
           </View>
         </View>
@@ -96,23 +96,23 @@ const MaintenanceCard: React.FC<MaintenanceCardProps> = ({ maintenance, onPress 
           </Text>
         </View>
         
-                         {(maintenance.actual_cost || maintenance.estimated_cost) && (
+        {(maintenance.actual_cost || maintenance.estimated_cost) && (
           <View style={styles.footerItem}>
             <Icon name="settings" size="sm" color={Colors.textSecondary} />
             <Text style={styles.footerText}>
-              ${maintenance.actual_cost || maintenance.estimated_cost}
+              ${maintenance.actual_cost || maintenance.estimated_cost || '0'}
             </Text>
           </View>
         )}
 
-         {maintenance.vendor_name && (
-           <View style={styles.footerItem}>
-             <Icon name="user" size="sm" color={Colors.textSecondary} />
-             <Text style={styles.footerText} numberOfLines={1}>
-               {maintenance.vendor_name}
-             </Text>
-           </View>
-         )}
+        {maintenance.vendor_name && (
+          <View style={styles.footerItem}>
+            <Icon name="user" size="sm" color={Colors.textSecondary} />
+            <Text style={styles.footerText} numberOfLines={1}>
+              {maintenance.vendor_name}
+            </Text>
+          </View>
+        )}
       </View>
 
       {isCompleted && maintenance.completed_date && (
@@ -132,6 +132,9 @@ export const MaintenanceScreen: React.FC = () => {
   const { maintenance } = useDataContext();
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'overdue'>('all');
+
+  // Debug: Log when MaintenanceScreen is rendered
+  console.log('MaintenanceScreen rendered, maintenance count:', maintenance.length);
 
   const onRefresh = async () => {
     setRefreshing(true);

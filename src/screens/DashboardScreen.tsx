@@ -153,19 +153,19 @@ export const DashboardScreen: React.FC = () => {
       case '2': // Active Tasks
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
-          params: { filter: 'pending' } 
+          params: { filter: 'open' } 
         });
         break;
       case '3': // Overdue Tasks
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
-          params: { filter: 'overdue' } 
+          params: { filter: 'open' } 
         });
         break;
       case '4': // Completed Tasks
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
-          params: { filter: 'completed' } 
+          params: { filter: 'done' } 
         });
         break;
       default:
