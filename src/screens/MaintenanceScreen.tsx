@@ -145,8 +145,7 @@ export const MaintenanceScreen: React.FC = () => {
   };
 
   const handleMaintenancePress = (maintenanceItem: any) => {
-    console.log('Maintenance pressed:', maintenanceItem.title);
-    // TODO: Navigate to Maintenance Detail screen (not implemented yet)
+    // Navigate to maintenance detail screen (to be implemented)
   };
 
   const getFilteredMaintenance = () => {

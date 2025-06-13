@@ -71,13 +71,11 @@ export const PropertiesScreen: React.FC = () => {
   };
 
   const handleAddProperty = () => {
-    console.log('Add Property pressed');
-    // TODO: Navigate to Add Property screen
+    // Navigate to add property screen (to be implemented)
   };
 
   const handlePropertyPress = (property: any) => {
-    console.log('Property pressed:', property.name);
-    // TODO: Navigate to Property Detail screen
+    // Navigate to property detail screen (to be implemented)
   };
 
   return (

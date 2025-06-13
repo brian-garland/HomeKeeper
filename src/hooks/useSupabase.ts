@@ -319,11 +319,10 @@ export const useSupabase = (): UseSupabaseReturn => {
   // Register this hook instance for global state updates
   useEffect(() => {
     const updateLocalState = () => {
-      console.log('updateLocalState called - globalTasks length:', globalTasks.length);
-      setTasks([...globalTasks]);
-      setHomes([...globalHomes]);
-      setEquipment([...globalEquipment]);
-      setMaintenance([...globalMaintenance]);
+      setTasks(globalTasks);
+      setHomes(globalHomes);
+      setEquipment(globalEquipment);
+      setMaintenance(globalMaintenance);
     };
 
     globalStateCallbacks.push(updateLocalState);
@@ -360,37 +359,8 @@ export const useSupabase = (): UseSupabaseReturn => {
 
   // Fetch Tasks
   const fetchTasks = async () => {
-    if (isDevelopmentMode) {
-      // For MVP: In development mode, preserve existing tasks during refresh
-      // Don't reset to empty - keep whatever tasks the user has created
-      console.log('fetchTasks called - globalTasks length:', globalTasks.length);
-      console.log('fetchTasks - setting tasks to:', globalTasks.map(t => t.title));
-      setTasks([...globalTasks]);
-      return;
-    }
-    
-    try {
-      setError(null);
-      
-      const { data, error: fetchError } = await supabase
-        .from('tasks')
-        .select(`
-          *,
-          homes (
-            id,
-            name,
-            address
-          )
-        `)
-        .order('due_date', { ascending: true });
-
-      if (fetchError) throw fetchError;
-      
-      setTasks(data || []);
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch tasks');
-    }
+    // In development mode, use mock data
+    setTasks(globalTasks);
   };
 
   // Fetch Equipment
@@ -530,17 +500,17 @@ export const useSupabase = (): UseSupabaseReturn => {
 
   // Refresh all data
   const refresh = async () => {
-    console.log('refresh() called - globalTasks before:', globalTasks.length);
     setLoading(true);
+    setError(null);
+    
     try {
-      await Promise.all([
-        fetchHomes(),
-        fetchTasks(),
-        fetchEquipment(),
-        fetchMaintenance(),
-        fetchDashboardStats(),
-      ]);
-      console.log('refresh() completed - globalTasks after:', globalTasks.length);
+      // In development mode, just update from global state
+      setTasks(globalTasks);
+      setHomes(globalHomes);
+      setEquipment(globalEquipment);
+      setMaintenance(globalMaintenance);
+    } catch (err) {
+      setError('Failed to refresh data');
     } finally {
       setLoading(false);
     }
@@ -548,69 +518,11 @@ export const useSupabase = (): UseSupabaseReturn => {
 
   // Add Task
   const addTask = async (taskData: Partial<Task>) => {
-    // Always use development mode for now since we don't have auth set up
-    if (true || isDevelopmentMode) {
-      // In development mode, just add to local state
-      const newTask: Task = {
-        id: `demo-task-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        home_id: taskData.home_id || 'demo-home-1',
-        equipment_id: null,
-        template_id: null,
-        title: taskData.title || '',
-        description: taskData.description || '',
-        category: taskData.category || 'general',
-        due_date: taskData.due_date || new Date().toISOString().split('T')[0]!,
-        priority: taskData.priority || 2,
-        estimated_duration_minutes: taskData.estimated_duration_minutes || 30,
-        difficulty_level: taskData.difficulty_level || 1,
-        instructions: null,
-        status: 'pending',
-        completed_at: null,
-        completed_by: null,
-        auto_generated: false,
-        reschedule_count: 0,
-        weather_dependent: false,
-        notes: null,
-        tags: []
-      };
-      setTasks(prev => {
-        console.log('addTask - prev tasks length:', prev.length);
-        const updatedTasks = [newTask, ...prev];
-        console.log('addTask - new tasks length:', updatedTasks.length);
-        console.log('addTask - task titles:', updatedTasks.map(t => t.title));
-        
-        // Update global state so other components can see it
-        globalTasks = updatedTasks;
-        console.log('addTask - globalTasks updated to length:', globalTasks.length);
-        
-        // Notify other hook instances
-        notifyGlobalStateChange();
-        
-        return updatedTasks;
-      });
-      
-      // Recalculate dashboard stats after adding task
-      await fetchDashboardStats();
-      return;
-    }
-
-    try {
-      setError(null);
-      const { error: insertError } = await supabase
-        .from('tasks')
-        .insert(taskData as any);
-
-      if (insertError) throw insertError;
-      
-      // Refresh tasks to get the new one
-      await fetchTasks();
-    } catch (err) {
-      console.error('Error adding task:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add task');
-      throw err;
-    }
+    const updatedTasks = [taskData, ...globalTasks];
+    globalTasks.length = 0;
+    globalTasks.push(...updatedTasks);
+    
+    setTasks(updatedTasks);
   };
 
   // Update Task

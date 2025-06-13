@@ -91,10 +91,25 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       loadFromStorage(STORAGE_KEYS.MAINTENANCE),
     ]);
 
-    setHomes(savedHomes);
+    // If no homes exist, create a default one
+    const homesToSet = savedHomes.length > 0 ? savedHomes : [{
+      id: 'default-home',
+      name: 'My Home',
+      address: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: 'default-user'
+    }];
+
+    setHomes(homesToSet);
     setTasks(savedTasks);
     setEquipment(savedEquipment);
     setMaintenance(savedMaintenance);
+
+    // Save the default home if it was created
+    if (savedHomes.length === 0) {
+      saveToStorage(STORAGE_KEYS.HOMES, homesToSet);
+    }
   };
 
   // Task operations

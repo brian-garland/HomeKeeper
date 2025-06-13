@@ -110,8 +110,8 @@ export const TasksScreen: React.FC = () => {
   // Refresh tasks when screen comes into focus (e.g., after adding a task)
   useFocusEffect(
     React.useCallback(() => {
-      console.log('TasksScreen focused, current tasks count:', tasks.length);
-      // Don't auto-refresh to avoid infinite loops
+      // Screen focused - tasks are already managed by DataContext
+      // No need for logging or refresh calls
     }, [tasks.length])
   );
 
