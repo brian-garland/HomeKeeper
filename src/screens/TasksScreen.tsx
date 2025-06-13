@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
@@ -101,11 +101,20 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
 
 export const TasksScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const { tasks } = useDataContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'overdue'>('all');
+
+  // Set initial filter from route params
+  useEffect(() => {
+    const params = route.params as { filter?: 'all' | 'pending' | 'overdue' } | undefined;
+    if (params?.filter) {
+      setFilter(params.filter);
+    }
+  }, [route.params]);
 
   // Refresh tasks when screen comes into focus (e.g., after adding a task)
   useFocusEffect(

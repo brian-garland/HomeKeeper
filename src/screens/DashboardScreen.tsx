@@ -151,13 +151,24 @@ export const DashboardScreen: React.FC = () => {
         navigation.navigate('Properties' as never);
         break;
       case '2': // Active Tasks
-        navigation.navigate('Tasks' as never);
+        (navigation as any).navigate('Tasks', { 
+          screen: 'TasksList', 
+          params: { filter: 'pending' } 
+        });
         break;
       case '3': // Overdue Tasks
-        navigation.navigate('Tasks' as never);
+        (navigation as any).navigate('Tasks', { 
+          screen: 'TasksList', 
+          params: { filter: 'overdue' } 
+        });
         break;
       case '4': // Completed Tasks
-        navigation.navigate('Tasks' as never);
+        // For completed tasks, we'll show all tasks since we don't have a completed filter yet
+        // This can be enhanced in Phase 2
+        (navigation as any).navigate('Tasks', { 
+          screen: 'TasksList', 
+          params: { filter: 'all' } 
+        });
         break;
       default:
         break;

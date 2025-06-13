@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Platform,
+  Alert,
 } from 'react-native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
@@ -72,10 +73,20 @@ export const PropertiesScreen: React.FC = () => {
 
   const handleAddProperty = () => {
     // Navigate to add property screen (to be implemented)
+    Alert.alert(
+      'Add Property',
+      'Property management features are coming in Phase 2! For now, you can manage tasks for your default home.',
+      [{ text: 'OK' }]
+    );
   };
 
   const handlePropertyPress = (property: any) => {
-    // Navigate to property detail screen (to be implemented)
+    // Show property details for now, full PropertyDetailScreen coming in Phase 2
+    Alert.alert(
+      property.name,
+      `Property Details:\n\nName: ${property.name}\nAddress: ${property.address || 'No address set'}\nCreated: ${new Date(property.created_at).toLocaleDateString()}\n\nFull property management features coming in Phase 2!`,
+      [{ text: 'OK' }]
+    );
   };
 
   return (
