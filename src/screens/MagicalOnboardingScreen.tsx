@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -356,45 +356,81 @@ const PersonalizationStep: React.FC<{ onNext: (preferences: any) => void }> = ({
 
 // Calendar Reveal Component
 const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const [isGenerating, setIsGenerating] = useState(true);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [scaleAnim] = useState(new Animated.Value(0.8));
+  const { tasks } = useDataContext();
 
-  React.useEffect(() => {
-    setTimeout(() => {
-      setIsGenerating(false);
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, 3000);
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 100,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
-  if (isGenerating) {
+  // Get the first 3 tasks to show in preview
+  const previewTasks = tasks.slice(0, 3);
+
+  // Helper function to get task scheduling text
+  const getTaskSchedule = (task: any, index: number): string => {
+    const dueDate = new Date(task.due_date);
+    const now = new Date();
+    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilDue <= 0) return 'Ready to start';
+    if (daysUntilDue <= 3) return 'This weekend';
+    if (daysUntilDue <= 7) return 'Next week';
+    if (daysUntilDue <= 14) return 'In 2 weeks';
+    if (daysUntilDue <= 21) return 'Later this month';
+    if (daysUntilDue <= 30) return 'End of month';
+    return 'Next month';
+  };
+
+  // Helper function to get icon based on task category
+  const getTaskIcon = (task: any): any => {
+    switch (task.category) {
+      case 'hvac': return 'maintenance';
+      case 'plumbing': return 'plumbing';
+      case 'safety': return 'electrical';
+      case 'cleaning': return 'maintenance';
+      case 'landscaping': return 'plumbing';
+      default: return 'maintenance';
+    }
+  };
+
+  // Helper function to get color based on task category
+  const getTaskColor = (task: any): string => {
+    switch (task.category) {
+      case 'hvac': return Colors.primary;
+      case 'plumbing': return Colors.info;
+      case 'safety': return Colors.warning;
+      case 'cleaning': return Colors.success;
+      case 'landscaping': return Colors.success;
+      default: return Colors.primary;
+    }
+  };
+
+  // Show loading state if no tasks are available yet
+  if (tasks.length === 0) {
     return (
       <View style={styles.stepContainer}>
-        <View style={styles.generatingContainer}>
-          <View style={styles.loadingIcon}>
-            <Icon name="settings" size="xl" color={Colors.primary} />
-          </View>
-          <Text style={styles.generatingTitle}>Creating your personalized schedule...</Text>
-          <Text style={styles.generatingSubtitle}>
-            Analyzing your home and preferences to build the perfect maintenance plan
-          </Text>
-          <View style={styles.generatingSteps}>
-            <Text style={styles.generatingStep}>✓ Analyzing home characteristics</Text>
-            <Text style={styles.generatingStep}>✓ Checking local weather patterns</Text>
-            <Text style={styles.generatingStep}>✓ Optimizing task timing</Text>
-            <Text style={styles.generatingStep}>⏳ Finalizing your schedule</Text>
+        <View style={styles.revealContainer}>
+          <View style={styles.celebrationHeader}>
+            <View style={styles.celebrationIcon}>
+              <Icon name="settings" size="xl" color={Colors.primary} />
+            </View>
+            <Text style={styles.celebrationTitle}>Creating your schedule... 🔄</Text>
+            <Text style={styles.celebrationSubtitle}>
+              We're generating personalized maintenance tasks for your home
+            </Text>
           </View>
         </View>
       </View>
@@ -424,27 +460,19 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
         
         <View style={styles.schedulePreview}>
           <Text style={styles.previewTitle}>Coming up this month:</Text>
-          <View style={styles.taskPreview}>
-            <Icon name="maintenance" size="md" color={Colors.primary} />
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>Check HVAC Filter</Text>
-              <Text style={styles.taskDate}>This Weekend</Text>
+          {previewTasks.map((task, index) => (
+            <View key={task.id} style={styles.taskPreview}>
+              <Icon 
+                name={getTaskIcon(task)} 
+                size="md" 
+                color={getTaskColor(task)} 
+              />
+              <View style={styles.taskInfo}>
+                <Text style={styles.taskTitle}>{task.title}</Text>
+                <Text style={styles.taskDate}>{getTaskSchedule(task, index)}</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.taskPreview}>
-            <Icon name="plumbing" size="md" color={Colors.success} />
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>Clean Gutters</Text>
-              <Text style={styles.taskDate}>Next Week</Text>
-            </View>
-          </View>
-          <View style={styles.taskPreview}>
-            <Icon name="electrical" size="md" color={Colors.warning} />
-            <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>Test Smoke Detectors</Text>
-              <Text style={styles.taskDate}>End of Month</Text>
-            </View>
-          </View>
+          ))}
         </View>
         
         <View style={styles.valueHighlight}>

@@ -222,14 +222,23 @@ async function generateEquipmentTasks(
         continue
       }
 
-      // Generate the task
+      // Generate the task - only link to equipment if template is equipment-specific
       const dueDate = calculateEquipmentDueDate(template, item, tasks.length)
-      const task = await createTaskFromTemplate(template, home.id, dueDate, item.id)
+      const isEquipmentSpecific = template.applies_to_equipment_types && template.applies_to_equipment_types.length > 0
+      const equipmentId = isEquipmentSpecific ? item.id : undefined
+      
+      const task = await createTaskFromTemplate(template, home.id, dueDate, equipmentId)
       if (task) {
         task.template_id = templateKey // Use simple key for tracking
         tasks.push(task)
         usedTemplateIds.add(templateKey) // Mark template as used
-        console.log(`✅ Generated equipment task: ${task.title} for ${item.name}`)
+        
+        // Log with correct association
+        if (isEquipmentSpecific) {
+          console.log(`✅ Generated equipment task: ${task.title} for ${item.name}`)
+        } else {
+          console.log(`✅ Generated general task: ${task.title} (found during ${item.name} equipment scan)`)
+        }
       }
 
       if (tasks.length >= maxTasks) break
@@ -250,6 +259,25 @@ async function createTaskFromTemplate(
   dueDate: string,
   equipmentId?: string
 ): Promise<Task | null> {
+  // 🚀 Set up recurrence information based on template frequency
+  let recurrence = undefined
+  if (template.frequency_months && template.frequency_months > 0) {
+    // Determine frequency type based on months
+    let frequency_type: 'monthly' | 'quarterly' | 'biannual' | 'annual' | 'custom' = 'custom'
+    if (template.frequency_months === 1) frequency_type = 'monthly'
+    else if (template.frequency_months === 3) frequency_type = 'quarterly'
+    else if (template.frequency_months === 6) frequency_type = 'biannual'
+    else if (template.frequency_months === 12) frequency_type = 'annual'
+    
+    recurrence = {
+      enabled: true,
+      frequency_months: template.frequency_months,
+      frequency_type: frequency_type
+    }
+    
+    console.log(`🔄 Setting up recurring task: ${template.title} every ${template.frequency_months} months (${frequency_type})`);
+  }
+
   const taskData: TaskInsert = {
     home_id: homeId,
     template_id: template.id,
@@ -265,7 +293,9 @@ async function createTaskFromTemplate(
     money_saved_estimate: template.money_saved_estimate || undefined,
     auto_generated: true,
     weather_dependent: isWeatherDependent(template.category),
-    status: 'pending'
+    status: 'pending',
+    // Pass recurrence information
+    ...(recurrence && { recurrence })
   }
 
   // Use unified data manager for consistent task creation

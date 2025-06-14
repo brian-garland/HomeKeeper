@@ -181,11 +181,52 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (updatedTask.money_saved_estimate && updatedTask.money_saved_estimate > 0) {
         console.log('💰 Money saved by completing task:', `$${updatedTask.money_saved_estimate}`);
       }
+
+      // 🚀 NEW: Update equipment service dates when equipment-linked task is completed
+      console.log('🔍 Task equipment_id:', updatedTask.equipment_id);
+      console.log('🔍 Available equipment:', equipment.map(eq => ({ id: eq.id, name: eq.name })));
+      
+      if (updatedTask.equipment_id) {
+        console.log('⚙️ Task is equipment-linked, updating equipment service dates...');
+        const linkedEquipment = equipment.find(eq => eq.id === updatedTask.equipment_id);
+        
+        if (linkedEquipment) {
+          const completedDate = new Date(updates.completed_at);
+          const completedDateString = completedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          
+          // Calculate next service due date based on maintenance frequency
+          let nextServiceDue: string | null = null;
+          if (linkedEquipment.maintenance_frequency_months) {
+            const nextServiceDate = new Date(completedDate);
+            nextServiceDate.setMonth(nextServiceDate.getMonth() + linkedEquipment.maintenance_frequency_months);
+            nextServiceDue = nextServiceDate.toISOString().split('T')[0];
+          }
+          
+          // Update equipment service dates
+          const equipmentUpdates = {
+            last_service_date: completedDateString,
+            ...(nextServiceDue && { next_service_due: nextServiceDue }),
+            updated_at: new Date().toISOString()
+          };
+          
+          console.log(`⚙️ Updating equipment "${linkedEquipment.name}":`, equipmentUpdates);
+          updateEquipment(linkedEquipment.id, equipmentUpdates);
+          
+          console.log(`✅ Equipment service dates updated! Last service: ${completedDateString}, Next service: ${nextServiceDue || 'Not scheduled'}`);
+        } else {
+          console.log('⚠️ Equipment not found for equipment_id:', updatedTask.equipment_id);
+        }
+      }
       
       if (updatedTask.recurrence?.enabled) {
         console.log('🔄 Recurrence enabled, creating recurring task...');
         try {
-          const recurringTask = createRecurringTask(updatedTask, new Date(updates.completed_at));
+          // Convert the task to the expected type for createRecurringTask
+          const taskForRecurring = {
+            ...updatedTask,
+            recurrence: updatedTask.recurrence
+          };
+          const recurringTask = createRecurringTask(taskForRecurring, new Date(updates.completed_at));
           
           if (recurringTask) {
             console.log('✅ Created recurring task:', recurringTask.title);

@@ -117,10 +117,12 @@ export const TaskDetailScreen: React.FC = () => {
           onPress: async () => {
             setLoading(true);
             try {
+              console.log('🔧 TaskDetailScreen: About to call updateTask for task:', task.id);
               await updateTask(task.id, {
                 status: 'completed',
                 completed_at: new Date().toISOString(),
               });
+              console.log('🔧 TaskDetailScreen: updateTask completed successfully');
               Alert.alert('Success', 'Task marked as complete!', [
                 { text: 'OK', onPress: () => navigation.goBack() }
               ]);

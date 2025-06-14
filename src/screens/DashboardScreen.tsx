@@ -62,6 +62,19 @@ export const DashboardScreen: React.FC = () => {
     return new Date(task.due_date) < new Date();
   };
 
+  // Helper function to get time-appropriate greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    
+    if (hour < 12) {
+      return 'Good morning!';
+    } else if (hour < 17) {
+      return 'Good afternoon!';
+    } else {
+      return 'Good evening!';
+    }
+  };
+
   // Calculate intelligent dashboard stats
   const dashboardStats = {
     // Equipment Status Intelligence
@@ -177,32 +190,79 @@ export const DashboardScreen: React.FC = () => {
     },
   ];
 
-  const recentActivity: RecentActivity[] = [
-    {
-      id: '1',
-      type: 'task',
-      title: 'Clean gutters',
-      subtitle: 'Main House - Seasonal',
-      time: '2 hours ago',
-      status: 'completed'
-    },
-    {
-      id: '2',
-      type: 'maintenance',
-      title: 'HVAC filter replacement',
-      subtitle: 'Due in 3 days',
-      time: 'Upcoming',
-      status: 'pending'
-    },
-    {
-      id: '3',
-      type: 'task',
-      title: 'Winterize sprinkler system',
-      subtitle: 'Backyard - Overdue by 2 days',
-      time: '2 days ago',
-      status: 'overdue'
-    },
-  ];
+  // Generate recent activity from actual tasks
+  const generateRecentActivity = (): RecentActivity[] => {
+    const activities: RecentActivity[] = [];
+    
+    // Get completed tasks (most recent first)
+    const completedTasks = tasks
+      .filter(task => task.status === 'completed' && task.completed_at)
+      .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime())
+      .slice(0, 3); // Get last 3 completed tasks
+    
+    // Add completed tasks to activities
+    completedTasks.forEach(task => {
+      const completedDate = new Date(task.completed_at!);
+      const timeAgo = getTimeAgo(completedDate);
+      const taskEquipment = task.equipment_id ? 
+        equipment.find((eq: any) => eq.id === task.equipment_id) : null;
+      
+              activities.push({
+          id: task.id,
+          type: 'task',
+          title: task.title,
+          subtitle: taskEquipment ? 
+            `${taskEquipment.name} - ${task.category}` : 
+            `${task.category} task`,
+          time: timeAgo,
+          status: 'completed'
+        });
+    });
+    
+    // If we have fewer than 3 activities, add some upcoming/overdue tasks
+    if (activities.length < 3) {
+      const upcomingTasks = tasks
+        .filter(task => task.status === 'pending')
+        .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+        .slice(0, 3 - activities.length);
+      
+      upcomingTasks.forEach(task => {
+        const dueDate = new Date(task.due_date);
+        const isTaskOverdue = isOverdue(task);
+                 const taskEquipmentUpcoming = task.equipment_id ? 
+           equipment.find((eq: any) => eq.id === task.equipment_id) : null;
+        
+        activities.push({
+          id: task.id,
+          type: 'task',
+          title: task.title,
+                     subtitle: taskEquipmentUpcoming ? 
+             `${taskEquipmentUpcoming.name} - Due ${dueDate.toLocaleDateString()}` : 
+             `Due ${dueDate.toLocaleDateString()}`,
+          time: isTaskOverdue ? 
+            `Overdue by ${Math.ceil((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24))} days` :
+            `Due in ${Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days`,
+          status: isTaskOverdue ? 'overdue' : 'pending'
+        });
+      });
+    }
+    
+    return activities;
+  };
+
+  // Helper function to get time ago string
+  const getTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const recentActivity = generateRecentActivity();
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -233,25 +293,25 @@ export const DashboardScreen: React.FC = () => {
 
   const handleStatPress = (statId: string) => {
     switch (statId) {
-      case '1': // Equipment Status
-        navigation.navigate('Equipment' as never);
-        break;
-      case '2': // Today's Tasks
-        (navigation as any).navigate('Tasks', { 
-          screen: 'TasksList', 
-          params: { filter: 'today' } 
-        });
-        break;
-      case '3': // Urgent Items (overdue tasks + equipment needing attention)
-        (navigation as any).navigate('Tasks', { 
-          screen: 'TasksList', 
-          params: { filter: 'urgent' } 
-        });
-        break;
-      case '4': // Monthly Progress
+      case '1': // Money Saved
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
           params: { filter: 'done' } 
+        });
+        break;
+      case '2': // Equipment Status
+        navigation.navigate('Equipment' as never);
+        break;
+      case '3': // Today's Tasks
+        (navigation as any).navigate('Tasks', { 
+          screen: 'TasksList', 
+          params: { filter: 'open' } 
+        });
+        break;
+      case '4': // Urgent Items (overdue tasks + equipment needing attention)
+        (navigation as any).navigate('Tasks', { 
+          screen: 'TasksList', 
+          params: { filter: 'urgent' } 
         });
         break;
       default:
@@ -315,7 +375,7 @@ export const DashboardScreen: React.FC = () => {
 
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeTitle}>Good morning! 🏠</Text>
+        <Text style={styles.welcomeTitle}>{getGreeting()} 🏠</Text>
         <Text style={styles.welcomeSubtitle}>
           Here's what's happening with your properties today
         </Text>

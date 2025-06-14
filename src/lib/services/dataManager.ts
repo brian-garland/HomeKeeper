@@ -2,11 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { supabase } from '../supabase'
 import { createTask as dbCreateTask } from '../models/tasks'
 import type { Tables, TablesInsert } from '../../types/database.types'
+import type { Task, TaskInsert } from '../../types'
 
 type Home = Tables<'homes'>
 type Equipment = Tables<'equipment'>
-type Task = Tables<'tasks'>
-type TaskInsert = TablesInsert<'tasks'>
 
 export interface DataManagerInterface {
   getHome(homeId: string): Promise<Home | null>
@@ -71,6 +70,8 @@ class LocalDataManager implements DataManagerInterface {
       estimated_duration_minutes: taskData.estimated_duration_minutes || null,
       instructions: taskData.instructions || null,
       equipment_id: taskData.equipment_id || null,
+      money_saved_estimate: taskData.money_saved_estimate || null,
+      recurrence: (taskData as any).recurrence || null, // Preserve recurrence info
       completed_at: null,
       completed_by: null,
       notes: null,
@@ -86,7 +87,7 @@ class LocalDataManager implements DataManagerInterface {
       return null
     }
 
-    return task
+    return task as Task
   }
 
   private validateTask(task: Task): boolean {
@@ -200,7 +201,7 @@ class DatabaseDataManager implements DataManagerInterface {
   }
 
   async createTask(taskData: TaskInsert): Promise<Task | null> {
-    const result = await dbCreateTask(taskData)
+    const result = await dbCreateTask(taskData as any) // Cast to handle type mismatch
     return result.success ? result.data : null
   }
 }
