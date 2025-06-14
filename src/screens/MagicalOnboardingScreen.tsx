@@ -19,6 +19,13 @@ import { SecondaryButton } from '../components/buttons/SecondaryButton';
 import { Icon } from '../components/icons/Icon';
 import { TextInput } from '../components/inputs/TextInput';
 import { useSupabase } from '../hooks/useSupabase';
+import { createHome } from '../lib/models/homes';
+import { generateIntelligentTasks } from '../lib/services/taskGenerationService';
+import { geocodeAddress } from '../lib/services/geocodingService';
+import { supabase } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useDataContext } from '../contexts/DataContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -461,6 +468,8 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
   const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const scrollViewRef = useRef<ScrollView>(null);
+  const navigation = useNavigation();
+  const { setTasks } = useDataContext();
 
   const steps: OnboardingStep[] = [
     { id: 'welcome', title: 'Welcome', subtitle: 'Get started with HomeKeeper' },
@@ -483,11 +492,96 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   const handleComplete = async () => {
     try {
-      // Here we would save the onboarding data to Supabase
       console.log('Onboarding completed with data:', onboardingData);
       
-      // Call the completion callback
-      onComplete?.();
+      // First, geocode the address to get coordinates
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+      
+      if (onboardingData.address) {
+        console.log('🗺️ Geocoding address:', onboardingData.address);
+        const geocodingResult = await geocodeAddress(onboardingData.address);
+        
+        if (geocodingResult.success) {
+          latitude = geocodingResult.data.latitude;
+          longitude = geocodingResult.data.longitude;
+          console.log(`✅ Address geocoded to: ${latitude}, ${longitude}`);
+        } else {
+          console.warn('Geocoding failed:', geocodingResult.error);
+          // Continue without coordinates - task generation will fall back to mock weather
+        }
+      }
+      
+      // USER-FIRST APPROACH: Provide immediate value, authenticate later
+      console.log('🏠 Creating local home profile for immediate value...');
+      
+      // Create local home object that works immediately
+      const localHome = {
+        id: `local-${Date.now()}`, // Temporary local ID
+        name: 'My Home',
+        address: onboardingData.address || '',
+        home_type: onboardingData.characteristics?.homeType || 'single_family',
+        year_built: onboardingData.characteristics?.yearBuilt,
+        square_footage: onboardingData.characteristics?.squareFootage,
+        latitude,
+        longitude,
+        created_at: new Date().toISOString(),
+        is_local: true, // Flag to indicate this is a local-only home
+      };
+
+      console.log('✅ Local home created:', localHome);
+
+      // Store locally FIRST so task generation can find it
+      await AsyncStorage.setItem('homekeeper_local_home', JSON.stringify(localHome));
+      await AsyncStorage.setItem('homekeeper_onboarding_complete', 'true');
+
+      // Generate intelligent tasks using real weather data
+      const { generateIntelligentTasks } = await import('../lib/services/taskGenerationService');
+      const tasksResult = await generateIntelligentTasks(localHome.id);
+
+      if (tasksResult.success) {
+        console.log(`✅ Generated ${tasksResult.tasksGenerated} initial tasks`);
+        
+        // Save generated tasks to AsyncStorage for immediate access
+        if (tasksResult.tasks.length > 0) {
+          await AsyncStorage.setItem('homekeeper_tasks', JSON.stringify(tasksResult.tasks));
+          console.log(`💾 Saved ${tasksResult.tasks.length} tasks to local storage`);
+          
+          // Update DataContext state so tasks appear immediately in UI
+          setTasks(tasksResult.tasks);
+          console.log(`🔄 Updated DataContext with ${tasksResult.tasks.length} tasks`);
+        }
+        
+        // Show success message emphasizing immediate value
+        Alert.alert(
+          '🎉 Your Home is Ready!',
+          `We've created your personalized maintenance schedule with ${tasksResult.tasksGenerated} tasks. You can start using HomeKeeper immediately!`,
+          [
+            {
+              text: 'Get Started',
+                             onPress: () => {
+                 console.log('✅ Onboarding completed successfully - immediate value provided');
+                 onComplete?.();
+               },
+            },
+          ]
+        );
+      } else {
+        console.warn('⚠️ Task generation failed:', tasksResult.error);
+        // Still allow user to proceed - they got geocoding and weather value
+        Alert.alert(
+          '🏠 Your Home is Set Up!',
+          'We\'ve set up your home profile. You can start adding tasks and exploring HomeKeeper!',
+          [
+            {
+              text: 'Continue',
+                             onPress: () => {
+                 onComplete?.();
+               },
+            },
+          ]
+        );
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
       Alert.alert('Setup Error', 'There was an issue setting up your home. Please try again.');

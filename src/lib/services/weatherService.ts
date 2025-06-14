@@ -66,17 +66,22 @@ export async function getCurrentWeather(
   longitude?: number
 ): Promise<WeatherResult<WeatherData>> {
   try {
-    // For development, return mock data
-    // In production, this would call OpenWeatherMap API
-    if (process.env.NODE_ENV === 'development' || !process.env.OPENWEATHER_API_KEY) {
+    // Use real weather data if coordinates are provided and API key exists
+    // Otherwise fall back to mock data
+    const shouldUseMockData = !latitude || !longitude || !process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
+    
+    if (shouldUseMockData) {
+      console.log('🌤️ Using mock weather data (no coordinates or API key)');
       return {
         success: true,
         data: MOCK_WEATHER_DATA
       }
     }
+    
+    console.log(`🌤️ Fetching real weather for coordinates: ${latitude}, ${longitude}`);
 
     // Production weather API call would go here
-    const apiKey = process.env.OPENWEATHER_API_KEY
+    const apiKey = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY
     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=imperial`
     
     const response = await fetch(url)
@@ -119,16 +124,21 @@ export async function getWeatherForecast(
   longitude?: number
 ): Promise<WeatherResult<WeatherForecast[]>> {
   try {
-    // For development, return mock data
-    if (process.env.NODE_ENV === 'development' || !process.env.OPENWEATHER_API_KEY) {
+    // Use real weather data if coordinates are provided and API key exists
+    const shouldUseMockData = !latitude || !longitude || !process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
+    
+    if (shouldUseMockData) {
+      console.log('🌤️ Using mock forecast data (no coordinates or API key)');
       return {
         success: true,
         data: MOCK_FORECAST
       }
     }
+    
+    console.log(`🌤️ Fetching real weather forecast for coordinates: ${latitude}, ${longitude}`);
 
     // Production forecast API call would go here
-    const apiKey = process.env.OPENWEATHER_API_KEY
+    const apiKey = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY
     const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=imperial`
     
     const response = await fetch(url)

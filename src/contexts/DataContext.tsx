@@ -91,23 +91,49 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       loadFromStorage(STORAGE_KEYS.MAINTENANCE),
     ]);
 
-    // If no homes exist, create a default one
-    const homesToSet = savedHomes.length > 0 ? savedHomes : [{
-      id: 'default-home',
-      name: 'My Home',
-      address: '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      user_id: 'default-user'
-    }];
+    // Always check for local home from onboarding first
+    let homesToSet = [];
+    try {
+      const localHomeData = await AsyncStorage.getItem('homekeeper_local_home');
+      if (localHomeData) {
+        const localHome = JSON.parse(localHomeData);
+        homesToSet = [localHome];
+        console.log('📍 DataContext loaded local home with coordinates:', localHome.latitude, localHome.longitude);
+      } else if (savedHomes.length > 0) {
+        // Use saved homes if no local home
+        homesToSet = savedHomes;
+        console.log('📍 DataContext loaded saved homes:', savedHomes.length);
+      } else {
+        // Create default home only as last resort
+        homesToSet = [{
+          id: 'default-home',
+          name: 'My Home',
+          address: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          user_id: 'default-user'
+        }];
+        console.log('📍 DataContext created default home (no local or saved homes found)');
+      }
+    } catch (error) {
+      console.error('Failed to load local home:', error);
+      homesToSet = savedHomes.length > 0 ? savedHomes : [{
+        id: 'default-home',
+        name: 'My Home',
+        address: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_id: 'default-user'
+      }];
+    }
 
     setHomes(homesToSet);
     setTasks(savedTasks);
     setEquipment(savedEquipment);
     setMaintenance(savedMaintenance);
 
-    // Save the default home if it was created
-    if (savedHomes.length === 0) {
+    // Save the home data if it was created
+    if (savedHomes.length === 0 && homesToSet.length > 0 && homesToSet[0].id === 'default-home') {
       saveToStorage(STORAGE_KEYS.HOMES, homesToSet);
     }
   };

@@ -26,6 +26,15 @@ export interface TaskGenerationOptions {
 }
 
 /**
+ * Get default equipment for a home type (used for local homes)
+ */
+function getDefaultEquipmentForHomeType(homeType: string): Equipment[] {
+  // Return empty array for now - we'll generate tasks based on home type and templates
+  // This allows the system to work without requiring equipment setup
+  return []
+}
+
+/**
  * Generate intelligent tasks for a home based on templates, equipment, and weather
  */
 export async function generateIntelligentTasks(
@@ -40,14 +49,30 @@ export async function generateIntelligentTasks(
       lookAheadDays = 30
     } = options
 
-    // Get home data
-    const { data: home, error: homeError } = await supabase
-      .from('homes')
-      .select('*')
-      .eq('id', homeId)
-      .single()
+    // Get home data - handle both local and database homes
+    let home: Home | null = null
+    
+    if (homeId.startsWith('local-')) {
+      // Handle local home from AsyncStorage
+      const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default)
+      const localHomeData = await AsyncStorage.getItem('homekeeper_local_home')
+      if (localHomeData) {
+        home = JSON.parse(localHomeData) as Home
+      }
+    } else {
+      // Handle database home
+      const { data: dbHome, error: homeError } = await supabase
+        .from('homes')
+        .select('*')
+        .eq('id', homeId)
+        .single()
+      
+      if (!homeError && dbHome) {
+        home = dbHome
+      }
+    }
 
-    if (homeError || !home) {
+    if (!home) {
       return {
         success: false,
         tasksGenerated: 0,
@@ -57,35 +82,48 @@ export async function generateIntelligentTasks(
     }
 
     // Get equipment for the home
-    const { data: equipment, error: equipmentError } = await supabase
-      .from('equipment')
-      .select('*')
-      .eq('home_id', homeId)
-      .eq('active', true)
+    let equipment: Equipment[] = []
+    let existingTasks: any[] = []
+    
+    if (homeId.startsWith('local-')) {
+      // For local homes, we'll use default equipment based on home type
+      equipment = getDefaultEquipmentForHomeType(home.home_type || 'single_family')
+      existingTasks = [] // No existing tasks for new local homes
+    } else {
+      // Get equipment from database
+      const { data: dbEquipment, error: equipmentError } = await supabase
+        .from('equipment')
+        .select('*')
+        .eq('home_id', homeId)
+        .eq('active', true)
 
-    if (equipmentError) {
-      return {
-        success: false,
-        tasksGenerated: 0,
-        tasks: [],
-        error: 'Failed to fetch equipment data'
+      if (equipmentError) {
+        return {
+          success: false,
+          tasksGenerated: 0,
+          tasks: [],
+          error: 'Failed to fetch equipment data'
+        }
       }
-    }
 
-    // Get existing tasks to avoid duplicates
-    const { data: existingTasks, error: tasksError } = await supabase
-      .from('tasks')
-      .select('template_id, due_date')
-      .eq('home_id', homeId)
-      .in('status', ['pending', 'in_progress'])
+      // Get existing tasks to avoid duplicates
+      const { data: dbTasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('template_id, due_date')
+        .eq('home_id', homeId)
+        .in('status', ['pending', 'in_progress'])
 
-    if (tasksError) {
-      return {
-        success: false,
-        tasksGenerated: 0,
-        tasks: [],
-        error: 'Failed to fetch existing tasks'
+      if (tasksError) {
+        return {
+          success: false,
+          tasksGenerated: 0,
+          tasks: [],
+          error: 'Failed to fetch existing tasks'
+        }
       }
+      
+      equipment = dbEquipment || []
+      existingTasks = dbTasks || []
     }
 
     // Generate tasks based on different criteria
@@ -286,9 +324,9 @@ async function createTaskFromTemplate(
     description: template.description || undefined,
     category: template.category,
     due_date: dueDate,
-         priority: calculateTaskPriority(template, dueDate),
-     difficulty_level: template.difficulty_level !== null ? template.difficulty_level : undefined,
-     estimated_duration_minutes: template.estimated_duration_minutes !== null ? template.estimated_duration_minutes : undefined,
+    priority: calculateTaskPriority(template, dueDate),
+    difficulty_level: template.difficulty_level !== null ? template.difficulty_level : undefined,
+    estimated_duration_minutes: template.estimated_duration_minutes !== null ? template.estimated_duration_minutes : undefined,
     instructions: template.instructions || undefined,
     equipment_id: equipmentId || undefined,
     auto_generated: true,
@@ -296,8 +334,40 @@ async function createTaskFromTemplate(
     status: 'pending'
   }
 
-  const result = await createTask(taskData)
-  return result.success ? result.data : null
+  // Handle local homes differently
+  if (homeId.startsWith('local-')) {
+    // For local homes, create a mock task object that matches the Task type
+    const localTask: Task = {
+      id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      home_id: taskData.home_id,
+      template_id: taskData.template_id || null,
+      title: taskData.title,
+      description: taskData.description || null,
+      category: taskData.category,
+      due_date: taskData.due_date,
+      priority: taskData.priority || 3,
+      difficulty_level: taskData.difficulty_level || null,
+      estimated_duration_minutes: taskData.estimated_duration_minutes || null,
+      instructions: taskData.instructions || null,
+      equipment_id: taskData.equipment_id || null,
+      completed_at: null,
+      completed_by: null,
+      notes: null,
+      tags: null,
+      reschedule_count: null,
+      auto_generated: taskData.auto_generated || true,
+      weather_dependent: taskData.weather_dependent || false,
+      status: taskData.status || 'pending'
+    }
+    
+    return localTask
+  } else {
+    // For database homes, use the existing createTask function
+    const result = await createTask(taskData)
+    return result.success ? result.data : null
+  }
 }
 
 /**

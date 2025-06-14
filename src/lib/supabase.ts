@@ -12,13 +12,13 @@ const supabaseUrl = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || DEVELOPMENT_CONFIG.key
 
 // Log configuration status for debugging
-if (!process.env.SUPABASE_URL) {
-  console.warn('⚠️  SUPABASE_URL not found in environment variables. Using development fallback.')
+if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+  console.warn('⚠️  EXPO_PUBLIC_SUPABASE_URL not found in environment variables. Using development fallback.')
   console.warn('📝 To fix this: Create a .env file with your Supabase project credentials')
 }
 
-if (!process.env.SUPABASE_ANON_KEY) {
-  console.warn('⚠️  SUPABASE_ANON_KEY not found in environment variables. Using development fallback.')
+if (!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) {
+  console.warn('⚠️  EXPO_PUBLIC_SUPABASE_ANON_KEY not found in environment variables. Using development fallback.')
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {

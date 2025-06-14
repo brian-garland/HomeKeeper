@@ -16,6 +16,9 @@ import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
+import { generateIntelligentTasks } from '../lib/services/taskGenerationService';
+import { getCurrentWeather } from '../lib/services/weatherService';
+import { Alert } from 'react-native';
 
 interface QuickStat {
   id: string;
@@ -60,6 +63,43 @@ export const DashboardScreen: React.FC = () => {
     icon: 'partly-sunny',
     recommendation: 'Great day for outdoor maintenance tasks!'
   });
+
+  // Load real weather data when component mounts or homes change
+  useEffect(() => {
+    loadWeatherData();
+  }, [homes]);
+
+  const loadWeatherData = async () => {
+    console.log('🌤️ Dashboard loadWeatherData called, homes:', homes.length);
+    if (homes.length > 0) {
+      const home = homes[0];
+      console.log('🏠 First home:', { id: home.id, latitude: home.latitude, longitude: home.longitude });
+      // Check if home has coordinates (from onboarding)
+      if (home.latitude && home.longitude) {
+        console.log('🌤️ Loading real weather for dashboard:', home.latitude, home.longitude);
+        const weatherResult = await getCurrentWeather(home.latitude, home.longitude);
+        
+        if (weatherResult.success) {
+          const weatherData = weatherResult.data;
+          setWeather({
+            temperature: weatherData.temperature,
+            condition: weatherData.description,
+            icon: weatherData.icon,
+            recommendation: weatherData.isOutdoorFriendly 
+              ? 'Great day for outdoor maintenance tasks!'
+              : 'Better to focus on indoor tasks today.'
+          });
+          console.log('✅ Dashboard weather updated:', weatherData.temperature + '°F', weatherData.description);
+        } else {
+          console.warn('⚠️ Failed to load weather for dashboard:', weatherResult.error);
+        }
+      } else {
+        console.log('📍 No coordinates available for weather data');
+      }
+    } else {
+      console.log('📍 No homes available yet');
+    }
+  };
 
   // Real data from Supabase
   const quickStats: QuickStat[] = [
@@ -122,9 +162,11 @@ export const DashboardScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // Refresh weather data
+    await loadWeatherData();
     // In development mode, we don't need to refresh from server
     // The data is already managed by the DataContext
-    setTimeout(() => setRefreshing(false), 500);
+    setRefreshing(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -171,6 +213,49 @@ export const DashboardScreen: React.FC = () => {
       default:
         break;
     }
+  };
+
+  const handleGenerateIntelligentTasks = async () => {
+    if (homes.length === 0) {
+      Alert.alert('No Home Found', 'Please complete onboarding first to set up your home.');
+      return;
+    }
+
+    const homeId = homes[0].id; // Use the first home
+    Alert.alert(
+      'Generate Intelligent Tasks',
+      `This will generate personalized maintenance tasks for your home. This is a test feature to verify the intelligent task generation system is working.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Generate',
+          onPress: async () => {
+            try {
+              console.log('🧠 Starting intelligent task generation for home:', homeId);
+              const result = await generateIntelligentTasks(homeId, {
+                includeWeatherOptimization: true,
+                maxTasksPerCategory: 3,
+                prioritizeOverdue: true,
+                lookAheadDays: 30
+              });
+
+              if (result.success) {
+                Alert.alert(
+                  'Tasks Generated! 🎉',
+                  `Successfully generated ${result.tasksGenerated} intelligent tasks based on your home data. Check the Tasks tab to see them!`,
+                  [{ text: 'View Tasks', onPress: () => (navigation as any).navigate('Tasks') }]
+                );
+              } else {
+                Alert.alert('Generation Failed', result.error || 'Could not generate tasks. Please try again.');
+              }
+            } catch (error) {
+              console.error('Task generation error:', error);
+              Alert.alert('Error', 'An unexpected error occurred during task generation.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (

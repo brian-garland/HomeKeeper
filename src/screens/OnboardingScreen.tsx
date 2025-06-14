@@ -19,6 +19,9 @@ import { Button } from '../components/buttons/Button';
 import { Icon } from '../components/icons/Icon';
 import { TextInput } from '../components/inputs/TextInput';
 import { useSupabase } from '../hooks/useSupabase';
+import { createHome } from '../lib/models/homes';
+import { generateIntelligentTasks } from '../lib/services/taskGenerationService';
+import { geocodeAddress } from '../lib/services/geocodingService';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -461,22 +464,65 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
   const handleComplete = async () => {
     try {
+      // First, geocode the address to get coordinates
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+      
+      if (onboardingData.address) {
+        console.log('🗺️ Geocoding address:', onboardingData.address);
+        const geocodingResult = await geocodeAddress(onboardingData.address);
+        
+        if (geocodingResult.success) {
+          latitude = geocodingResult.data.latitude;
+          longitude = geocodingResult.data.longitude;
+          console.log(`✅ Address geocoded to: ${latitude}, ${longitude}`);
+        } else {
+          console.warn('Geocoding failed:', geocodingResult.error);
+          // Continue without coordinates - task generation will fall back to mock weather
+        }
+      }
+      
       // Create home record with onboarding data
-      await createHome({
+      const homeResult = await createHome({
         name: 'My Home',
         address: onboardingData.address || '',
         home_type: onboardingData.characteristics?.homeType || 'single_family',
         year_built: onboardingData.characteristics?.yearBuilt,
         square_footage: onboardingData.characteristics?.squareFootage,
+        latitude,
+        longitude,
         preferences: {
           maintenance_style: onboardingData.personalization?.maintenanceStyle,
           available_time: onboardingData.personalization?.availableTime,
           notifications: onboardingData.personalization?.notifications,
         },
       });
-      
-      // Navigate to main app (this would be handled by navigation)
-      Alert.alert('Welcome to HomeKeeper!', 'Your home has been set up successfully.');
+
+      if (homeResult.success) {
+        // Generate intelligent tasks for the new home
+        console.log('🏠 Home created successfully, generating intelligent tasks...');
+        const taskGenerationResult = await generateIntelligentTasks(homeResult.data.id, {
+          includeWeatherOptimization: true,
+          maxTasksPerCategory: 3,
+          prioritizeOverdue: true,
+          lookAheadDays: 30
+        });
+
+        if (taskGenerationResult.success) {
+          console.log(`✅ Generated ${taskGenerationResult.tasksGenerated} intelligent tasks!`);
+          Alert.alert(
+            'Welcome to HomeKeeper!', 
+            `Your home has been set up with ${taskGenerationResult.tasksGenerated} personalized maintenance tasks ready to go!`,
+            [{ text: 'Let\'s Go!', onPress: onComplete }]
+          );
+        } else {
+          console.warn('Task generation failed:', taskGenerationResult.error);
+          Alert.alert('Welcome to HomeKeeper!', 'Your home has been set up successfully.');
+          onComplete?.();
+        }
+      } else {
+        throw new Error(homeResult.error);
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
       Alert.alert('Setup Error', 'There was an issue setting up your home. Please try again.');
