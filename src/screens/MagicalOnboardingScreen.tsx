@@ -7,10 +7,9 @@ import {
   Dimensions,
   Animated,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
@@ -632,9 +631,13 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAwareScrollView 
+        style={styles.container}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={150}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
@@ -652,35 +655,26 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
         </View>
 
         {/* Step Content */}
-        <ScrollView
-          ref={scrollViewRef}
-          horizontal
-          pagingEnabled
-          scrollEnabled={false}
-          showsHorizontalScrollIndicator={false}
-          style={styles.stepsContainer}
-        >
-          {steps.map((step, index) => (
-            <View key={step.id} style={styles.stepWrapper}>
-              {index === 0 && (
-                <WelcomeStep onNext={handleNext} />
-              )}
-              {index === 1 && (
-                <AddressStep onNext={(address) => handleStepData('address', address)} />
-              )}
-              {index === 2 && (
-                <HomeCharacteristicsStep onNext={(characteristics) => handleStepData('characteristics', characteristics)} />
-              )}
-              {index === 3 && (
-                <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
-              )}
-              {index === 4 && (
-                <CalendarRevealStep onComplete={handleComplete} />
-              )}
-            </View>
-          ))}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={styles.stepsContainer}>
+          <View style={styles.stepWrapper}>
+            {currentStep === 0 && (
+              <WelcomeStep onNext={handleNext} />
+            )}
+            {currentStep === 1 && (
+              <AddressStep onNext={(address) => handleStepData('address', address)} />
+            )}
+            {currentStep === 2 && (
+              <HomeCharacteristicsStep onNext={(characteristics) => handleStepData('characteristics', characteristics)} />
+            )}
+            {currentStep === 3 && (
+              <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
+            )}
+            {currentStep === 4 && (
+              <CalendarRevealStep onComplete={handleComplete} />
+            )}
+          </View>
+        </View>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };
@@ -717,8 +711,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepWrapper: {
-    width: screenWidth,
     flex: 1,
+    width: '100%',
   },
   stepContainer: {
     flex: 1,

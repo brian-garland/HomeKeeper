@@ -110,7 +110,6 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
               />
               <Text style={styles.equipmentText}>
                 {equipment.name}
-                {equipment.location && ` • ${equipment.location}`}
               </Text>
             </View>
           )}

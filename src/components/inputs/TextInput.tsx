@@ -252,6 +252,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: ComponentSpacing.inputPadding,
+    height: 56, // Fixed height for consistent appearance
+    justifyContent: 'center', // Better centering for content
     ...Platform.select({
       ios: {
         shadowColor: Colors.gray900,
@@ -266,9 +268,18 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: ComponentSpacing.inputPadding,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
+    fontSize: 16,
+    ...Platform.select({
+      ios: {
+        paddingTop: 0,
+        paddingBottom: 0,
+      },
+      android: {
+        textAlignVertical: 'center',
+        paddingVertical: 0,
+        includeFontPadding: false,
+      },
+    }),
   },
   leftIconContainer: {
     marginRight: ComponentSpacing.labelMargin,

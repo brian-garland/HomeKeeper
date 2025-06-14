@@ -164,6 +164,7 @@ async function generateEquipmentTasks(
 ): Promise<Task[]> {
   const tasks: Task[] = []
   const existingTemplateIds = new Set(existingTasks.map(t => t.template_id))
+  const usedTaskTitles = new Set(existingTasks.map(t => t.title.toLowerCase()))
 
   // Sort equipment by maintenance priority (overdue first, then by next service date)
   const sortedEquipment = equipment.sort((a, b) => {
@@ -213,15 +214,23 @@ async function generateEquipmentTasks(
         continue
       }
 
-      // IMPROVED: Pass task index for proper spacing
+      // IMPROVED: Check for duplicate task titles to prevent similar tasks
+      const potentialTitle = (template.title + ` for ${item.name}`).toLowerCase()
+      const baseTitle = template.title.toLowerCase()
+      
+      if (usedTaskTitles.has(potentialTitle) || usedTaskTitles.has(baseTitle)) {
+        console.log(`🚫 Skipping duplicate task: ${template.title}`)
+        continue
+      }
+
+      // IMPROVED: Better due date calculation with minimum 1 week spacing
       const dueDate = calculateEquipmentDueDate(template, item, tasks.length)
       const task = await createTaskFromTemplate(template, home.id, dueDate, item.id)
       
       if (task) {
-        // Task is already enhanced with equipment_id relationship
-        // Equipment details can be fetched via the relationship when needed
         tasks.push(task)
-        existingTemplateIds.add(template.id) // Prevent duplicates
+        existingTemplateIds.add(template.id) // Prevent template reuse
+        usedTaskTitles.add(task.title.toLowerCase()) // Prevent title duplicates
       }
     }
   }
@@ -251,17 +260,26 @@ async function generateHomeTypeTasks(
 
   const tasks: Task[] = []
   const existingTemplateIds = new Set(existingTasks.map(t => t.template_id))
+  const usedTaskTitles = new Set(existingTasks.map(t => t.title.toLowerCase()))
 
   for (const template of templatesResult.data.slice(0, maxTasks)) {
     if (existingTemplateIds.has(template.id)) {
       continue
     }
 
-    const dueDate = calculateHomeDueDate(template, home)
+    // Check for duplicate task titles
+    const baseTitle = template.title.toLowerCase()
+    if (usedTaskTitles.has(baseTitle)) {
+      console.log(`🚫 Skipping duplicate home task: ${template.title}`)
+      continue
+    }
+
+    const dueDate = calculateHomeDueDate(template, home, tasks.length)
     const task = await createTaskFromTemplate(template, home.id, dueDate)
     
     if (task) {
       tasks.push(task)
+      usedTaskTitles.add(task.title.toLowerCase())
     }
   }
 
@@ -421,41 +439,48 @@ function calculateSeasonalDueDate(template: TaskTemplate, currentMonth: number, 
  */
 function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment, taskIndex: number = 0): string {
   const today = new Date()
+  const minimumDaysOut = 7 // Never schedule tasks sooner than 1 week
   
-  // If equipment is overdue, make task urgent but not immediate (within 2-3 weeks)
+  // If equipment is overdue, make task urgent but not immediate (2-4 weeks)
   if (equipment.next_service_due) {
     const nextServiceDate = new Date(equipment.next_service_due)
     if (nextServiceDate < today) {
       const urgentDate = new Date()
-      // IMPROVED: Give users 2-3 weeks instead of 7 days for overdue equipment
-      const urgentDays = 14 + Math.floor(Math.random() * 7) + (taskIndex * 2) // 14-21 days + spacing
-      urgentDate.setDate(urgentDate.getDate() + urgentDays)
+      // Give users 2-4 weeks for overdue equipment + spacing between tasks
+      const urgentDays = 14 + Math.floor(Math.random() * 14) + (taskIndex * 3) // 14-28 days + spacing
+      urgentDate.setDate(urgentDate.getDate() + Math.max(urgentDays, minimumDaysOut))
       return urgentDate.toISOString().split('T')[0]
     }
     
-    // If service is due soon, use that date
+    // If service is due soon, use that date but ensure minimum spacing
     const daysUntilService = (nextServiceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    if (daysUntilService <= 60) { // Within 2 months
+    if (daysUntilService <= 60 && daysUntilService >= minimumDaysOut) { // Within 2 months but not too soon
       return equipment.next_service_due
     }
   }
   
-  // IMPROVED: Space equipment tasks over time instead of using exact frequency
-  // This creates a more manageable flow for users
+  // IMPROVED: Space equipment tasks over time with reasonable minimum timing
   if (equipment.maintenance_frequency_months) {
     const dueDate = new Date()
     const frequencyDays = equipment.maintenance_frequency_months * 30 // Convert to days
-    const spacedDays = Math.floor(frequencyDays * 0.3) + (taskIndex * 7) // 30% of frequency + weekly spacing
+    // Start at 20% of frequency but never less than 1 week, add spacing between tasks
+    const spacedDays = Math.max(
+      Math.floor(frequencyDays * 0.2) + (taskIndex * 7), // 20% of frequency + weekly spacing
+      minimumDaysOut + (taskIndex * 3) // Minimum 1 week + 3 days per task
+    )
     dueDate.setDate(dueDate.getDate() + spacedDays)
     return dueDate.toISOString().split('T')[0]
   }
   
-  // Fall back to template frequency with spacing
+  // Fall back to template frequency with spacing and minimum timing
   const frequencyMonths = template.frequency_months || 12
   const dueDate = new Date()
-  const spacingMonths = Math.floor(frequencyMonths * 0.4) // Start at 40% of full frequency
-  dueDate.setMonth(dueDate.getMonth() + spacingMonths)
-  dueDate.setDate(dueDate.getDate() + (taskIndex * 5)) // Add 5 days per task for spacing
+  // Start at 25% of full frequency but ensure minimum spacing
+  const spacingDays = Math.max(
+    Math.floor((frequencyMonths * 30) * 0.25) + (taskIndex * 5), // 25% of frequency + 5 days per task
+    minimumDaysOut + (taskIndex * 3) // Minimum 1 week + 3 days per task
+  )
+  dueDate.setDate(dueDate.getDate() + spacingDays)
   
   return dueDate.toISOString().split('T')[0]
 }
@@ -463,23 +488,20 @@ function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment,
 /**
  * Calculate due date for home-type tasks
  */
-function calculateHomeDueDate(template: TaskTemplate, home: Home): string {
+function calculateHomeDueDate(template: TaskTemplate, home: Home, taskIndex: number = 0): string {
   const dueDate = new Date()
+  const minimumDaysOut = 7 // Never schedule tasks sooner than 1 week
   
-  // Consider home age for certain tasks
-  const homeAge = home.year_built ? new Date().getFullYear() - home.year_built : 10
+  // Use template frequency to determine spacing
+  const frequencyMonths = template.frequency_months || 12
   
-  // Older homes need more frequent maintenance
-  let frequencyMultiplier = 1
-  if (homeAge > 20) {
-    frequencyMultiplier = 0.8 // 20% more frequent
-  } else if (homeAge > 50) {
-    frequencyMultiplier = 0.6 // 40% more frequent
-  }
+  // Start at 30% of full frequency but ensure minimum spacing
+  const spacingDays = Math.max(
+    Math.floor((frequencyMonths * 30) * 0.3) + (taskIndex * 7), // 30% of frequency + weekly spacing
+    minimumDaysOut + (taskIndex * 4) // Minimum 1 week + 4 days per task
+  )
   
-  const frequencyMonths = Math.ceil((template.frequency_months || 12) * frequencyMultiplier)
-  dueDate.setMonth(dueDate.getMonth() + frequencyMonths)
-  
+  dueDate.setDate(dueDate.getDate() + spacingDays)
   return dueDate.toISOString().split('T')[0]
 }
 
