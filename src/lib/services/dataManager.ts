@@ -27,10 +27,25 @@ class LocalDataManager implements DataManagerInterface {
   }
 
   async getEquipment(homeId: string): Promise<Equipment[]> {
-    // Return default equipment based on home type
+    // First try to get equipment from AsyncStorage
+    try {
+      const savedEquipmentStr = await AsyncStorage.getItem('homekeeper_equipment')
+      if (savedEquipmentStr) {
+        const savedEquipment = JSON.parse(savedEquipmentStr)
+        if (savedEquipment && savedEquipment.length > 0) {
+          console.log('📦 LocalDataManager: Loading equipment from AsyncStorage:', savedEquipment.length)
+          return savedEquipment
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load equipment from AsyncStorage:', error)
+    }
+    
+    // Fallback to default equipment based on home type
     const home = await this.getHome(homeId)
     if (!home) return []
     
+    console.log('📦 LocalDataManager: No saved equipment found, returning defaults')
     return this.getDefaultEquipmentForHomeType(home.home_type || 'single_family')
   }
 

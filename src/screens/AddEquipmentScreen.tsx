@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { Icon } from '../components/icons/Icon'
 import { Colors } from '../theme/colors'
 import { Typography } from '../theme/typography'
@@ -183,7 +184,15 @@ export const AddEquipmentScreen: React.FC<AddEquipmentScreenProps> = ({ navigati
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={20}
+        contentContainerStyle={styles.contentContainer}
+      >
         {/* Basic Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
@@ -218,7 +227,7 @@ export const AddEquipmentScreen: React.FC<AddEquipmentScreenProps> = ({ navigati
         </View>
 
         <View style={styles.bottomSpacing} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   )
 }
@@ -333,5 +342,8 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: Spacing.xl,
+  },
+  contentContainer: {
+    // Add any additional styles for the content container if needed
   },
 }) 

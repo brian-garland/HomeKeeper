@@ -25,6 +25,11 @@ interface DataContextType {
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   
+  // Equipment operations
+  addEquipment: (equipment: Equipment) => void;
+  updateEquipment: (id: string, updates: Partial<Equipment>) => void;
+  deleteEquipment: (id: string) => void;
+  
   // Maintenance operations
   addMaintenance: (maintenance: Maintenance) => void;
   updateMaintenance: (id: string, updates: Partial<Maintenance>) => void;
@@ -129,7 +134,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
     setHomes(homesToSet);
     setTasks(savedTasks);
-    setEquipment(savedEquipment);
+    
+    // For equipment, if no saved equipment and we have homes, try to populate some default equipment
+    if (savedEquipment.length === 0 && homesToSet.length > 0) {
+      console.log('📦 DataContext: No saved equipment found, checking for default equipment data...');
+      // For now, just set empty array - equipment will be added through the UI
+      setEquipment([]);
+    } else {
+      console.log('📦 DataContext: Loading saved equipment:', savedEquipment.length);
+      setEquipment(savedEquipment);
+    }
+    
     setMaintenance(savedMaintenance);
 
     // Save the home data if it was created
@@ -184,6 +199,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     saveToStorage(STORAGE_KEYS.MAINTENANCE, newMaintenance);
   };
 
+  // Equipment operations
+  const addEquipment = (equipmentItem: Equipment) => {
+    console.log('DataContext addEquipment called with:', equipmentItem.name);
+    const newEquipment = [equipmentItem, ...equipment];
+    console.log('New equipment array length:', newEquipment.length);
+    setEquipment(newEquipment);
+    saveToStorage(STORAGE_KEYS.EQUIPMENT, newEquipment);
+  };
+
+  const updateEquipment = (id: string, updates: Partial<Equipment>) => {
+    const newEquipment = equipment.map(item => 
+      item.id === id ? { ...item, ...updates, updated_at: new Date().toISOString() } : item
+    );
+    setEquipment(newEquipment);
+    saveToStorage(STORAGE_KEYS.EQUIPMENT, newEquipment);
+  };
+
+  const deleteEquipment = (id: string) => {
+    const newEquipment = equipment.filter(item => item.id !== id);
+    setEquipment(newEquipment);
+    saveToStorage(STORAGE_KEYS.EQUIPMENT, newEquipment);
+  };
+
   const value: DataContextType = {
     // Data
     homes,
@@ -201,6 +239,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     addTask,
     updateTask,
     deleteTask,
+    
+    // Equipment operations
+    addEquipment,
+    updateEquipment,
+    deleteEquipment,
     
     // Maintenance operations
     addMaintenance,

@@ -1,11 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native'
 import { Icon } from '../components/icons/Icon'
 import { Colors } from '../theme/colors'
 import { Typography } from '../theme/typography'
 import { Spacing } from '../theme/spacing'
+import { useFocusEffect } from '@react-navigation/native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { TabParamList } from '../navigation/types'
 import type { Tables } from '../types/database.types'
+import { useDataContext } from '../contexts/DataContext'
 
 type Equipment = Tables<'equipment'>
 
@@ -15,8 +18,38 @@ interface EquipmentDetailScreenProps {
 }
 
 export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ route, navigation }) => {
-  const { equipment } = route.params
+  const initialEquipment = route.params.equipment
+  const [equipment, setEquipment] = useState<Equipment>(initialEquipment)
   const [isEditing, setIsEditing] = useState(false)
+  const { tasks } = useDataContext()
+
+  // Get tasks associated with this equipment
+  const associatedTasks = tasks.filter(task => 
+    task.equipment_id === equipment.id && !task.completed_at
+  )
+
+  // Refresh equipment data when screen comes into focus (e.g., returning from edit)
+  const refreshEquipmentData = useCallback(async () => {
+    try {
+      const savedEquipmentStr = await AsyncStorage.getItem('homekeeper_equipment')
+      if (savedEquipmentStr) {
+        const savedEquipment = JSON.parse(savedEquipmentStr)
+        const updatedEquipment = savedEquipment.find((eq: Equipment) => eq.id === initialEquipment.id)
+        if (updatedEquipment) {
+          console.log('🔄 EquipmentDetail: Refreshing equipment data for', updatedEquipment.name)
+          setEquipment(updatedEquipment)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh equipment data:', error)
+    }
+  }, [initialEquipment.id])
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshEquipmentData()
+    }, [refreshEquipmentData])
+  )
 
   const getStatusColor = (equipment: Equipment) => {
     const today = new Date()
@@ -91,8 +124,10 @@ export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ ro
         <View style={styles.overviewHeader}>
           <View style={styles.equipmentInfo}>
             <Text style={styles.equipmentName}>{equipment.name}</Text>
-            <Text style={styles.equipmentType}>{equipment.type}</Text>
-            <Text style={styles.equipmentCategory}>{equipment.category}</Text>
+            <Text style={styles.equipmentType}>
+              {equipment.brand ? `${equipment.brand}${equipment.model ? ` ${equipment.model}` : ''}` : 
+               equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
+            </Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(equipment) }]}>
             <Icon name="check" size={16} color={Colors.white} />
@@ -151,6 +186,14 @@ export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ ro
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Equipment Details</Text>
         <View style={styles.infoGrid}>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Category</Text>
+            <Text style={styles.infoValue}>{equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}</Text>
+          </View>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Type</Text>
+            <Text style={styles.infoValue}>{equipment.type || 'Not specified'}</Text>
+          </View>
           <View style={styles.infoItem}>
             <Text style={styles.infoLabel}>Brand</Text>
             <Text style={styles.infoValue}>{equipment.brand || 'Not specified'}</Text>
@@ -212,6 +255,76 @@ export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ ro
             </View>
           )}
         </View>
+      </View>
+
+      {/* Associated Tasks */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Associated Tasks</Text>
+          <TouchableOpacity 
+            style={styles.addTaskButton}
+            onPress={() => navigation.navigate('Tasks', { 
+              screen: 'AddTask', 
+              params: { equipmentId: equipment.id } 
+            })}
+          >
+            <Icon name="add" size={16} color={Colors.primary} />
+            <Text style={styles.addTaskButtonText}>Add Task</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {associatedTasks.length === 0 ? (
+          <View style={styles.emptyTasksContainer}>
+            <Icon name="tasks" size={32} color={Colors.textTertiary} />
+            <Text style={styles.emptyTasksText}>No active tasks</Text>
+            <Text style={styles.emptyTasksSubtext}>
+              Create maintenance tasks for this equipment
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.tasksList}>
+            {associatedTasks.slice(0, 3).map((task) => (
+              <TouchableOpacity 
+                key={task.id}
+                style={styles.taskItem}
+                onPress={() => navigation.navigate('Tasks', { 
+                  screen: 'TaskDetail', 
+                  params: { task } 
+                })}
+              >
+                <View style={styles.taskInfo}>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <Text style={styles.taskDueDate}>
+                    {task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No due date'}
+                  </Text>
+                </View>
+                <View style={[
+                  styles.taskPriorityBadge,
+                  { backgroundColor: task.priority === 3 ? Colors.error : task.priority === 2 ? Colors.warning : Colors.info }
+                ]}>
+                  <Text style={styles.taskPriorityText}>
+                    {task.priority === 3 ? 'HIGH' : task.priority === 2 ? 'MED' : 'LOW'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            
+            {associatedTasks.length > 3 && (
+              <TouchableOpacity 
+                style={styles.viewAllTasksButton}
+                onPress={() => navigation.navigate('Tasks', { 
+                  equipmentFilter: equipment.id,
+                  equipmentName: equipment.name 
+                })}
+              >
+                <Text style={styles.viewAllTasksText}>
+                  View all {associatedTasks.length} tasks
+                </Text>
+                <Icon name="right" size={16} color={Colors.primary} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Action Buttons */}
@@ -295,12 +408,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.bodyMedium.fontSize,
     color: Colors.textSecondary,
     marginBottom: Spacing.xs,
-  },
-  equipmentCategory: {
-    fontFamily: Typography.bodySmall.fontFamily,
-    fontSize: Typography.bodySmall.fontSize,
-    color: Colors.textTertiary,
-    textTransform: 'capitalize',
   },
   statusBadge: {
     width: 32,
@@ -422,6 +529,95 @@ const styles = StyleSheet.create({
     fontFamily: Typography.labelMedium.fontFamily,
     fontSize: Typography.labelMedium.fontSize,
     color: Colors.error,
+    fontWeight: '500',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  addTaskButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primaryLight,
+    padding: Spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  addTaskButtonText: {
+    marginLeft: Spacing.sm,
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.primary,
+    fontWeight: '500',
+  },
+  emptyTasksContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyTasksText: {
+    fontFamily: Typography.titleLarge.fontFamily,
+    fontSize: Typography.titleLarge.fontSize,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
+  },
+  emptyTasksSubtext: {
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textSecondary,
+  },
+  tasksList: {
+    flex: 1,
+  },
+  taskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  taskInfo: {
+    flex: 1,
+  },
+  taskTitle: {
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
+  },
+  taskDueDate: {
+    fontFamily: Typography.bodySmall.fontFamily,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Colors.textSecondary,
+  },
+  taskPriorityBadge: {
+    padding: Spacing.xs,
+    borderRadius: 12,
+    marginLeft: Spacing.sm,
+  },
+  taskPriorityText: {
+    fontFamily: Typography.bodySmall.fontFamily,
+    fontSize: Typography.bodySmall.fontSize,
+    color: Colors.white,
+    fontWeight: '500',
+  },
+  viewAllTasksButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  viewAllTasksText: {
+    marginRight: Spacing.sm,
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.primary,
     fontWeight: '500',
   },
 }) 

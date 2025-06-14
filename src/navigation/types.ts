@@ -6,9 +6,6 @@ export type RootStackParamList = {
   Tasks: undefined;
   TaskDetail: { taskId: string };
   CreateTask: { propertyId?: string };
-  Maintenance: undefined;
-  MaintenanceDetail: { maintenanceId: string };
-  CreateMaintenance: { propertyId?: string };
   Profile: undefined;
   Settings: undefined;
   Auth: undefined;
@@ -40,10 +37,4 @@ export type TaskStackParamList = {
   TasksList: { filter?: 'all' | 'pending' | 'overdue' | 'completed' };
   AddTask: undefined;
   TaskDetail: { task: any };
-};
-
-export type MaintenanceStackParamList = {
-  MaintenanceList: undefined;
-  AddMaintenance: undefined;
-  MaintenanceDetail: { maintenance: any };
 }; 

@@ -47,15 +47,58 @@ interface WeatherData {
 
 export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { homes, tasks } = useDataContext();
+  const { homes, tasks, equipment } = useDataContext();
   const [refreshing, setRefreshing] = useState(false);
   
-  // Calculate dashboard stats from tasks
+  // Helper function to check if a date is today
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+  };
+
+  // Helper function to check if a task is overdue
+  const isOverdue = (task: any) => {
+    if (!task.due_date || task.completed_at) return false;
+    return new Date(task.due_date) < new Date();
+  };
+
+  // Calculate intelligent dashboard stats
   const dashboardStats = {
-    homeCount: homes.length,
-    activeTasks: tasks.filter(task => !task.completed_at).length,
-    overdueTasks: tasks.filter(task => !task.completed_at && task.due_date && new Date(task.due_date) < new Date()).length,
-    completedTasks: tasks.filter(task => task.completed_at).length,
+    // Equipment Status Intelligence
+    healthyEquipmentCount: equipment.filter(item => 
+      !item.needs_attention && item.active !== false
+    ).length,
+    totalEquipmentCount: equipment.length,
+    
+    // Today's Tasks Intelligence
+    todayTaskCount: tasks.filter(task => 
+      !task.completed_at && 
+      task.due_date && 
+      isToday(new Date(task.due_date))
+    ).length,
+    
+    // Urgent Items Intelligence (combines overdue tasks + equipment needing attention)
+    urgentCount: [
+      ...tasks.filter(task => isOverdue(task)),
+      ...equipment.filter(item => item.needs_attention === true)
+    ].length,
+    
+    // Monthly Progress Intelligence
+    monthlyCompletionRate: (() => {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const completedThisMonth = tasks.filter(task => 
+        task.completed_at && 
+        new Date(task.completed_at) >= startOfMonth
+      ).length;
+      const totalTasksThisMonth = tasks.filter(task => 
+        task.created_at && 
+        new Date(task.created_at) >= startOfMonth
+      ).length;
+      
+      if (totalTasksThisMonth === 0) return 0;
+      return Math.round((completedThisMonth / totalTasksThisMonth) * 100);
+    })(),
   };
   const [weather, setWeather] = useState<WeatherData>({
     temperature: 72,
@@ -101,34 +144,34 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
-  // Real data from Supabase
+  // Intelligence Dashboard Cards
   const quickStats: QuickStat[] = [
     {
       id: '1',
-      title: 'Homes',
-      value: dashboardStats.homeCount.toString(),
-      icon: 'properties',
+      title: 'Equipment Status',
+      value: `${dashboardStats.healthyEquipmentCount}/${dashboardStats.totalEquipmentCount}`,
+      icon: 'equipment',
       color: Colors.primary,
     },
     {
       id: '2',
-      title: 'Active Tasks',
-      value: dashboardStats.activeTasks.toString(),
-      icon: 'tasks',
+      title: 'Today\'s Tasks',
+      value: dashboardStats.todayTaskCount.toString(),
+      icon: 'calendar',
       color: Colors.info,
     },
     {
       id: '3',
-      title: 'Overdue',
-      value: dashboardStats.overdueTasks.toString(),
+      title: 'Urgent Items',
+      value: dashboardStats.urgentCount.toString(),
       icon: 'warning',
       color: Colors.warning,
     },
     {
       id: '4',
-      title: 'Completed',
-      value: dashboardStats.completedTasks.toString(),
-      icon: 'check',
+      title: 'Monthly Progress',
+      value: `${dashboardStats.monthlyCompletionRate}%`,
+              icon: 'up',
       color: Colors.success,
     },
   ];
@@ -189,22 +232,22 @@ export const DashboardScreen: React.FC = () => {
 
   const handleStatPress = (statId: string) => {
     switch (statId) {
-      case '1': // Homes
-        navigation.navigate('Properties' as never);
+      case '1': // Equipment Status
+        navigation.navigate('Equipment' as never);
         break;
-      case '2': // Active Tasks
+      case '2': // Today's Tasks
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
-          params: { filter: 'open' } 
+          params: { filter: 'today' } 
         });
         break;
-      case '3': // Overdue Tasks
+      case '3': // Urgent Items (overdue tasks + equipment needing attention)
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
-          params: { filter: 'open' } 
+          params: { filter: 'urgent' } 
         });
         break;
-      case '4': // Completed Tasks
+      case '4': // Monthly Progress
         (navigation as any).navigate('Tasks', { 
           screen: 'TasksList', 
           params: { filter: 'done' } 
@@ -242,7 +285,7 @@ export const DashboardScreen: React.FC = () => {
               if (result.success) {
                 Alert.alert(
                   'Tasks Generated! 🎉',
-                  `Successfully generated ${result.tasksGenerated} intelligent tasks based on your home data. Check the Tasks tab to see them!`,
+                  `Successfully generated ${result.tasksGenerated} intelligent tasks spread over the coming weeks. Check the Tasks tab to see your personalized maintenance schedule!`,
                   [{ text: 'View Tasks', onPress: () => (navigation as any).navigate('Tasks') }]
                 );
               } else {
@@ -293,9 +336,9 @@ export const DashboardScreen: React.FC = () => {
         )}
       </View>
 
-      {/* Quick Stats */}
+      {/* Intelligence Dashboard */}
       <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Quick Overview</Text>
+        <Text style={styles.sectionTitle}>Intelligence Dashboard</Text>
         <View style={styles.statsGrid}>
           {quickStats.map((stat) => (
             <TouchableOpacity 
@@ -329,8 +372,8 @@ export const DashboardScreen: React.FC = () => {
             style={styles.actionButton}
           />
           <SecondaryButton
-            title="Schedule Maintenance"
-            onPress={() => (navigation as any).navigate('Maintenance', { screen: 'AddMaintenance' })}
+            title="Generate Smart Tasks"
+            onPress={handleGenerateIntelligentTasks}
             size="small"
             style={styles.actionButton}
           />

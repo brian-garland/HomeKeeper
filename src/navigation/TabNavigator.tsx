@@ -76,19 +76,19 @@ export const TabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen 
-        name="Tasks" 
-        component={TaskStackNavigator}
-        options={{
-          title: 'Tasks',
-          headerTitle: 'My Tasks'
-        }}
-      />
-      <Tab.Screen 
         name="Equipment" 
         component={EquipmentStackNavigator}
         options={{
           title: 'Equipment',
           headerTitle: 'Equipment'
+        }}
+      />
+      <Tab.Screen 
+        name="Tasks" 
+        component={TaskStackNavigator}
+        options={{
+          title: 'Tasks',
+          headerTitle: 'My Tasks'
         }}
       />
       <Tab.Screen 

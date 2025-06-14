@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native'
 import { Icon } from '../components/icons/Icon'
 import { Colors } from '../theme/colors'
@@ -6,20 +6,22 @@ import { Typography } from '../theme/typography'
 import { Spacing } from '../theme/spacing'
 import { useDataContext } from '../contexts/DataContext'
 import { useEquipment } from '../hooks/useEquipment'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useFocusEffect } from '@react-navigation/native'
 
 interface EquipmentCardProps {
   equipment: any
   taskCount: number
   onPress: () => void
   onSchedule: () => void
+  onTasksPress: () => void
 }
 
 const EquipmentCard: React.FC<EquipmentCardProps> = ({ 
   equipment, 
   taskCount,
   onPress, 
-  onSchedule 
+  onSchedule,
+  onTasksPress
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -74,7 +76,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
         <View style={styles.equipmentInfo}>
           <Text style={styles.equipmentName}>{equipment.name}</Text>
           <Text style={styles.equipmentType}>
-            {equipment.type} • {equipment.category}
+            {equipment.brand ? `${equipment.brand}` : equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
           </Text>
           {equipment.location && (
             <Text style={styles.equipmentLocation}>📍 {equipment.location}</Text>
@@ -102,12 +104,12 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
 
       {/* Task Count and Actions */}
       <View style={styles.equipmentFooter}>
-        <View style={styles.taskCountContainer}>
+        <TouchableOpacity style={styles.taskCountContainer} onPress={onTasksPress}>
           <Icon name="tasks" size="sm" color={Colors.textSecondary} />
           <Text style={styles.taskCountText}>
             {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
           </Text>
-        </View>
+        </TouchableOpacity>
         
         <View style={styles.equipmentActions}>
           <TouchableOpacity 
@@ -138,6 +140,22 @@ export const EquipmentScreen: React.FC = () => {
   const { equipment, loading, error, refreshEquipment, getEquipmentStatus } = useEquipment()
   const { tasks } = useDataContext()
   const [refreshing, setRefreshing] = useState(false)
+
+  // Refresh equipment when screen comes into focus (e.g., returning from edit screen)
+  // Use a ref to track last refresh time to avoid excessive API calls
+  const lastRefreshRef = React.useRef(0)
+  
+  useFocusEffect(
+    React.useCallback(() => {
+      const now = Date.now()
+      // Only refresh if it's been more than 2 seconds since last refresh
+      if (now - lastRefreshRef.current > 2000) {
+        console.log('🔄 Equipment screen focused - refreshing equipment data')
+        refreshEquipment()
+        lastRefreshRef.current = now
+      }
+    }, [refreshEquipment])
+  )
 
   const onRefresh = async () => {
     setRefreshing(true)
@@ -271,6 +289,7 @@ export const EquipmentScreen: React.FC = () => {
                   taskCount={getTaskCountForEquipment(eq.id)}
                   onPress={() => handleEquipmentPress(eq)}
                   onSchedule={() => handleSchedulePress(eq)}
+                  onTasksPress={() => handleSchedulePress(eq)}
                 />
               ))}
             </View>

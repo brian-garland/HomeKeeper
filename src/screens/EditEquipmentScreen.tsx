@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 import { Icon } from '../components/icons/Icon'
 import { Colors } from '../theme/colors'
 import { Typography } from '../theme/typography'
@@ -89,22 +90,27 @@ export const EditEquipmentScreen: React.FC<EditEquipmentScreenProps> = ({ route,
         updated_at: new Date().toISOString()
       }
 
-      // For now, we'll simulate saving - in the future this will be integrated with dataManager
+      // FIXED: Actually save the equipment data instead of just simulating
       console.log('📝 Updating equipment:', equipment.id, equipmentData)
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Save to AsyncStorage (where equipment data is stored and read from)
+      const AsyncStorage = await import('@react-native-async-storage/async-storage')
       
-      Alert.alert(
-        'Equipment Updated!', 
-        `${formData.name} has been updated.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack()
-          }
-        ]
+      // Get current equipment from storage, update this item, and save back
+      const savedEquipmentStr = await AsyncStorage.default.getItem('homekeeper_equipment')
+      let savedEquipment = savedEquipmentStr ? JSON.parse(savedEquipmentStr) : []
+      
+      // Update the specific equipment item
+      const updatedEquipment = savedEquipment.map((item: any) => 
+        item.id === equipment.id ? { ...item, ...equipmentData } : item
       )
+      
+      // Save back to storage
+      await AsyncStorage.default.setItem('homekeeper_equipment', JSON.stringify(updatedEquipment))
+      console.log('✅ Equipment saved to AsyncStorage - changes should now persist!')
+      
+      // Navigate back immediately after saving
+      navigation.goBack()
     } catch (error) {
       console.error('Failed to update equipment:', error)
       Alert.alert('Error', 'Failed to update equipment. Please try again.')
@@ -178,7 +184,15 @@ export const EditEquipmentScreen: React.FC<EditEquipmentScreenProps> = ({ route,
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContentContainer}
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={20}
+      >
         {/* Basic Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Basic Information</Text>
@@ -213,7 +227,7 @@ export const EditEquipmentScreen: React.FC<EditEquipmentScreenProps> = ({ route,
         </View>
 
         <View style={styles.bottomSpacing} />
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   )
 }
@@ -328,5 +342,8 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: Spacing.xl,
+  },
+  scrollContentContainer: {
+    paddingBottom: Spacing.xl,
   },
 }) 

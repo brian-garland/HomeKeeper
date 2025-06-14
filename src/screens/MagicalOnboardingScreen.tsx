@@ -469,7 +469,7 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
   const [onboardingData, setOnboardingData] = useState<any>({});
   const scrollViewRef = useRef<ScrollView>(null);
   const navigation = useNavigation();
-  const { setTasks } = useDataContext();
+  const { setTasks, setEquipment, setHomes } = useDataContext();
 
   const steps: OnboardingStep[] = [
     { id: 'welcome', title: 'Welcome', subtitle: 'Get started with HomeKeeper' },
@@ -518,24 +518,66 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
       // Create local home object that works immediately
       const localHome = {
         id: `local-${Date.now()}`, // Temporary local ID
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        owner_id: null,
         name: 'My Home',
         address: onboardingData.address || '',
+        city: null,
+        state: null,
+        zip_code: null,
+        country: 'United States',
+        latitude: latitude || null,
+        longitude: longitude || null,
+        location: null,
         home_type: onboardingData.characteristics?.homeType || 'single_family',
-        year_built: onboardingData.characteristics?.yearBuilt,
-        square_footage: onboardingData.characteristics?.squareFootage,
-        latitude,
-        longitude,
-        created_at: new Date().toISOString(),
+        year_built: onboardingData.characteristics?.yearBuilt || null,
+        square_footage: onboardingData.characteristics?.squareFootage || null,
+        lot_size: null,
+        bedrooms: null,
+        bathrooms: null,
+        floors: 1,
+        heating_type: null,
+        cooling_type: null,
+        water_heater_type: null,
+        maintenance_season_start: 3,
+        high_maintenance_mode: false,
+        photo_url: null,
+        notes: null,
+        active: true,
         is_local: true, // Flag to indicate this is a local-only home
       };
 
       console.log('✅ Local home created:', localHome);
 
+      // Clear any existing home data to prevent conflicts
+      await AsyncStorage.removeItem('homekeeper_homes');
+      await AsyncStorage.removeItem('homekeeper_tasks');
+      await AsyncStorage.removeItem('homekeeper_equipment');
+      
       // Store locally FIRST so task generation can find it
       await AsyncStorage.setItem('homekeeper_local_home', JSON.stringify(localHome));
       await AsyncStorage.setItem('homekeeper_onboarding_complete', 'true');
 
-      // Generate intelligent tasks using real weather data
+      // CRITICAL: Generate default equipment BEFORE generating tasks
+      console.log('📦 Generating default equipment for home type:', localHome.home_type);
+      const { getDataManager } = await import('../lib/services/dataManager');
+      const dataManager = getDataManager(localHome.id);
+      const defaultEquipment = await dataManager.getEquipment(localHome.id);
+      
+      // Save equipment to AsyncStorage so it persists
+      await AsyncStorage.setItem('homekeeper_equipment', JSON.stringify(defaultEquipment));
+      console.log(`📦 Generated and saved ${defaultEquipment.length} default equipment items`);
+      
+      // Update DataContext so equipment appears immediately in UI
+      setEquipment(defaultEquipment);
+      console.log(`🔄 Updated DataContext with ${defaultEquipment.length} equipment items`);
+      
+      // Update DataContext with new home data (cast to correct type)
+      setHomes([localHome as any]);
+      console.log(`🏠 Updated DataContext with new home data`);
+
+      // Generate intelligent tasks using real weather data (now with equipment context)
       const { generateIntelligentTasks } = await import('../lib/services/taskGenerationService');
       const tasksResult = await generateIntelligentTasks(localHome.id);
 
@@ -555,7 +597,7 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
         // Show success message emphasizing immediate value
         Alert.alert(
           '🎉 Your Home is Ready!',
-          `We've created your personalized maintenance schedule with ${tasksResult.tasksGenerated} tasks. You can start using HomeKeeper immediately!`,
+          `We've set up your home with ${defaultEquipment.length} equipment items and created your personalized maintenance schedule with ${tasksResult.tasksGenerated} tasks. You can start using HomeKeeper immediately!`,
           [
             {
               text: 'Get Started',

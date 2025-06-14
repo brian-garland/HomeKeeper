@@ -141,7 +141,8 @@ async function generateSeasonalTasks(
       continue // Skip if task already exists
     }
 
-    const dueDate = calculateSeasonalDueDate(template, currentMonth)
+    // IMPROVED: Pass task index for proper spacing  
+    const dueDate = calculateSeasonalDueDate(template, currentMonth, tasks.length)
     const task = await createTaskFromTemplate(template, home.id, dueDate)
     
     if (task) {
@@ -212,7 +213,8 @@ async function generateEquipmentTasks(
         continue
       }
 
-      const dueDate = calculateEquipmentDueDate(template, item)
+      // IMPROVED: Pass task index for proper spacing
+      const dueDate = calculateEquipmentDueDate(template, item, tasks.length)
       const task = await createTaskFromTemplate(template, home.id, dueDate, item.id)
       
       if (task) {
@@ -380,15 +382,22 @@ function isWeatherDependent(category: string): boolean {
 }
 
 /**
- * Calculate due date for seasonal tasks
+ * Calculate due date for seasonal tasks with better spacing
  */
-function calculateSeasonalDueDate(template: TaskTemplate, currentMonth: number): string {
+function calculateSeasonalDueDate(template: TaskTemplate, currentMonth: number, taskIndex: number = 0): string {
   const seasonalMonths = template.seasonal_months || []
   
   if (seasonalMonths.includes(currentMonth)) {
-    // Due within the next 2 weeks for current season
+    // IMPROVED: Space seasonal tasks over 6-8 weeks instead of 2 weeks
+    // This prevents overwhelming users with too many immediate tasks
     const dueDate = new Date()
-    dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 14) + 1)
+    const spacingWeeks = 6 + Math.floor(Math.random() * 3) // 6-8 weeks
+    const spacingDays = spacingWeeks * 7
+    
+    // Add task index to prevent all tasks from clustering on same dates
+    const indexOffset = taskIndex * 3 // 3 days between each task minimum
+    
+    dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * spacingDays) + 7 + indexOffset)
     return dueDate.toISOString().split('T')[0]
   }
   
@@ -408,17 +417,19 @@ function calculateSeasonalDueDate(template: TaskTemplate, currentMonth: number):
 }
 
 /**
- * Enhanced equipment due date calculation with maintenance intelligence
+ * Enhanced equipment due date calculation with user-friendly spacing
  */
-function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment): string {
+function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment, taskIndex: number = 0): string {
   const today = new Date()
   
-  // If equipment is overdue, make task urgent (within 7 days)
+  // If equipment is overdue, make task urgent but not immediate (within 2-3 weeks)
   if (equipment.next_service_due) {
     const nextServiceDate = new Date(equipment.next_service_due)
     if (nextServiceDate < today) {
       const urgentDate = new Date()
-      urgentDate.setDate(urgentDate.getDate() + 7) // 7 days from now
+      // IMPROVED: Give users 2-3 weeks instead of 7 days for overdue equipment
+      const urgentDays = 14 + Math.floor(Math.random() * 7) + (taskIndex * 2) // 14-21 days + spacing
+      urgentDate.setDate(urgentDate.getDate() + urgentDays)
       return urgentDate.toISOString().split('T')[0]
     }
     
@@ -429,17 +440,22 @@ function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment)
     }
   }
   
-  // Use equipment's maintenance frequency if available
+  // IMPROVED: Space equipment tasks over time instead of using exact frequency
+  // This creates a more manageable flow for users
   if (equipment.maintenance_frequency_months) {
     const dueDate = new Date()
-    dueDate.setMonth(dueDate.getMonth() + equipment.maintenance_frequency_months)
+    const frequencyDays = equipment.maintenance_frequency_months * 30 // Convert to days
+    const spacedDays = Math.floor(frequencyDays * 0.3) + (taskIndex * 7) // 30% of frequency + weekly spacing
+    dueDate.setDate(dueDate.getDate() + spacedDays)
     return dueDate.toISOString().split('T')[0]
   }
   
-  // Fall back to template frequency
+  // Fall back to template frequency with spacing
   const frequencyMonths = template.frequency_months || 12
   const dueDate = new Date()
-  dueDate.setMonth(dueDate.getMonth() + frequencyMonths)
+  const spacingMonths = Math.floor(frequencyMonths * 0.4) // Start at 40% of full frequency
+  dueDate.setMonth(dueDate.getMonth() + spacingMonths)
+  dueDate.setDate(dueDate.getDate() + (taskIndex * 5)) // Add 5 days per task for spacing
   
   return dueDate.toISOString().split('T')[0]
 }

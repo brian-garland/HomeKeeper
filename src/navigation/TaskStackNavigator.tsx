@@ -46,7 +46,7 @@ export const TaskStackNavigator: React.FC = () => {
         name="TaskDetail" 
         component={TaskDetailScreen}
         options={{
-          title: 'Task Details',
+          headerShown: false, // Custom header in the screen
         }}
       />
     </Stack.Navigator>

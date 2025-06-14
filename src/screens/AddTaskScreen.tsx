@@ -7,9 +7,9 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
-  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
@@ -154,12 +154,15 @@ export const AddTaskScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    <KeyboardAwareScrollView 
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      enableOnAndroid={true}
+      enableAutomaticScroll={true}
+      extraScrollHeight={20}
+      contentContainerStyle={styles.contentContainer}
     >
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Title Input */}
         <View style={styles.section}>
           <Text style={styles.label}>Task Title *</Text>
@@ -303,23 +306,22 @@ export const AddTaskScreen: React.FC = () => {
         
         {/* Extra spacing to ensure form is scrollable above keyboard */}
         <View style={styles.keyboardSpacer} />
-      </ScrollView>
 
-      {/* Action Buttons */}
-      <View style={styles.actions}>
-        <SecondaryButton
-          title="Cancel"
-          onPress={() => navigation.goBack()}
-          style={styles.cancelButton}
-        />
-        <PrimaryButton
-          title={loading ? "Creating..." : "Create Task"}
-          onPress={handleSave}
-          disabled={loading}
-          style={styles.saveButton}
-        />
-      </View>
-    </KeyboardAvoidingView>
+        {/* Action Buttons */}
+        <View style={styles.actions}>
+          <SecondaryButton
+            title="Cancel"
+            onPress={() => navigation.goBack()}
+            style={styles.cancelButton}
+          />
+          <PrimaryButton
+            title={loading ? "Creating..." : "Create Task"}
+            onPress={handleSave}
+            disabled={loading}
+            style={styles.saveButton}
+          />
+        </View>
+    </KeyboardAwareScrollView>
   );
 };
 
@@ -328,8 +330,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  content: {
-    flex: 1,
+  contentContainer: {
     padding: Spacing.lg,
   },
   section: {
