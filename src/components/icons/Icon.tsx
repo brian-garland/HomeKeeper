@@ -10,7 +10,7 @@ import { Colors } from '../../theme/colors';
 
 export type IconName = 
   // Navigation
-  | 'home' | 'dashboard' | 'properties' | 'tasks' | 'maintenance' | 'profile'
+  | 'home' | 'dashboard' | 'properties' | 'tasks' | 'maintenance' | 'equipment' | 'profile'
   // Actions
   | 'add' | 'edit' | 'delete' | 'save' | 'cancel' | 'search' | 'filter'
   // Status
@@ -62,6 +62,7 @@ export const Icon: React.FC<IconProps> = ({
       case 'properties': return <MaterialIcons name="business" size={iconSize} color={color} style={style} />;
       case 'tasks': return <MaterialIcons name="assignment" size={iconSize} color={color} style={style} />;
       case 'maintenance': return <MaterialIcons name="build" size={iconSize} color={color} style={style} />;
+      case 'equipment': return <MaterialIcons name="settings" size={iconSize} color={color} style={style} />;
       case 'profile': return <MaterialIcons name="person" size={iconSize} color={color} style={style} />;
       
       // Actions

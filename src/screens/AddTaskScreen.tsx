@@ -18,6 +18,7 @@ import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
+import { useEquipment } from '../hooks/useEquipment';
 
 interface TaskFormData {
   title: string;
@@ -55,6 +56,7 @@ const difficulties = [
 export const AddTaskScreen: React.FC = () => {
   const navigation = useNavigation();
   const { addTask, homes } = useDataContext();
+  const { equipment } = useEquipment();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState<TaskFormData>({
@@ -66,6 +68,28 @@ export const AddTaskScreen: React.FC = () => {
     estimated_duration_minutes: 30,
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
   });
+
+  const findMatchingEquipment = (taskCategory: string) => {
+    if (!equipment || equipment.length === 0) {
+      console.log('🔍 No equipment available for matching');
+      return null;
+    }
+    
+    console.log('🔍 Finding equipment for category:', taskCategory);
+    console.log('🔍 Available equipment:', equipment.map(eq => ({ id: eq.id, name: eq.name, category: eq.category, type: eq.type })));
+    
+    const matchingEquipment = equipment.find(eq => 
+      eq.category === taskCategory || 
+      eq.type === taskCategory ||
+      (taskCategory === 'hvac' && (eq.category === 'hvac' || eq.type === 'hvac' || eq.type === 'hvac_system' || eq.type === 'central_air' || eq.type === 'heat_pump' || eq.type === 'furnace')) ||
+      (taskCategory === 'plumbing' && (eq.category === 'plumbing' || eq.type === 'water_heater')) ||
+      (taskCategory === 'electrical' && (eq.category === 'electrical' || eq.type === 'electrical_panel')) ||
+      (taskCategory === 'appliances' && eq.category === 'appliance')
+    );
+    
+    console.log('🔍 Found matching equipment:', matchingEquipment ? { id: matchingEquipment.id, name: matchingEquipment.name } : 'None');
+    return matchingEquipment || null;
+  };
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
@@ -80,15 +104,18 @@ export const AddTaskScreen: React.FC = () => {
 
     setLoading(true);
     try {
+      const matchingEquipment = findMatchingEquipment(formData.category);
+      console.log('💾 Creating task with equipment:', matchingEquipment ? matchingEquipment.name : 'No equipment');
+      
       const newTask = {
         id: `demo-task-${Date.now()}`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         home_id: homes[0]?.id || 'demo-home-1',
-        equipment_id: null,
+        equipment_id: matchingEquipment?.id || null,
         template_id: null,
-        title: formData.title,
-        description: formData.description,
+        title: formData.title + (matchingEquipment ? ` for ${matchingEquipment.name}` : ''),
+        description: formData.description + (matchingEquipment && matchingEquipment.location ? ` (${matchingEquipment.location})` : ''),
         category: formData.category,
         due_date: formData.due_date,
         priority: formData.priority,
@@ -106,7 +133,12 @@ export const AddTaskScreen: React.FC = () => {
       };
 
       addTask(newTask);
-      Alert.alert('Success', 'Task created successfully!', [
+      
+      const successMessage = matchingEquipment 
+        ? `Task created and associated with ${matchingEquipment.name}!`
+        : 'Task created successfully!';
+        
+      Alert.alert('Success', successMessage, [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
     } catch (error) {

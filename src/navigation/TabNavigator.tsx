@@ -7,9 +7,8 @@ import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
 import { TabParamList } from './types';
 import { DashboardScreen } from '../screens/DashboardScreen';
-import { PropertiesScreen } from '../screens/PropertiesScreen';
 import { TaskStackNavigator } from './TaskStackNavigator';
-import { MaintenanceStackNavigator } from './MaintenanceStackNavigator';
+import { EquipmentStackNavigator } from './EquipmentStackNavigator';
 import { ProfileScreen } from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -22,17 +21,14 @@ export const TabNavigator: React.FC = () => {
           let iconName: any;
 
           switch (route.name) {
-            case 'Dashboard':
-              iconName = 'dashboard';
-              break;
-            case 'Properties':
-              iconName = 'properties';
+            case 'Home':
+              iconName = 'home';
               break;
             case 'Tasks':
               iconName = 'tasks';
               break;
-            case 'Maintenance':
-              iconName = 'maintenance';
+            case 'Equipment':
+              iconName = 'equipment';
               break;
             case 'Profile':
               iconName = 'profile';
@@ -72,19 +68,11 @@ export const TabNavigator: React.FC = () => {
       })}
     >
       <Tab.Screen 
-        name="Dashboard" 
+        name="Home" 
         component={DashboardScreen}
         options={{
-          title: 'Dashboard',
-          headerTitle: 'HomeKeeper Dashboard'
-        }}
-      />
-      <Tab.Screen 
-        name="Properties" 
-        component={PropertiesScreen}
-        options={{
-          title: 'Properties',
-          headerTitle: 'My Properties'
+          title: 'Home',
+          headerTitle: 'HomeKeeper'
         }}
       />
       <Tab.Screen 
@@ -96,11 +84,11 @@ export const TabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen 
-        name="Maintenance" 
-        component={MaintenanceStackNavigator}
+        name="Equipment" 
+        component={EquipmentStackNavigator}
         options={{
-          title: 'Maintenance',
-          headerTitle: 'Maintenance'
+          title: 'Equipment',
+          headerTitle: 'Equipment'
         }}
       />
       <Tab.Screen 

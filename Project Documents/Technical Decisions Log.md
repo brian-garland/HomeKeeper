@@ -1,41 +1,109 @@
 # HomeKeeper Technical Decisions Log
 
+## Week 9 Session - January 29, 2025
+
+### 🎯 MAJOR STRATEGIC DECISION: Equipment-Centered Vision Restoration
+
+#### **Equipment Architecture & Navigation Consolidation**
+**Date**: January 29, 2025  
+**Priority**: **CRITICAL** - Major architectural shift
+**Decision**: Full restoration of HomeKeeper's original equipment-centered vision with unified data architecture
+
+**Context**: Technical review revealed significant deviation from original product vision:
+- Equipment functionality existed in backend but was invisible to users
+- Navigation had grown to 5 tabs with overlapping functionality
+- Task generation lacked equipment-specific intelligence
+- Original "magical equipment discovery" vision was abandoned
+
+**Decision Made**: 
+1. **Unified Data Architecture**: Replace dual-path logic with single `UnifiedDataManager` interface
+2. **Navigation Consolidation**: Reduce from 5 tabs to 4 tabs with equipment prominence
+3. **Equipment-Centered Task Generation**: All tasks linked to specific equipment with context
+4. **Magical Equipment Discovery**: Restore AI-powered equipment identification during onboarding
+
+**Implementation Strategy**:
+```typescript
+// NEW: Unified architecture replaces dual-path complexity
+export class UnifiedDataManager implements DataManagerInterface {
+  async getEquipment(homeId: string): Promise<Equipment[]> {
+    if (homeId.startsWith('local-')) {
+      return this.getDefaultEquipmentForHomeType(homeType)
+    } else {
+      return await this.databaseManager.getEquipment(homeId)
+    }
+  }
+}
+
+// REMOVED: Dual-path logic from taskGenerationService.ts
+// ADDED: Single interface for all data operations
+```
+
+**Navigation Changes**:
+```
+OLD: Dashboard | Properties | Tasks | Maintenance | Profile (5 tabs)
+NEW: Home | Tasks | Equipment | Profile (4 tabs)
+```
+
+**Benefits**:
+- ✅ **Restored Original Vision**: Equipment as central intelligence hub
+- ✅ **Reduced Complexity**: Single data interface replaces dual-path logic  
+- ✅ **Improved UX**: Clear equipment visibility and management
+- ✅ **Better Intelligence**: Equipment-specific task generation
+- ✅ **Simplified Navigation**: 4 tabs with clear purposes
+
+**Immediate Actions**:
+- [x] Created `UnifiedDataManager` with smart equipment defaults
+- [x] Refactored `taskGenerationService.ts` to use unified interface
+- [ ] Implement `EquipmentScreen` with full equipment management
+- [ ] Restructure navigation to 4-tab layout
+- [ ] Add equipment discovery to onboarding flow
+
+**Success Metrics**:
+- Equipment tab engagement >70% of users
+- Equipment-task correlation understanding >90%  
+- Reduced support queries about task origins
+- Improved task completion rates due to equipment context
+
+**Status**: ✅ **APPROVED & IN PROGRESS** - Backend architecture completed, UI implementation starting
+
+---
+
 ## Week 8 Session - January 14, 2025
 
 ### Critical Architectural Decisions Made
 
-#### 1. **Dual-Path Task Generation System**
+#### 1. **~~Dual-Path Task Generation System~~** ✅ **RESOLVED**
 **Date**: January 14, 2025  
-**Decision**: Implemented dual-path logic in `taskGenerationService.ts` to handle both local and database homes
+**Original Decision**: Implemented dual-path logic in `taskGenerationService.ts` to handle both local and database homes
 
-**Implementation**:
+**Resolution Date**: January 29, 2025  
+**Resolution**: Replaced with UnifiedDataManager interface
+
+**New Implementation**:
 ```typescript
-// src/lib/services/taskGenerationService.ts:50-70
-if (homeId.startsWith('local-')) {
-  // Handle local home from AsyncStorage
-  const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default)
-  const localHomeData = await AsyncStorage.getItem('homekeeper_local_home')
-  if (localHomeData) {
-    home = JSON.parse(localHomeData) as Home
+// src/lib/services/dataManager.ts
+export class UnifiedDataManager implements DataManagerInterface {
+  async getHome(homeId: string): Promise<Home | null> {
+    if (homeId.startsWith('local-')) {
+      return await this.localDataManager.getHome(homeId)
+    } else {
+      return await this.databaseDataManager.getHome(homeId)
+    }
   }
-} else {
-  // Handle database home
-  const { data: dbHome, error: homeError } = await supabase
-    .from('homes')
-    .select('*')
-    .eq('id', homeId)
-    .single()
 }
+
+// src/lib/services/taskGenerationService.ts - Now uses single interface
+const dataManager = new UnifiedDataManager()
+const home = await dataManager.getHome(homeId)
 ```
 
-**Rationale**: Enable immediate task generation for local homes without database dependency
+**Benefits of Resolution**:
+- ✅ **Eliminated Complexity**: Single interface instead of dual-path logic
+- ✅ **Improved Maintainability**: One code path to maintain
+- ✅ **Better Abstraction**: Clean separation of concerns
+- ✅ **Future-Proof**: Easy to add new data sources
 
-**Temporary Nature**: ⚠️ **HIGH PRIORITY FOR REVIEW**
-- Adds significant complexity to core service
-- Duplicates logic paths that must be maintained in parallel
-- May cause inconsistencies between local and database task creation
-
-**Reevaluation Trigger**: When implementing user authentication or multi-device sync
+**Status**: ✅ **RESOLVED** - Dual-path complexity successfully abstracted behind unified interface
 
 ---
 
@@ -124,33 +192,39 @@ if (homeId.startsWith('local-')) {
 
 ---
 
-#### 5. **Default Equipment Handling for Local Homes**
+#### 5. **~~Default Equipment Handling for Local Homes~~** ✅ **RESOLVED**
 **Date**: January 14, 2025  
-**Decision**: Return empty equipment array for local homes instead of database lookup
+**Original Decision**: Return empty equipment array for local homes instead of database lookup
 
-**Implementation**:
+**Resolution Date**: January 29, 2025  
+**Resolution**: Implemented smart equipment defaults in UnifiedDataManager
+
+**New Implementation**:
 ```typescript
-// src/lib/services/taskGenerationService.ts:88-95
-if (homeId.startsWith('local-')) {
-  equipment = getDefaultEquipmentForHomeType(home.home_type || 'single_family')
-  existingTasks = [] // No existing tasks for new local homes
-} else {
-  // Get equipment from database
-}
-
-function getDefaultEquipmentForHomeType(homeType: string): Equipment[] {
-  return [] // Return empty array for now
+// src/lib/services/dataManager.ts - LocalDataManager
+getDefaultEquipmentForHomeType(homeType: string): Equipment[] {
+  const baseEquipment = [
+    { name: 'HVAC System', type: 'HVAC', category: 'heating_cooling' },
+    { name: 'Water Heater', type: 'Water Heater', category: 'plumbing' }
+  ];
+  
+  if (homeType === 'single_family') {
+    baseEquipment.push(
+      { name: 'Garage Door', type: 'Garage Door', category: 'mechanical' },
+      { name: 'Roof & Gutters', type: 'Roof', category: 'exterior' }
+    );
+  }
+  return baseEquipment.map(eq => ({ ...eq, /* full Equipment object */ }));
 }
 ```
 
-**Rationale**: Allow task generation to work without equipment setup
+**Benefits of Resolution**:
+- ✅ **Smart Defaults**: Equipment now generated based on home type
+- ✅ **Better Task Generation**: Equipment-specific maintenance tasks possible
+- ✅ **User Experience**: Equipment visible in dedicated Equipment tab
+- ✅ **Scalable**: Easy to add more home types and equipment
 
-**Temporary Nature**: ⚠️ **MEDIUM PRIORITY FOR REVIEW**
-- Limits task generation effectiveness for local homes
-- Should implement default equipment based on home type
-- May miss equipment-specific maintenance tasks
-
-**Reevaluation Trigger**: When implementing equipment management or improving task generation accuracy
+**Status**: ✅ **RESOLVED** - Smart equipment defaults implemented with home-type intelligence
 
 ---
 
@@ -200,5 +274,36 @@ function getDefaultEquipmentForHomeType(homeType: string): Equipment[] {
 
 ---
 
-*Last Updated: January 14, 2025*  
-*Next Review: January 21, 2025* 
+## Current Status Summary (January 29, 2025)
+
+### ✅ **RESOLVED DECISIONS** (2 of 5)
+1. **✅ Dual-Path Task Generation System** - Replaced with UnifiedDataManager interface
+2. **✅ Default Equipment Handling** - Implemented smart equipment defaults
+
+### ⏳ **REMAINING OPEN ITEMS** (3 of 5)
+3. **⚠️ Local Home Priority in DataContext** - MEDIUM PRIORITY
+   - **Status**: Still using implicit home hierarchy 
+   - **Next Action**: Evaluate during multi-home support implementation
+   
+4. **⚠️ Mock Task Object Creation** - HIGH PRIORITY  
+   - **Status**: Still bypassing validation and business logic
+   - **Next Action**: Integrate task validation in UnifiedDataManager
+   
+5. **⚠️ Navigation Callback Pattern** - LOW PRIORITY
+   - **Status**: Working well, may need standardization
+   - **Next Action**: Review during future onboarding enhancements
+
+### 📈 **Progress Metrics**
+- **Decisions Resolved**: 40% (2 of 5)
+- **High Priority Items Resolved**: 50% (1 of 2) 
+- **Technical Debt Reduction**: Significant improvement with unified architecture
+
+### 🎯 **Next Review Priorities**
+1. **Mock Task Object Creation** - Address validation bypass in next sprint
+2. **Local Home Priority** - Plan multi-home architecture 
+3. **Navigation Standardization** - Low priority maintenance task
+
+---
+
+*Last Updated: January 29, 2025*  
+*Next Review: February 5, 2025* 

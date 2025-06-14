@@ -16,6 +16,7 @@ import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
+import { useEquipment } from '../hooks/useEquipment';
 
 const categories = [
   { id: 'hvac', label: 'HVAC', icon: 'wrench' as const },
@@ -49,9 +50,15 @@ export const TaskDetailScreen: React.FC = () => {
   const route = useRoute();
   const { task: initialTask } = route.params as TaskDetailRouteParams;
   const { updateTask, deleteTask, tasks } = useDataContext();
+  const { equipment } = useEquipment(); // Get equipment data
   
   // Get the current task from the global state (in case it was updated)
   const task = tasks.find(t => t.id === initialTask.id) || initialTask;
+  
+  // Find associated equipment
+  const associatedEquipment = task.equipment_id 
+    ? equipment.find(eq => eq.id === task.equipment_id)
+    : null;
   
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -393,6 +400,20 @@ export const TaskDetailScreen: React.FC = () => {
                   <Text style={styles.detailValue}>{task.category?.toUpperCase()}</Text>
                 </View>
               </View>
+
+              {/* Equipment Association */}
+              {associatedEquipment && (
+                <View style={styles.detailItem}>
+                  <Icon name="wrench" size="sm" color={Colors.textSecondary} />
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailLabel}>Equipment</Text>
+                    <Text style={styles.detailValue}>{associatedEquipment.name}</Text>
+                    {associatedEquipment.location && (
+                      <Text style={styles.detailSubValue}>({associatedEquipment.location})</Text>
+                    )}
+                  </View>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -576,6 +597,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bodyMedium.fontFamily,
     fontSize: Typography.bodyMedium.fontSize,
     color: Colors.textPrimary,
+  },
+  detailSubValue: {
+    fontFamily: Typography.labelSmall.fontFamily,
+    fontSize: Typography.labelSmall.fontSize,
+    color: Colors.textTertiary,
+    marginTop: Spacing.xs,
   },
   overdueText: {
     color: Colors.error,

@@ -16,10 +16,10 @@ export type RootStackParamList = {
 };
 
 export type TabParamList = {
-  Dashboard: undefined;
-  Properties: undefined;
+  Home: undefined;
   Tasks: undefined;
-  Maintenance: undefined;
+  Equipment: undefined;
+  EquipmentDetail: { equipment: any };
   Profile: undefined;
 };
 

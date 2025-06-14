@@ -16,13 +16,29 @@ import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
+import { useEquipment } from '../hooks/useEquipment';
+
+// Helper function for equipment icons
+const getEquipmentIcon = (category: string) => {
+  switch (category) {
+    case 'hvac': return 'settings';
+    case 'plumbing': return 'plumbing';
+    case 'electrical': return 'electrical';
+    case 'appliance': return 'home';
+    case 'exterior': return 'house';
+    case 'safety': return 'warning';
+    case 'mechanical': return 'settings';
+    default: return 'wrench';
+  }
+};
 
 interface TaskCardProps {
   task: any;
+  equipment?: any; // Equipment data for this task
   onPress: () => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
   const getPriorityColor = (priority: number) => {
     switch (priority) {
       case 3: return Colors.error; // High
@@ -49,6 +65,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
       default: return 'Normal';
     }
   };
+
+
 
   const isCompleted = !!task.completed_at;
   const isOverdue = !isCompleted && task.due_date && new Date(task.due_date) < new Date();
@@ -81,6 +99,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onPress }) => {
               </View>
             )}
           </View>
+          
+          {/* Equipment Badge */}
+          {equipment && (
+            <View style={styles.equipmentBadge}>
+              <Icon 
+                name={getEquipmentIcon(equipment.category)} 
+                size="xs" 
+                color={Colors.primary} 
+              />
+              <Text style={styles.equipmentText}>
+                {equipment.name}
+                {equipment.location && ` • ${equipment.location}`}
+              </Text>
+            </View>
+          )}
+          
           <Text style={[
             styles.taskDescription,
             isCompleted && styles.taskDescriptionCompleted
@@ -153,10 +187,12 @@ export const TasksScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { tasks } = useDataContext();
+  const { equipment } = useEquipment(); // Get equipment data
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'open' | 'done' | 'overdue'>('all');
+  const [equipmentFilter, setEquipmentFilter] = useState<string | null>(null);
 
   // Set initial filter from route params
   useEffect(() => {
@@ -188,6 +224,12 @@ export const TasksScreen: React.FC = () => {
     (navigation as any).navigate('TaskDetail', { task });
   };
 
+  // Create equipment lookup map
+  const equipmentMap = equipment.reduce((map, eq) => {
+    map[eq.id] = eq;
+    return map;
+  }, {} as Record<string, any>);
+
   const getFilteredTasks = () => {
     let filtered: any[] = [];
     
@@ -205,15 +247,12 @@ export const TasksScreen: React.FC = () => {
       );
     }
 
-    // Sort tasks: pending first, completed last
-    return filtered.sort((a, b) => {
-      const aCompleted = !!a.completed_at;
-      const bCompleted = !!b.completed_at;
-      
-      if (aCompleted && !bCompleted) return 1;
-      if (!aCompleted && bCompleted) return -1;
-      return 0;
-    });
+    // Apply equipment filter if selected
+    if (equipmentFilter) {
+      filtered = filtered.filter(task => task.equipment_id === equipmentFilter);
+    }
+
+    return filtered;
   };
 
   const filteredTasks = getFilteredTasks();
@@ -306,13 +345,70 @@ export const TasksScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Equipment Filter */}
+        {equipment.length > 0 && (
+          <View style={styles.equipmentFilterSection}>
+            <Text style={styles.sectionTitle}>Filter by Equipment</Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.equipmentFilterContainer}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.equipmentFilterChip,
+                  !equipmentFilter && styles.equipmentFilterChipActive
+                ]}
+                onPress={() => setEquipmentFilter(null)}
+              >
+                <Text style={[
+                  styles.equipmentFilterText,
+                  !equipmentFilter && styles.equipmentFilterTextActive
+                ]}>
+                  All Equipment
+                </Text>
+              </TouchableOpacity>
+              
+              {equipment.map((eq) => (
+                <TouchableOpacity
+                  key={eq.id}
+                  style={[
+                    styles.equipmentFilterChip,
+                    equipmentFilter === eq.id && styles.equipmentFilterChipActive
+                  ]}
+                  onPress={() => setEquipmentFilter(eq.id)}
+                >
+                  <Icon 
+                    name={getEquipmentIcon(eq.category)} 
+                    size="xs" 
+                    color={equipmentFilter === eq.id ? Colors.white : Colors.primary} 
+                  />
+                  <Text style={[
+                    styles.equipmentFilterText,
+                    equipmentFilter === eq.id && styles.equipmentFilterTextActive
+                  ]}>
+                    {eq.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* Current Filter Indicator */}
         <View style={styles.filterIndicatorSection}>
           <Text style={styles.filterIndicatorText}>
-            Showing: {filter === 'all' ? 'All Tasks' : filter === 'open' ? 'Open Tasks' : filter === 'done' ? 'Completed Tasks' : 'Overdue Tasks'} ({filteredTasks.length})
+            Showing: {filter === 'all' ? 'All Tasks' : filter === 'open' ? 'Open Tasks' : filter === 'done' ? 'Completed Tasks' : 'Overdue Tasks'}
+            {equipmentFilter && ` for ${equipmentMap[equipmentFilter]?.name}`} ({filteredTasks.length})
           </Text>
-          {filter !== 'all' && (
-            <TouchableOpacity onPress={() => setFilter('all')} style={styles.showAllButton}>
+          {(filter !== 'all' || equipmentFilter) && (
+            <TouchableOpacity 
+              onPress={() => {
+                setFilter('all');
+                setEquipmentFilter(null);
+              }} 
+              style={styles.showAllButton}
+            >
               <Text style={styles.showAllText}>Show All</Text>
             </TouchableOpacity>
           )}
@@ -345,6 +441,7 @@ export const TasksScreen: React.FC = () => {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  equipment={equipmentMap[task.equipment_id]}
                   onPress={() => handleTaskPress(task)}
                 />
               ))}
@@ -620,6 +717,47 @@ const styles = StyleSheet.create({
   },
   showAllText: {
     ...Typography.labelMedium,
+    color: Colors.white,
+  },
+  equipmentBadge: {
+    padding: Spacing.xs,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surface,
+    marginBottom: Spacing.sm,
+  },
+  equipmentText: {
+    ...Typography.caption,
+    color: Colors.textPrimary,
+  },
+  equipmentFilterSection: {
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  equipmentFilterContainer: {
+    paddingRight: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  equipmentFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
+    gap: Spacing.xs,
+  },
+  equipmentFilterChipActive: {
+    backgroundColor: Colors.primary,
+  },
+  equipmentFilterText: {
+    ...Typography.labelMedium,
+    color: Colors.primary,
+  },
+  equipmentFilterTextActive: {
     color: Colors.white,
   },
 }); 
