@@ -47,7 +47,7 @@ interface WeatherData {
 
 export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation();
-  const { homes, tasks, equipment } = useDataContext();
+  const { homes, tasks, equipment, totalMoneySaved } = useDataContext();
   const [refreshing, setRefreshing] = useState(false);
   
   // Helper function to check if a date is today
@@ -148,31 +148,32 @@ export const DashboardScreen: React.FC = () => {
   const quickStats: QuickStat[] = [
     {
       id: '1',
+      title: 'Money Saved',
+      value: `$${totalMoneySaved.toFixed(0)}`,
+      icon: 'up',
+      color: Colors.success,
+      trend: 'by doing tasks yourself'
+    },
+    {
+      id: '2',
       title: 'Equipment Status',
       value: `${dashboardStats.healthyEquipmentCount}/${dashboardStats.totalEquipmentCount}`,
       icon: 'equipment',
       color: Colors.primary,
     },
     {
-      id: '2',
+      id: '3',
       title: 'Today\'s Tasks',
       value: dashboardStats.todayTaskCount.toString(),
       icon: 'calendar',
       color: Colors.info,
     },
     {
-      id: '3',
+      id: '4',
       title: 'Urgent Items',
       value: dashboardStats.urgentCount.toString(),
       icon: 'warning',
       color: Colors.warning,
-    },
-    {
-      id: '4',
-      title: 'Monthly Progress',
-      value: `${dashboardStats.monthlyCompletionRate}%`,
-              icon: 'up',
-      color: Colors.success,
     },
   ];
 

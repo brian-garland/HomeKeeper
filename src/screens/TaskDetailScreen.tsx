@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  Switch,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -18,6 +19,7 @@ import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
 import { useEquipment } from '../hooks/useEquipment';
+import { TaskRecurrence, FREQUENCY_OPTIONS, DEFAULT_RECURRENCE } from '../types/preferences';
 
 const categories = [
   { id: 'hvac', label: 'HVAC', icon: 'wrench' as const },
@@ -63,11 +65,17 @@ export const TaskDetailScreen: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTask, setEditedTask] = useState(task);
+  const [editedTask, setEditedTask] = useState({
+    ...task,
+    recurrence: task.recurrence || DEFAULT_RECURRENCE
+  });
 
   // Update editedTask when task changes or when entering edit mode
   React.useEffect(() => {
-    setEditedTask(task);
+    setEditedTask({
+      ...task,
+      recurrence: task.recurrence || DEFAULT_RECURRENCE
+    });
   }, [task]);
 
   const getPriorityColor = (priority: number) => {
@@ -140,6 +148,7 @@ export const TaskDetailScreen: React.FC = () => {
         priority: editedTask.priority,
         difficulty_level: editedTask.difficulty_level,
         notes: editedTask.notes,
+        recurrence: editedTask.recurrence,
       };
       
       console.log('Updating task with:', updates);
@@ -362,6 +371,83 @@ export const TaskDetailScreen: React.FC = () => {
                   ))}
                 </View>
               </View>
+
+              {/* Recurrence */}
+              <View style={styles.editDetailItem}>
+                <View style={styles.recurrenceHeader}>
+                  <Text style={styles.editDetailLabel}>Recurring Task</Text>
+                  <Switch
+                    value={editedTask.recurrence?.enabled || false}
+                    onValueChange={(enabled) => 
+                      setEditedTask((prev: any) => ({ 
+                        ...prev, 
+                        recurrence: { 
+                          ...DEFAULT_RECURRENCE, 
+                          ...prev.recurrence, 
+                          enabled 
+                        } 
+                      }))
+                    }
+                    trackColor={{ false: Colors.border, true: Colors.primary + '40' }}
+                    thumbColor={editedTask.recurrence?.enabled ? Colors.primary : Colors.textSecondary}
+                  />
+                </View>
+                
+                {editedTask.recurrence?.enabled && (
+                  <View style={styles.recurrenceOptions}>
+                    <Text style={styles.recurrenceSubLabel}>Repeat every:</Text>
+                    <View style={styles.frequencyContainer}>
+                      {FREQUENCY_OPTIONS.map((option) => (
+                        <TouchableOpacity
+                          key={option.value}
+                          style={[
+                            styles.frequencyButton,
+                            editedTask.recurrence?.frequency_type === option.value && styles.frequencyButtonActive
+                          ]}
+                          onPress={() => 
+                            setEditedTask((prev: any) => ({ 
+                              ...prev, 
+                              recurrence: { 
+                                ...prev.recurrence, 
+                                frequency_type: option.value,
+                                frequency_months: option.months || prev.recurrence?.frequency_months || 3
+                              } 
+                            }))
+                          }
+                        >
+                          <Text style={[
+                            styles.frequencyButtonText,
+                            editedTask.recurrence?.frequency_type === option.value && styles.frequencyButtonTextActive
+                          ]}>
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    
+                    {editedTask.recurrence?.frequency_type === 'custom' && (
+                      <View style={styles.customFrequencyContainer}>
+                        <Text style={styles.recurrenceSubLabel}>Custom frequency (months):</Text>
+                        <TextInput
+                          style={styles.numberInput}
+                          value={editedTask.recurrence?.frequency_months?.toString() || ''}
+                          onChangeText={(text) => 
+                            setEditedTask((prev: any) => ({ 
+                              ...prev, 
+                              recurrence: { 
+                                ...prev.recurrence, 
+                                frequency_months: parseInt(text) || 1
+                              } 
+                            }))
+                          }
+                          placeholder="3"
+                          keyboardType="numeric"
+                        />
+                      </View>
+                    )}
+                  </View>
+                )}
+              </View>
             </View>
           ) : (
             <View style={styles.detailsGrid}>
@@ -419,6 +505,36 @@ export const TaskDetailScreen: React.FC = () => {
                     {associatedEquipment.location && (
                       <Text style={styles.detailSubValue}>({associatedEquipment.location})</Text>
                     )}
+                  </View>
+                </View>
+              )}
+
+              {/* Money Saved */}
+              {task.money_saved_estimate && task.money_saved_estimate > 0 && (
+                <View style={styles.detailItem}>
+                  <Icon name="check" size="sm" color={Colors.success} />
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailLabel}>Money Saved</Text>
+                    <Text style={[styles.detailValue, styles.moneySavedText]}>
+                      ${task.money_saved_estimate.toFixed(0)}
+                    </Text>
+                    <Text style={styles.detailSubValue}>by doing this yourself</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Recurrence */}
+              {task.recurrence?.enabled && (
+                <View style={styles.detailItem}>
+                  <Icon name="clock" size="sm" color={Colors.textSecondary} />
+                  <View style={styles.detailContent}>
+                    <Text style={styles.detailLabel}>Recurrence</Text>
+                    <Text style={styles.detailValue}>
+                      {task.recurrence.frequency_type === 'custom' 
+                        ? `Every ${task.recurrence.frequency_months} month${task.recurrence.frequency_months > 1 ? 's' : ''}`
+                        : FREQUENCY_OPTIONS.find(opt => opt.value === task.recurrence?.frequency_type)?.label || 'Unknown'
+                      }
+                    </Text>
                   </View>
                 </View>
               )}
@@ -772,5 +888,54 @@ const styles = StyleSheet.create({
     fontFamily: Typography.labelSmall.fontFamily,
     fontSize: Typography.labelSmall.fontSize,
     color: Colors.textTertiary,
+  },
+  // Recurrence styles
+  recurrenceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  recurrenceOptions: {
+    marginTop: Spacing.sm,
+    gap: Spacing.md,
+  },
+  recurrenceSubLabel: {
+    fontFamily: Typography.labelSmall.fontFamily,
+    fontSize: Typography.labelSmall.fontSize,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  frequencyContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  frequencyButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  frequencyButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  frequencyButtonText: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.textSecondary,
+  },
+  frequencyButtonTextActive: {
+    color: Colors.white,
+  },
+  customFrequencyContainer: {
+    marginTop: Spacing.sm,
+  },
+  moneySavedText: {
+    color: Colors.success,
+    fontWeight: '600',
   },
 }); 

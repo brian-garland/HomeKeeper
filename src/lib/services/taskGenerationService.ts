@@ -1,14 +1,9 @@
-import { Tables, TablesInsert } from '../../types/database.types'
 import { getApplicableTaskTemplates, getSeasonalTaskTemplates, getTaskTemplatesByCategory } from '../models/taskTemplates'
+import * as LocalTemplateService from './localTemplateService'
 import { getCurrentWeather, getBestOutdoorTaskDays } from './weatherService'
 import { UnifiedDataManager, getDataManager } from './dataManager'
-
-// Type aliases
-type Home = Tables<'homes'>
-type Equipment = Tables<'equipment'>
-type Task = Tables<'tasks'>
-type TaskTemplate = Tables<'task_templates'>
-type TaskInsert = TablesInsert<'tasks'>
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import type { Home, Equipment, Task, TaskTemplate, TaskInsert } from '../../types'
 
 export interface TaskGenerationResult {
   success: boolean
@@ -53,6 +48,7 @@ export async function generateIntelligentTasks(
 
     // Generate tasks based on different criteria
     const generatedTasks: Task[] = []
+    const usedTemplateIds = new Set<string>() // Track used templates to prevent duplicates
     const currentMonth = new Date().getMonth() + 1
     const equipmentTypes = equipment?.map(eq => eq.type) || []
 
@@ -63,26 +59,23 @@ export async function generateIntelligentTasks(
       existingTasks || [],
       maxTasksPerCategory
     )
-    generatedTasks.push(...seasonalResult)
+    seasonalResult.forEach(task => {
+      if (task.template_id && !usedTemplateIds.has(task.template_id)) {
+        generatedTasks.push(task)
+        usedTemplateIds.add(task.template_id)
+      }
+    })
 
-    // 2. Generate equipment-based tasks
+    // 2. Generate equipment-specific tasks
     const equipmentResult = await generateEquipmentTasks(
       home,
       equipment || [],
       existingTasks || [],
-      maxTasksPerCategory
+      maxTasksPerCategory,
+      usedTemplateIds // Pass used templates to prevent duplicates
     )
+    // Add all equipment tasks (duplicate prevention already handled inside function)
     generatedTasks.push(...equipmentResult)
-
-    // 3. Generate home-type specific tasks
-    const homeTypeResult = await generateHomeTypeTasks(
-      home,
-      equipmentTypes,
-      currentMonth,
-      existingTasks || [],
-      maxTasksPerCategory
-    )
-    generatedTasks.push(...homeTypeResult)
 
     // 4. Apply weather optimization if enabled
     if (includeWeatherOptimization) {
@@ -93,27 +86,37 @@ export async function generateIntelligentTasks(
       )
     }
 
-    // 5. Apply intelligent scheduling
-    const scheduledTasks = await applyIntelligentScheduling(
-      generatedTasks,
-      home,
-      lookAheadDays,
-      prioritizeOverdue
-    )
+    // 5. Save all generated tasks
+    if (generatedTasks.length > 0) {
+      // Save to AsyncStorage for local homes
+      if (homeId.startsWith('local-')) {
+        await AsyncStorage.setItem('homekeeper_tasks', JSON.stringify(generatedTasks))
+        console.log(`💾 Saved ${generatedTasks.length} tasks to local storage`)
+      } else {
+        // For database homes, create tasks individually
+        for (const task of generatedTasks) {
+          await UnifiedDataManager.createTask(homeId, task)
+        }
+      }
+      console.log(`🔄 Updated DataContext with ${generatedTasks.length} tasks`)
+    }
+
+    console.log(`✅ Generated ${generatedTasks.length} initial tasks`)
 
     return {
       success: true,
-      tasksGenerated: scheduledTasks.length,
-      tasks: scheduledTasks,
+      tasksGenerated: generatedTasks.length,
+      tasks: generatedTasks,
       error: undefined
     }
 
   } catch (error) {
+    console.error('❌ Error generating intelligent tasks:', error)
     return {
       success: false,
       tasksGenerated: 0,
       tasks: [],
-      error: error instanceof Error ? error.message : 'Unknown error in task generation'
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -127,7 +130,11 @@ async function generateSeasonalTasks(
   existingTasks: any[],
   maxTasks: number
 ): Promise<Task[]> {
-  const templatesResult = await getSeasonalTaskTemplates(currentMonth, home.home_type || undefined)
+  const templatesResult = home.id.startsWith('local-')
+    ? await LocalTemplateService.getSeasonalTaskTemplates(currentMonth, home.home_type || undefined)
+    : await getSeasonalTaskTemplates(currentMonth, home.home_type || undefined)
+  
+  console.log(`🌱 Seasonal tasks for month ${currentMonth}: ${templatesResult.success ? templatesResult.data.length : 'ERROR: ' + templatesResult.error}`)
   
   if (!templatesResult.success) {
     return []
@@ -154,133 +161,81 @@ async function generateSeasonalTasks(
 }
 
 /**
- * Enhanced equipment-specific task generation with better intelligence
+ * Generate tasks for specific equipment
  */
 async function generateEquipmentTasks(
   home: Home,
   equipment: Equipment[],
   existingTasks: any[],
-  maxTasks: number
+  maxTasks: number,
+  usedTemplateIds: Set<string>
 ): Promise<Task[]> {
   const tasks: Task[] = []
-  const existingTemplateIds = new Set(existingTasks.map(t => t.template_id))
-  const usedTaskTitles = new Set(existingTasks.map(t => t.title.toLowerCase()))
+  const currentMonth = new Date().getMonth() + 1
 
-  // Sort equipment by maintenance priority (overdue first, then by next service date)
-  const sortedEquipment = equipment.sort((a, b) => {
-    const aNextService = a.next_service_due ? new Date(a.next_service_due) : new Date('2099-12-31')
-    const bNextService = b.next_service_due ? new Date(b.next_service_due) : new Date('2099-12-31')
-    const today = new Date()
+  for (const item of equipment) {
+    // Get templates for this specific equipment
+    const templatesResult = home.id.startsWith('local-')
+      ? await LocalTemplateService.getApplicableTaskTemplates(
+          home.home_type || 'single_family',
+          [item.type],
+          currentMonth
+        )
+      : await getApplicableTaskTemplates(
+          home.home_type || 'single_family',
+          [item.type],
+          currentMonth
+        )
+
+    console.log(`🔍 Equipment: ${item.name} (type: ${item.type}, category: ${item.category})`)
     
-    // Overdue equipment gets highest priority
-    const aOverdue = aNextService < today
-    const bOverdue = bNextService < today
-    
-    if (aOverdue && !bOverdue) return -1
-    if (!aOverdue && bOverdue) return 1
-    
-    // Then sort by next service date
-    return aNextService.getTime() - bNextService.getTime()
-  })
+    if (!templatesResult.success) {
+      console.log(`🔍 Templates found: 0 (error: ${templatesResult.error})`)
+      continue
+    }
 
-  for (const item of sortedEquipment) {
-    if (!item.type || tasks.length >= maxTasks) break
+    console.log(`🔍 Templates found: ${templatesResult.data.length}`)
+    console.log(`🔍 Available templates:`, templatesResult.data.map((t: TaskTemplate) => ({ 
+      title: t.title, 
+      category: t.category, 
+      applies_to: t.applies_to_equipment_types 
+    })))
 
-    // Get templates for this specific equipment type
-    const templatesResult = await getApplicableTaskTemplates(
-      home.home_type || 'single_family',
-      [item.type, item.category], // Include both type and category for better matching
-      new Date().getMonth() + 1
-    )
-
-    if (!templatesResult.success) continue
-
-    // Sort templates by relevance to equipment
-    const sortedTemplates = templatesResult.data.sort((a, b) => {
-      // Prioritize templates that specifically mention this equipment type
-      const aSpecific = a.applies_to_equipment_types?.includes(item.type) ? 1 : 0
-      const bSpecific = b.applies_to_equipment_types?.includes(item.type) ? 1 : 0
+    for (const template of templatesResult.data) {
+      // Create simple template key for duplicate detection (title + category)
+      const templateKey = `${template.title}-${template.category}`
       
-      if (aSpecific !== bSpecific) return bSpecific - aSpecific
-      
-      // Then by frequency (more frequent = higher priority)
-      const aFreq = a.frequency_months || 12
-      const bFreq = b.frequency_months || 12
-      return aFreq - bFreq
-    })
-
-    for (const template of sortedTemplates) {
-      if (existingTemplateIds.has(template.id) || tasks.length >= maxTasks) {
+      // Skip if this template has already been used
+      if (usedTemplateIds.has(templateKey)) {
+        console.log(`🚫 Skipping duplicate template: ${template.title} (${template.category})`)
         continue
       }
 
-      // IMPROVED: Check for duplicate task titles to prevent similar tasks
-      const potentialTitle = (template.title + ` for ${item.name}`).toLowerCase()
-      const baseTitle = template.title.toLowerCase()
-      
-      if (usedTaskTitles.has(potentialTitle) || usedTaskTitles.has(baseTitle)) {
-        console.log(`🚫 Skipping duplicate task: ${template.title}`)
+      // Check if task already exists
+      const existingTask = existingTasks.find(task => 
+        task.title === template.title && 
+        task.equipment_id === item.id
+      )
+
+      if (existingTask) {
+        console.log(`⏭️ Task already exists: ${template.title} for ${item.name}`)
         continue
       }
 
-      // IMPROVED: Better due date calculation with minimum 1 week spacing
+      // Generate the task
       const dueDate = calculateEquipmentDueDate(template, item, tasks.length)
       const task = await createTaskFromTemplate(template, home.id, dueDate, item.id)
-      
       if (task) {
+        task.template_id = templateKey // Use simple key for tracking
         tasks.push(task)
-        existingTemplateIds.add(template.id) // Prevent template reuse
-        usedTaskTitles.add(task.title.toLowerCase()) // Prevent title duplicates
+        usedTemplateIds.add(templateKey) // Mark template as used
+        console.log(`✅ Generated equipment task: ${task.title} for ${item.name}`)
       }
-    }
-  }
 
-  return tasks
-}
-
-/**
- * Generate home-type specific tasks
- */
-async function generateHomeTypeTasks(
-  home: Home,
-  equipmentTypes: string[],
-  currentMonth: number,
-  existingTasks: any[],
-  maxTasks: number
-): Promise<Task[]> {
-  const templatesResult = await getApplicableTaskTemplates(
-    home.home_type || 'single_family',
-    equipmentTypes,
-    currentMonth
-  )
-
-  if (!templatesResult.success) {
-    return []
-  }
-
-  const tasks: Task[] = []
-  const existingTemplateIds = new Set(existingTasks.map(t => t.template_id))
-  const usedTaskTitles = new Set(existingTasks.map(t => t.title.toLowerCase()))
-
-  for (const template of templatesResult.data.slice(0, maxTasks)) {
-    if (existingTemplateIds.has(template.id)) {
-      continue
+      if (tasks.length >= maxTasks) break
     }
 
-    // Check for duplicate task titles
-    const baseTitle = template.title.toLowerCase()
-    if (usedTaskTitles.has(baseTitle)) {
-      console.log(`🚫 Skipping duplicate home task: ${template.title}`)
-      continue
-    }
-
-    const dueDate = calculateHomeDueDate(template, home, tasks.length)
-    const task = await createTaskFromTemplate(template, home.id, dueDate)
-    
-    if (task) {
-      tasks.push(task)
-      usedTaskTitles.add(task.title.toLowerCase())
-    }
+    if (tasks.length >= maxTasks) break
   }
 
   return tasks
@@ -295,26 +250,11 @@ async function createTaskFromTemplate(
   dueDate: string,
   equipmentId?: string
 ): Promise<Task | null> {
-  // Get equipment details if provided
-  let equipmentContext = ''
-  if (equipmentId) {
-    const dataManager = getDataManager(homeId)
-    const equipment = await dataManager.getEquipment(homeId)
-    const targetEquipment = equipment.find((e: Equipment) => e.id === equipmentId)
-    
-    if (targetEquipment) {
-      equipmentContext = ` for ${targetEquipment.name}`
-      if (targetEquipment.location) {
-        equipmentContext += ` (${targetEquipment.location})`
-      }
-    }
-  }
-
   const taskData: TaskInsert = {
     home_id: homeId,
     template_id: template.id,
     equipment_id: equipmentId || undefined,
-    title: template.title + equipmentContext,
+    title: template.title,
     description: enhanceDescriptionWithEquipment(template.description || '', equipmentId ? true : false),
     category: template.category,
     due_date: dueDate,
@@ -322,13 +262,17 @@ async function createTaskFromTemplate(
     difficulty_level: template.difficulty_level !== null ? template.difficulty_level : undefined,
     estimated_duration_minutes: template.estimated_duration_minutes !== null ? template.estimated_duration_minutes : undefined,
     instructions: template.instructions || undefined,
+    money_saved_estimate: template.money_saved_estimate || undefined,
     auto_generated: true,
     weather_dependent: isWeatherDependent(template.category),
     status: 'pending'
   }
 
   // Use unified data manager for consistent task creation
-  return await UnifiedDataManager.createTask(homeId, taskData)
+  const createdTask = await UnifiedDataManager.createTask(homeId, taskData)
+  
+  // Return the task with our extended type
+  return createdTask as Task
 }
 
 /**
@@ -406,16 +350,16 @@ function calculateSeasonalDueDate(template: TaskTemplate, currentMonth: number, 
   const seasonalMonths = template.seasonal_months || []
   
   if (seasonalMonths.includes(currentMonth)) {
-    // IMPROVED: Space seasonal tasks over 6-8 weeks instead of 2 weeks
+    // IMPROVED: Space seasonal tasks over 8-12 weeks instead of immediately
     // This prevents overwhelming users with too many immediate tasks
     const dueDate = new Date()
-    const spacingWeeks = 6 + Math.floor(Math.random() * 3) // 6-8 weeks
+    const spacingWeeks = 8 + Math.floor(Math.random() * 5) // 8-12 weeks
     const spacingDays = spacingWeeks * 7
     
     // Add task index to prevent all tasks from clustering on same dates
-    const indexOffset = taskIndex * 3 // 3 days between each task minimum
+    const indexOffset = taskIndex * 7 // 7 days between each task minimum
     
-    dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * spacingDays) + 7 + indexOffset)
+    dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * spacingDays) + 14 + indexOffset)
     return dueDate.toISOString().split('T')[0]
   }
   
@@ -439,15 +383,15 @@ function calculateSeasonalDueDate(template: TaskTemplate, currentMonth: number, 
  */
 function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment, taskIndex: number = 0): string {
   const today = new Date()
-  const minimumDaysOut = 7 // Never schedule tasks sooner than 1 week
+  const minimumDaysOut = 14 // IMPROVED: Never schedule tasks sooner than 2 weeks
   
-  // If equipment is overdue, make task urgent but not immediate (2-4 weeks)
+  // If equipment is overdue, make task urgent but not immediate (3-6 weeks)
   if (equipment.next_service_due) {
     const nextServiceDate = new Date(equipment.next_service_due)
     if (nextServiceDate < today) {
       const urgentDate = new Date()
-      // Give users 2-4 weeks for overdue equipment + spacing between tasks
-      const urgentDays = 14 + Math.floor(Math.random() * 14) + (taskIndex * 3) // 14-28 days + spacing
+      // Give users 3-6 weeks for overdue equipment + spacing between tasks
+      const urgentDays = 21 + Math.floor(Math.random() * 21) + (taskIndex * 7) // 21-42 days + weekly spacing
       urgentDate.setDate(urgentDate.getDate() + Math.max(urgentDays, minimumDaysOut))
       return urgentDate.toISOString().split('T')[0]
     }
@@ -463,10 +407,10 @@ function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment,
   if (equipment.maintenance_frequency_months) {
     const dueDate = new Date()
     const frequencyDays = equipment.maintenance_frequency_months * 30 // Convert to days
-    // Start at 20% of frequency but never less than 1 week, add spacing between tasks
+    // Start at 25% of frequency but never less than 2 weeks, add spacing between tasks
     const spacedDays = Math.max(
-      Math.floor(frequencyDays * 0.2) + (taskIndex * 7), // 20% of frequency + weekly spacing
-      minimumDaysOut + (taskIndex * 3) // Minimum 1 week + 3 days per task
+      Math.floor(frequencyDays * 0.25) + (taskIndex * 14), // 25% of frequency + bi-weekly spacing
+      minimumDaysOut + (taskIndex * 7) // Minimum 2 weeks + weekly spacing per task
     )
     dueDate.setDate(dueDate.getDate() + spacedDays)
     return dueDate.toISOString().split('T')[0]
@@ -475,38 +419,18 @@ function calculateEquipmentDueDate(template: TaskTemplate, equipment: Equipment,
   // Fall back to template frequency with spacing and minimum timing
   const frequencyMonths = template.frequency_months || 12
   const dueDate = new Date()
-  // Start at 25% of full frequency but ensure minimum spacing
-  const spacingDays = Math.max(
-    Math.floor((frequencyMonths * 30) * 0.25) + (taskIndex * 5), // 25% of frequency + 5 days per task
-    minimumDaysOut + (taskIndex * 3) // Minimum 1 week + 3 days per task
-  )
-  dueDate.setDate(dueDate.getDate() + spacingDays)
-  
-  return dueDate.toISOString().split('T')[0]
-}
-
-/**
- * Calculate due date for home-type tasks
- */
-function calculateHomeDueDate(template: TaskTemplate, home: Home, taskIndex: number = 0): string {
-  const dueDate = new Date()
-  const minimumDaysOut = 7 // Never schedule tasks sooner than 1 week
-  
-  // Use template frequency to determine spacing
-  const frequencyMonths = template.frequency_months || 12
-  
   // Start at 30% of full frequency but ensure minimum spacing
   const spacingDays = Math.max(
-    Math.floor((frequencyMonths * 30) * 0.3) + (taskIndex * 7), // 30% of frequency + weekly spacing
-    minimumDaysOut + (taskIndex * 4) // Minimum 1 week + 4 days per task
+    Math.floor((frequencyMonths * 30) * 0.3) + (taskIndex * 10), // 30% of frequency + 10 days per task
+    minimumDaysOut + (taskIndex * 7) // Minimum 2 weeks + weekly spacing per task
   )
-  
   dueDate.setDate(dueDate.getDate() + spacingDays)
+  
   return dueDate.toISOString().split('T')[0]
 }
 
 /**
- * Optimize task scheduling based on weather
+ * Optimize task scheduling based on weather (IMPROVED to respect original due dates)
  */
 async function optimizeTasksForWeather(
   tasks: Task[],
@@ -520,13 +444,41 @@ async function optimizeTasksForWeather(
   if (!bestOutdoorDaysResult.success) return
 
   const bestDays = bestOutdoorDaysResult.data
-  let bestDayIndex = 0
-
+  
   for (const task of tasks) {
     if (task.weather_dependent && bestDays.length > 0) {
-      // Assign outdoor tasks to best weather days
-      task.due_date = bestDays[bestDayIndex % bestDays.length]
-      bestDayIndex++
+      // IMPROVED: Only suggest weather optimization if original due date is far out
+      const originalDueDate = new Date(task.due_date)
+      const today = new Date()
+      const daysUntilDue = Math.ceil(
+        (originalDueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      
+      // Only optimize if task is more than 2 weeks out
+      // This prevents overriding our carefully spaced due dates with immediate weather windows
+      if (daysUntilDue > 14) {
+        // Find the best weather day that's closest to the original due date
+        const bestDay = bestDays.reduce((closest, day) => {
+          const dayDate = new Date(day)
+          const closestDate = new Date(closest)
+          
+          const dayDiff = Math.abs(dayDate.getTime() - originalDueDate.getTime())
+          const closestDiff = Math.abs(closestDate.getTime() - originalDueDate.getTime())
+          
+          return dayDiff < closestDiff ? day : closest
+        })
+        
+        const bestDayDate = new Date(bestDay)
+        const daysDifference = Math.abs(
+          (bestDayDate.getTime() - originalDueDate.getTime()) / (1000 * 60 * 60 * 24)
+        )
+        
+        // Only use weather day if it's within 7 days of original date
+        if (daysDifference <= 7) {
+          task.due_date = bestDay
+          console.log(`🌤️ Weather-optimized task "${task.title}" from ${task.due_date} to ${bestDay}`)
+        }
+      }
     }
   }
 }
@@ -588,8 +540,10 @@ export async function generateTasksForCategory(
       }
     }
 
-    // Get templates for the category using existing function
-    const templatesResult = await getTaskTemplatesByCategory(category, home.home_type || undefined)
+    // Get templates for the category using unified approach
+    const templatesResult = home.id.startsWith('local-')
+      ? await LocalTemplateService.getTaskTemplatesByCategory(category, home.home_type || undefined)
+      : await getTaskTemplatesByCategory(category, home.home_type || undefined)
     
     if (!templatesResult.success) {
       return {
@@ -604,7 +558,35 @@ export async function generateTasksForCategory(
     const templates = templatesResult.data.slice(0, maxTasks)
     
     for (const template of templates) {
-      const dueDate = calculateHomeDueDate(template, home)
+      // Use equipment due date calculation with a default equipment object
+      const defaultEquipment: Equipment = {
+        id: 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        home_id: homeId,
+        type: 'general',
+        name: 'General',
+        category: template.category,
+        brand: null,
+        model: null,
+        serial_number: null,
+        install_date: null,
+        warranty_expires: null,
+        manual_url: null,
+        notes: null,
+        active: true,
+        next_service_due: null,
+        last_service_date: null,
+        location: null,
+        maintenance_frequency_months: null,
+        needs_attention: null,
+        photo_urls: null,
+        purchase_date: null,
+        room: null,
+        specifications: null
+      }
+      
+      const dueDate = calculateEquipmentDueDate(template, defaultEquipment)
       const task = await createTaskFromTemplate(template, homeId, dueDate)
       
       if (task) {

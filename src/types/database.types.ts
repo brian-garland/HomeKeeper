@@ -484,8 +484,10 @@ export type Database = {
           home_id: string
           id: string
           instructions: Json | null
+          money_saved_estimate: number | null
           notes: string | null
           priority: number | null
+          recurrence: Json | null
           reschedule_count: number | null
           status: string | null
           tags: string[] | null
@@ -508,8 +510,10 @@ export type Database = {
           home_id: string
           id?: string
           instructions?: Json | null
+          money_saved_estimate?: number | null
           notes?: string | null
           priority?: number | null
+          recurrence?: Json | null
           reschedule_count?: number | null
           status?: string | null
           tags?: string[] | null
@@ -532,8 +536,10 @@ export type Database = {
           home_id?: string
           id?: string
           instructions?: Json | null
+          money_saved_estimate?: number | null
           notes?: string | null
           priority?: number | null
+          recurrence?: Json | null
           reschedule_count?: number | null
           status?: string | null
           tags?: string[] | null

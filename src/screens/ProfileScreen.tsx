@@ -14,9 +14,11 @@ import { Spacing } from '../theme/spacing';
 import { PrimaryButton } from '../components/buttons/PrimaryButton';
 import { SecondaryButton } from '../components/buttons/SecondaryButton';
 import { Icon } from '../components/icons/Icon';
+import DebugScreen from './DebugScreen';
 
 export const ProfileScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   const handleResetOnboarding = async () => {
     Alert.alert(
@@ -71,9 +73,26 @@ export const ProfileScreen: React.FC = () => {
       title: 'Development',
       items: [
         { icon: 'settings', label: 'Reset Onboarding', action: handleResetOnboarding },
+        { icon: 'bug', label: 'Debug Screen', action: () => setShowDebug(true) },
       ],
     },
   ];
+
+  if (showDebug) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
+          <SecondaryButton
+            title="← Back"
+            onPress={() => setShowDebug(false)}
+            style={{ marginRight: 16 }}
+          />
+          <Text style={Typography.titleLarge}>Debug Screen</Text>
+        </View>
+        <DebugScreen />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

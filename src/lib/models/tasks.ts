@@ -1,10 +1,5 @@
 import { supabase } from '../supabase'
-import { Tables, TablesInsert, TablesUpdate } from '../../types/database.types'
-
-// Type aliases for better readability
-type Task = Tables<'tasks'>
-type TaskInsert = TablesInsert<'tasks'>
-type TaskUpdate = TablesUpdate<'tasks'>
+import type { Task, TaskInsert, TaskUpdate } from '../../types'
 
 // Result type for consistent error handling
 export type TaskResult<T> = {
@@ -39,7 +34,7 @@ export async function createTask(taskData: TaskInsert): Promise<TaskResult<Task>
 
     return {
       success: true,
-      data
+      data: data as Task
     }
   } catch (error) {
     return {

@@ -100,13 +100,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
             )}
           </View>
           
-          {/* Equipment Badge */}
-          {equipment && (
+          {/* Equipment Badge - Only show for equipment-specific tasks */}
+          {equipment && task.equipment_id && (
             <View style={styles.equipmentBadge}>
               <Icon 
                 name={getEquipmentIcon(equipment.category)} 
                 size="xs" 
-                color={Colors.primary} 
+                color={Colors.textSecondary} 
               />
               <Text style={styles.equipmentText}>
                 {equipment.name}
@@ -150,6 +150,19 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
               {task.estimated_duration_minutes || 'N/A'} min
             </Text>
           </View>
+          {/* Money Saved Display */}
+          {task.money_saved_estimate && task.money_saved_estimate > 0 && (
+            <View style={styles.metaItem}>
+              <Icon name="check" size="sm" color={Colors.success} />
+              <Text style={[
+                styles.metaText,
+                styles.moneySavedText,
+                isCompleted && styles.metaTextCompleted
+              ]}>
+                ${task.money_saved_estimate.toFixed(0)} saved
+              </Text>
+            </View>
+          )}
         </View>
         
         <View style={styles.metaRow}>
@@ -758,5 +771,9 @@ const styles = StyleSheet.create({
   },
   equipmentFilterTextActive: {
     color: Colors.white,
+  },
+  moneySavedText: {
+    color: Colors.success,
+    fontWeight: '600',
   },
 }); 
