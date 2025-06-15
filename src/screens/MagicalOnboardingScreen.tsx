@@ -361,10 +361,11 @@ const PersonalizationStep: React.FC<{ onNext: (preferences: any) => void }> = ({
 };
 
 // Calendar Reveal Component
-const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+const CalendarRevealStep: React.FC<{ onComplete: () => void; onboardingData: any }> = ({ onComplete, onboardingData }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.8));
-  const { tasks } = useDataContext();
+  const [isGenerating, setIsGenerating] = useState(true);
+  const { tasks, setTasks, setEquipment, setHomes } = useDataContext();
 
   useEffect(() => {
     Animated.parallel([
@@ -380,7 +381,99 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Generate tasks immediately when this step is reached
+    generateTasksForOnboarding();
   }, []);
+
+  const generateTasksForOnboarding = async () => {
+    try {
+      console.log('🎯 Step 5: Starting task generation with data:', onboardingData);
+      
+      // First, geocode the address to get coordinates
+      let latitude: number | undefined;
+      let longitude: number | undefined;
+      
+      if (onboardingData.address) {
+        console.log('🗺️ Geocoding address:', onboardingData.address);
+        const { geocodeAddress } = await import('../lib/services/geocodingService');
+        const geocodingResult = await geocodeAddress(onboardingData.address);
+        
+        if (geocodingResult.success) {
+          latitude = geocodingResult.data.latitude;
+          longitude = geocodingResult.data.longitude;
+          console.log(`✅ Address geocoded to: ${latitude}, ${longitude}`);
+        } else {
+          console.warn('Geocoding failed:', geocodingResult.error);
+        }
+      }
+      
+      // Create local home object
+      const localHome = {
+        id: `local-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        owner_id: null,
+        name: 'My Home',
+        address: onboardingData.address || '',
+        city: null,
+        state: null,
+        zip_code: null,
+        country: 'United States',
+        latitude: latitude || null,
+        longitude: longitude || null,
+        location: null,
+        home_type: onboardingData.characteristics?.homeType || 'single_family',
+        year_built: onboardingData.characteristics?.yearBuilt || null,
+        square_footage: onboardingData.characteristics?.squareFootage || null,
+        lot_size: null,
+        bedrooms: null,
+        bathrooms: null,
+        floors: 1,
+        heating_type: null,
+        cooling_type: null,
+        water_heater_type: null,
+        maintenance_season_start: 3,
+        high_maintenance_mode: false,
+        photo_url: null,
+        notes: null,
+        active: true,
+        is_local: true,
+      };
+
+      // Clear existing data and store new home
+      const AsyncStorage = await import('@react-native-async-storage/async-storage');
+      await AsyncStorage.default.removeItem('homekeeper_homes');
+      await AsyncStorage.default.removeItem('homekeeper_tasks');
+      await AsyncStorage.default.removeItem('homekeeper_equipment');
+      await AsyncStorage.default.setItem('homekeeper_local_home', JSON.stringify(localHome));
+      await AsyncStorage.default.setItem('homekeeper_onboarding_complete', 'true');
+
+      // Generate equipment
+      const { getDataManager } = await import('../lib/services/dataManager');
+      const dataManager = getDataManager(localHome.id);
+      const defaultEquipment = await dataManager.getEquipment(localHome.id);
+      
+      await AsyncStorage.default.setItem('homekeeper_equipment', JSON.stringify(defaultEquipment));
+      setEquipment(defaultEquipment);
+      setHomes([localHome as any]);
+
+      // Generate tasks
+      const { generateIntelligentTasks } = await import('../lib/services/taskGenerationService');
+      const tasksResult = await generateIntelligentTasks(localHome.id);
+
+      if (tasksResult.success && tasksResult.tasks.length > 0) {
+        await AsyncStorage.default.setItem('homekeeper_tasks', JSON.stringify(tasksResult.tasks));
+        setTasks(tasksResult.tasks);
+        console.log(`✅ Generated ${tasksResult.tasks.length} tasks for Step 5`);
+      }
+
+      setIsGenerating(false);
+    } catch (error) {
+      console.error('Error generating tasks in Step 5:', error);
+      setIsGenerating(false);
+    }
+  };
 
   // Get the first 3 tasks to show in preview
   const previewTasks = tasks.slice(0, 3);
@@ -424,8 +517,8 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
     }
   };
 
-  // Show loading state if no tasks are available yet
-  if (tasks.length === 0) {
+  // Show loading state while generating tasks
+  if (isGenerating || tasks.length === 0) {
     return (
       <View style={styles.stepContainer}>
         <View style={styles.revealContainer}>
@@ -525,141 +618,11 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   const handleComplete = async () => {
     try {
-      console.log('Onboarding completed with data:', onboardingData);
-      
-      // First, geocode the address to get coordinates
-      let latitude: number | undefined;
-      let longitude: number | undefined;
-      
-      if (onboardingData.address) {
-        console.log('🗺️ Geocoding address:', onboardingData.address);
-        const geocodingResult = await geocodeAddress(onboardingData.address);
-        
-        if (geocodingResult.success) {
-          latitude = geocodingResult.data.latitude;
-          longitude = geocodingResult.data.longitude;
-          console.log(`✅ Address geocoded to: ${latitude}, ${longitude}`);
-        } else {
-          console.warn('Geocoding failed:', geocodingResult.error);
-          // Continue without coordinates - task generation will fall back to mock weather
-        }
-      }
-      
-      // USER-FIRST APPROACH: Provide immediate value, authenticate later
-      console.log('🏠 Creating local home profile for immediate value...');
-      
-      // Create local home object that works immediately
-      const localHome = {
-        id: `local-${Date.now()}`, // Temporary local ID
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        owner_id: null,
-        name: 'My Home',
-        address: onboardingData.address || '',
-        city: null,
-        state: null,
-        zip_code: null,
-        country: 'United States',
-        latitude: latitude || null,
-        longitude: longitude || null,
-        location: null,
-        home_type: onboardingData.characteristics?.homeType || 'single_family',
-        year_built: onboardingData.characteristics?.yearBuilt || null,
-        square_footage: onboardingData.characteristics?.squareFootage || null,
-        lot_size: null,
-        bedrooms: null,
-        bathrooms: null,
-        floors: 1,
-        heating_type: null,
-        cooling_type: null,
-        water_heater_type: null,
-        maintenance_season_start: 3,
-        high_maintenance_mode: false,
-        photo_url: null,
-        notes: null,
-        active: true,
-        is_local: true, // Flag to indicate this is a local-only home
-      };
-
-      console.log('✅ Local home created:', localHome);
-
-      // Clear any existing home data to prevent conflicts
-      await AsyncStorage.removeItem('homekeeper_homes');
-      await AsyncStorage.removeItem('homekeeper_tasks');
-      await AsyncStorage.removeItem('homekeeper_equipment');
-      
-      // Store locally FIRST so task generation can find it
-      await AsyncStorage.setItem('homekeeper_local_home', JSON.stringify(localHome));
-      await AsyncStorage.setItem('homekeeper_onboarding_complete', 'true');
-
-      // CRITICAL: Generate default equipment BEFORE generating tasks
-      console.log('📦 Generating default equipment for home type:', localHome.home_type);
-      const { getDataManager } = await import('../lib/services/dataManager');
-      const dataManager = getDataManager(localHome.id);
-      const defaultEquipment = await dataManager.getEquipment(localHome.id);
-      
-      // Save equipment to AsyncStorage so it persists
-      await AsyncStorage.setItem('homekeeper_equipment', JSON.stringify(defaultEquipment));
-      console.log(`📦 Generated and saved ${defaultEquipment.length} default equipment items`);
-      
-      // Update DataContext so equipment appears immediately in UI
-      setEquipment(defaultEquipment);
-      console.log(`🔄 Updated DataContext with ${defaultEquipment.length} equipment items`);
-      
-      // Update DataContext with new home data (cast to correct type)
-      setHomes([localHome as any]);
-      console.log(`🏠 Updated DataContext with new home data`);
-
-      // Generate intelligent tasks using real weather data (now with equipment context)
-      const { generateIntelligentTasks } = await import('../lib/services/taskGenerationService');
-      const tasksResult = await generateIntelligentTasks(localHome.id);
-
-      if (tasksResult.success) {
-        console.log(`✅ Generated ${tasksResult.tasksGenerated} initial tasks`);
-        
-        // Save generated tasks to AsyncStorage for immediate access
-        if (tasksResult.tasks.length > 0) {
-          await AsyncStorage.setItem('homekeeper_tasks', JSON.stringify(tasksResult.tasks));
-          console.log(`💾 Saved ${tasksResult.tasks.length} tasks to local storage`);
-          
-          // Update DataContext state so tasks appear immediately in UI
-          setTasks(tasksResult.tasks);
-          console.log(`🔄 Updated DataContext with ${tasksResult.tasks.length} tasks`);
-        }
-        
-        // Show success message emphasizing immediate value
-        Alert.alert(
-          '🎉 Your Home is Ready!',
-          `We've set up your home with ${defaultEquipment.length} equipment items and created your personalized maintenance schedule with ${tasksResult.tasksGenerated} tasks. You can start using HomeKeeper immediately!`,
-          [
-            {
-              text: 'Get Started',
-                             onPress: () => {
-                 console.log('✅ Onboarding completed successfully - immediate value provided');
-                 onComplete?.();
-               },
-            },
-          ]
-        );
-      } else {
-        console.warn('⚠️ Task generation failed:', tasksResult.error);
-        // Still allow user to proceed - they got geocoding and weather value
-        Alert.alert(
-          '🏠 Your Home is Set Up!',
-          'We\'ve set up your home profile. You can start adding tasks and exploring HomeKeeper!',
-          [
-            {
-              text: 'Continue',
-                             onPress: () => {
-                 onComplete?.();
-               },
-            },
-          ]
-        );
-      }
+      console.log('✅ Onboarding completed successfully - immediate value provided');
+      onComplete?.();
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      Alert.alert('Setup Error', 'There was an issue setting up your home. Please try again.');
+      onComplete?.();
     }
   };
 
@@ -704,7 +667,7 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
               <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
             )}
             {currentStep === 4 && (
-              <CalendarRevealStep onComplete={handleComplete} />
+              <CalendarRevealStep onComplete={handleComplete} onboardingData={onboardingData} />
             )}
           </View>
         </View>
