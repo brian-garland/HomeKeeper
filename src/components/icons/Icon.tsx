@@ -25,7 +25,9 @@ export type IconName =
   | 'settings' | 'help' | 'logout' | 'back' | 'forward' | 'up' | 'down'
   | 'left' | 'right' | 'close' | 'menu' | 'more' | 'share' | 'favorite'
   // User
-  | 'user' | 'users' | 'contact' | 'phone' | 'email' | 'location';
+  | 'user' | 'users' | 'contact' | 'phone' | 'email' | 'location'
+  // Money
+  | 'dollar' | 'money';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 
@@ -128,6 +130,10 @@ export const Icon: React.FC<IconProps> = ({
       case 'phone': return <MaterialIcons name="phone" size={iconSize} color={color} style={style} />;
       case 'email': return <MaterialIcons name="email" size={iconSize} color={color} style={style} />;
       case 'location': return <MaterialIcons name="location-on" size={iconSize} color={color} style={style} />;
+      
+      // Money
+      case 'dollar': return <MaterialCommunityIcons name="cash-multiple" size={iconSize} color={color} style={style} />;
+      case 'money': return <MaterialCommunityIcons name="cash" size={iconSize} color={color} style={style} />;
       
       default:
         console.warn(`Icon "${name}" not found`);

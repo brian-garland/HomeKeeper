@@ -32,7 +32,7 @@ export const ProfileScreen: React.FC = () => {
           onPress: async () => {
             setIsLoading(true);
             try {
-              await AsyncStorage.removeItem('hasLaunched');
+              await AsyncStorage.removeItem('hasCompletedOnboarding');
               Alert.alert('Success', 'Onboarding has been reset. Restart the app to see the welcome flow.');
             } catch (error) {
               Alert.alert('Error', 'Failed to reset onboarding.');

@@ -5,10 +5,17 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(js|jsx)$': 'babel-jest',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-native|@react-native|@testing-library|react-clone-referenced-element|@react-native-community|react-navigation)/)',
+  ],
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Mock static assets
+    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': 'identity-obj-proxy',
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -24,4 +31,12 @@ module.exports = {
     },
   },
   testTimeout: 10000, // 10 seconds timeout for async tests
+  globals: {
+    'ts-jest': {
+      useESM: false,
+      tsconfig: {
+        jsx: 'react-jsx',
+      },
+    },
+  },
 }; 

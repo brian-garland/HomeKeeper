@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
+import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MagicalOnboardingScreen } from '../screens/MagicalOnboardingScreen';
 import { TabNavigator } from './TabNavigator';
-import { DataProvider } from '../contexts/DataContext';
 
-export type RootStackParamList = {
-  Onboarding: undefined;
-  MainApp: undefined;
-};
-
-const Stack = createStackNavigator<RootStackParamList>();
-
-export const AppNavigator: React.FC = () => {
+export default function AppNavigator() {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -21,43 +12,33 @@ export const AppNavigator: React.FC = () => {
 
   const checkFirstLaunch = async () => {
     try {
-      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-      if (hasLaunched === null) {
-        setIsFirstLaunch(true);
-      } else {
-        setIsFirstLaunch(false);
-      }
+      const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
+      setIsFirstLaunch(hasCompletedOnboarding === null);
     } catch (error) {
       console.error('Error checking first launch:', error);
-      setIsFirstLaunch(true); // Default to showing onboarding on error
+      setIsFirstLaunch(true); // Default to showing onboarding if there's an error
     }
   };
 
-  const completeOnboarding = async () => {
+  const handleOnboardingComplete = async () => {
     try {
-      await AsyncStorage.setItem('hasLaunched', 'true');
+      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
       setIsFirstLaunch(false);
     } catch (error) {
       console.error('Error saving onboarding completion:', error);
+      // Still proceed to main app even if saving fails
+      setIsFirstLaunch(false);
     }
   };
 
   // Show loading state while checking first launch
   if (isFirstLaunch === null) {
-    return null; // Could show a splash screen here
+    return null; // Or a loading screen
   }
 
-  return (
-    <DataProvider>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isFirstLaunch ? (
-          <Stack.Screen name="Onboarding">
-            {() => <MagicalOnboardingScreen onComplete={completeOnboarding} />}
-          </Stack.Screen>
-        ) : (
-          <Stack.Screen name="MainApp" component={TabNavigator} />
-        )}
-      </Stack.Navigator>
-    </DataProvider>
+  return isFirstLaunch ? (
+    <MagicalOnboardingScreen onComplete={handleOnboardingComplete} />
+  ) : (
+    <TabNavigator />
   );
-}; 
+} 

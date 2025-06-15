@@ -77,12 +77,12 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
             <Text style={styles.trustText}>Secure</Text>
           </View>
           <View style={styles.trustItem}>
-            <Icon name="users" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Community</Text>
+            <Icon name="dollar" size="sm" color={Colors.primary} />
+            <Text style={styles.trustText}>Save Money</Text>
           </View>
           <View style={styles.trustItem}>
             <Icon name="favorite" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Expert Tips</Text>
+            <Text style={styles.trustText}>Confidence</Text>
           </View>
         </View>
       </View>
@@ -182,7 +182,13 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
         </Text>
       </View>
       
-      <ScrollView style={styles.characteristicsForm} showsVerticalScrollIndicator={false}>
+      <KeyboardAwareScrollView 
+        style={styles.characteristicsForm} 
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid={true}
+        extraScrollHeight={50}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.formSection}>
           <Text style={styles.formLabel}>Home Type</Text>
           <View style={styles.homeTypeGrid}>
@@ -225,7 +231,7 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
             style={styles.formInput}
           />
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
       
       <PrimaryButton
         title="Continue"
@@ -715,6 +721,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    paddingTop: Spacing.massive, // 64px - Maximum generous spacing for perfect visual balance
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -799,7 +806,8 @@ const styles = StyleSheet.create({
   },
   trustIndicators: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
     width: '100%',
   },
   trustItem: {
