@@ -313,8 +313,11 @@ export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ ro
               <TouchableOpacity 
                 style={styles.viewAllTasksButton}
                 onPress={() => navigation.navigate('Tasks', { 
-                  equipmentFilter: equipment.id,
-                  equipmentName: equipment.name 
+                  screen: 'TasksList',
+                  params: {
+                    equipmentFilter: equipment.id,
+                    equipmentName: equipment.name 
+                  }
                 })}
               >
                 <Text style={styles.viewAllTasksText}>

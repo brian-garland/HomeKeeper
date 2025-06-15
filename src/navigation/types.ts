@@ -34,7 +34,11 @@ export type OnboardingStackParamList = {
 };
 
 export type TaskStackParamList = {
-  TasksList: { filter?: 'all' | 'pending' | 'overdue' | 'completed' };
+  TasksList: { 
+    filter?: 'all' | 'pending' | 'overdue' | 'completed';
+    equipmentFilter?: string;
+    equipmentName?: string;
+  };
   AddTask: undefined;
   TaskDetail: { task: any };
 }; 

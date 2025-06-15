@@ -174,8 +174,11 @@ export const EquipmentScreen: React.FC = () => {
   const handleSchedulePress = (equipment: any) => {
     // Navigate to tasks screen filtered by this equipment
     (navigation as any).navigate('Tasks', { 
-      equipmentFilter: equipment.id,
-      equipmentName: equipment.name 
+      screen: 'TasksList',
+      params: {
+        equipmentFilter: equipment.id,
+        equipmentName: equipment.name 
+      }
     })
   }
 

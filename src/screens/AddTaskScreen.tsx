@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Icon } from '../components/icons/Icon';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
@@ -55,19 +55,36 @@ const difficulties = [
 
 export const AddTaskScreen: React.FC = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const { addTask, homes } = useDataContext();
   const { equipment } = useEquipment();
   const [loading, setLoading] = useState(false);
   
+  // Get equipmentId from navigation params if available
+  const params = route.params as { equipmentId?: string } | undefined;
+  const specificEquipmentId = params?.equipmentId;
+  const specificEquipment = specificEquipmentId 
+    ? equipment.find(eq => eq.id === specificEquipmentId)
+    : null;
+
+
+  
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
-    category: 'general',
+    category: specificEquipment?.category || 'general',
     priority: 2,
     difficulty_level: 1,
     estimated_duration_minutes: 30,
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
   });
+
+  // Update category when specific equipment is found (handles timing issues)
+  React.useEffect(() => {
+    if (specificEquipment && specificEquipment.category && formData.category === 'general') {
+      setFormData(prev => ({ ...prev, category: specificEquipment.category }));
+    }
+  }, [specificEquipment, formData.category]);
 
   const findMatchingEquipment = (taskCategory: string) => {
     if (!equipment || equipment.length === 0) {
@@ -104,18 +121,19 @@ export const AddTaskScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      const matchingEquipment = findMatchingEquipment(formData.category);
-      console.log('💾 Creating task with equipment:', matchingEquipment ? matchingEquipment.name : 'No equipment');
+      // Use specific equipment if navigated from equipment detail, otherwise try to find matching equipment
+      const targetEquipment = specificEquipment || findMatchingEquipment(formData.category);
+      console.log('💾 Creating task with equipment:', targetEquipment ? targetEquipment.name : 'No equipment');
       
       const newTask = {
         id: `demo-task-${Date.now()}`,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         home_id: homes[0]?.id || 'demo-home-1',
-        equipment_id: matchingEquipment?.id || null,
+        equipment_id: targetEquipment?.id || null,
         template_id: null,
-        title: formData.title + (matchingEquipment ? ` for ${matchingEquipment.name}` : ''),
-        description: formData.description + (matchingEquipment && matchingEquipment.location ? ` (${matchingEquipment.location})` : ''),
+        title: formData.title, // Don't automatically append equipment name - let user control this
+        description: formData.description + (targetEquipment && targetEquipment.location ? ` (${targetEquipment.location})` : ''),
         category: formData.category,
         due_date: formData.due_date,
         priority: formData.priority,
@@ -129,17 +147,35 @@ export const AddTaskScreen: React.FC = () => {
         reschedule_count: 0,
         weather_dependent: false,
         notes: null,
-        tags: []
+        tags: [],
+        money_saved_estimate: null,
+        recurrence: null
       };
 
       addTask(newTask);
       
-      const successMessage = matchingEquipment 
-        ? `Task created and associated with ${matchingEquipment.name}!`
+      const successMessage = targetEquipment 
+        ? `Task created and associated with ${targetEquipment.name}!`
         : 'Task created successfully!';
         
       Alert.alert('Success', successMessage, [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { 
+          text: 'OK', 
+          onPress: () => {
+            // If we came from equipment detail via Tasks navigation, go back to Equipment
+            // and reset Tasks stack to TasksList
+            if (specificEquipmentId) {
+              // Reset Tasks stack to TasksList before navigating to Equipment
+              (navigation as any).reset({
+                index: 0,
+                routes: [{ name: 'TasksList' }],
+              });
+              (navigation as any).navigate('Equipment');
+            } else {
+              navigation.goBack();
+            }
+          }
+        }
       ]);
     } catch (error) {
       console.error('Error creating task:', error);
@@ -163,6 +199,16 @@ export const AddTaskScreen: React.FC = () => {
       extraScrollHeight={20}
       contentContainerStyle={styles.contentContainer}
     >
+        {/* Equipment Context (if applicable) */}
+        {specificEquipment && (
+          <View style={styles.equipmentContext}>
+            <Icon name="equipment" size="sm" color={Colors.primary} />
+            <Text style={styles.equipmentContextText}>
+              Creating task for: <Text style={styles.equipmentName}>{specificEquipment.name}</Text>
+            </Text>
+          </View>
+        )}
+
         {/* Title Input */}
         <View style={styles.section}>
           <Text style={styles.label}>Task Title *</Text>
@@ -170,7 +216,10 @@ export const AddTaskScreen: React.FC = () => {
             style={styles.textInput}
             value={formData.title}
             onChangeText={(text) => updateFormData('title', text)}
-            placeholder="Enter task title"
+            placeholder={specificEquipment 
+              ? `e.g., "Check for leaks" or "Inspect ${specificEquipment.name}"`
+              : "Enter task title"
+            }
             placeholderTextColor={Colors.textTertiary}
           />
         </View>
@@ -311,7 +360,20 @@ export const AddTaskScreen: React.FC = () => {
         <View style={styles.actions}>
           <SecondaryButton
             title="Cancel"
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              // If we came from equipment detail via Tasks navigation, go back to Equipment
+              // and reset Tasks stack to TasksList
+              if (specificEquipmentId) {
+                // Reset Tasks stack to TasksList before navigating to Equipment
+                (navigation as any).reset({
+                  index: 0,
+                  routes: [{ name: 'TasksList' }],
+                });
+                (navigation as any).navigate('Equipment');
+              } else {
+                navigation.goBack();
+              }
+            }}
             style={styles.cancelButton}
           />
           <PrimaryButton
@@ -461,5 +523,27 @@ const styles = StyleSheet.create({
   },
   keyboardSpacer: {
     height: 200, // Extra space to ensure content is scrollable above keyboard
+  },
+  equipmentContext: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary + '10',
+    padding: Spacing.md,
+    borderRadius: 8,
+    marginBottom: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.primary + '30',
+  },
+  equipmentContextText: {
+    fontFamily: Typography.bodyMedium.fontFamily,
+    fontSize: Typography.bodyMedium.fontSize,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.sm,
+  },
+  equipmentName: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.primary,
+    fontWeight: '600',
   },
 }); 

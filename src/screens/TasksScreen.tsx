@@ -208,9 +208,18 @@ export const TasksScreen: React.FC = () => {
 
   // Set initial filter from route params
   useEffect(() => {
-    const params = route.params as { filter?: 'all' | 'open' | 'done' | 'overdue' } | undefined;
+    const params = route.params as { 
+      filter?: 'all' | 'open' | 'done' | 'overdue';
+      equipmentFilter?: string;
+      equipmentName?: string;
+    } | undefined;
+    
     if (params?.filter) {
       setFilter(params.filter);
+    }
+    
+    if (params?.equipmentFilter) {
+      setEquipmentFilter(params.equipmentFilter);
     }
   }, [route.params]);
 
