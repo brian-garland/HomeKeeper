@@ -16,9 +16,7 @@ import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
-import { generateIntelligentTasks } from '../lib/services/taskGenerationService';
 import { getCurrentWeather } from '../lib/services/weatherService';
-import { Alert } from 'react-native';
 
 interface QuickStat {
   id: string;
@@ -319,48 +317,7 @@ export const DashboardScreen: React.FC = () => {
     }
   };
 
-  const handleGenerateIntelligentTasks = async () => {
-    if (homes.length === 0) {
-      Alert.alert('No Home Found', 'Please complete onboarding first to set up your home.');
-      return;
-    }
 
-    const homeId = homes[0].id; // Use the first home
-    Alert.alert(
-      'Generate Intelligent Tasks',
-      `This will generate personalized maintenance tasks for your home. This is a test feature to verify the intelligent task generation system is working.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Generate',
-          onPress: async () => {
-            try {
-              console.log('🧠 Starting intelligent task generation for home:', homeId);
-              const result = await generateIntelligentTasks(homeId, {
-                includeWeatherOptimization: true,
-                maxTasksPerCategory: 3,
-                prioritizeOverdue: true,
-                lookAheadDays: 30
-              });
-
-              if (result.success) {
-                Alert.alert(
-                  'Tasks Generated! 🎉',
-                  `Successfully generated ${result.tasksGenerated} intelligent tasks spread over the coming weeks. Check the Tasks tab to see your personalized maintenance schedule!`,
-                  [{ text: 'View Tasks', onPress: () => (navigation as any).navigate('Tasks') }]
-                );
-              } else {
-                Alert.alert('Generation Failed', result.error || 'Could not generate tasks. Please try again.');
-              }
-            } catch (error) {
-              console.error('Task generation error:', error);
-              Alert.alert('Error', 'An unexpected error occurred during task generation.');
-            }
-          }
-        }
-      ]
-    );
-  };
 
   return (
     <ScrollView 
@@ -399,7 +356,7 @@ export const DashboardScreen: React.FC = () => {
 
       {/* Intelligence Dashboard */}
       <View style={styles.statsSection}>
-        <Text style={styles.sectionTitle}>Intelligence Dashboard</Text>
+        <Text style={styles.sectionTitle}>Your Home Today</Text>
         <View style={styles.statsGrid}>
           {quickStats.map((stat) => (
             <TouchableOpacity 
@@ -422,24 +379,7 @@ export const DashboardScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Quick Actions */}
-      <View style={styles.actionsSection}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionButtons}>
-          <PrimaryButton
-            title="Add Task"
-            onPress={() => (navigation as any).navigate('Tasks', { screen: 'AddTask' })}
-            size="small"
-            style={styles.actionButton}
-          />
-          <SecondaryButton
-            title="Generate Smart Tasks"
-            onPress={handleGenerateIntelligentTasks}
-            size="small"
-            style={styles.actionButton}
-          />
-        </View>
-      </View>
+
 
       {/* Recent Activity */}
       <View style={styles.activitySection}>
@@ -600,17 +540,7 @@ const styles = StyleSheet.create({
     color: Colors.success,
     marginTop: Spacing.xs,
   },
-  actionsSection: {
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
-  actionButton: {
-    flex: 1,
-  },
+
   activitySection: {
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
