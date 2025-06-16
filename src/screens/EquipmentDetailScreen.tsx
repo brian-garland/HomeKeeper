@@ -55,10 +55,31 @@ export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ ro
     const today = new Date()
     const nextService = equipment.next_service_due ? new Date(equipment.next_service_due) : null
     
+    // Check for overdue tasks first
+    const overdueTasks = associatedTasks.filter(task => 
+      task.due_date && new Date(task.due_date) < today
+    )
+    
+    if (overdueTasks.length > 0) {
+      return Colors.error // Has overdue tasks
+    }
+    
+    // Task-aware logic: Check for upcoming tasks
+    const upcomingTasks = associatedTasks.filter(task => 
+      task.due_date && 
+      new Date(task.due_date) >= today && 
+      (new Date(task.due_date).getTime() - today.getTime()) < (30 * 24 * 60 * 60 * 1000)
+    )
+    
+    if (upcomingTasks.length > 0) {
+      return Colors.info // User already knows - task exists (scheduled)
+    }
+    
+    // Check equipment service dates ONLY if no tasks exist
     if (nextService && nextService < today) {
-      return Colors.error // Overdue
+      return Colors.error // Equipment service overdue, no active task
     } else if (nextService && (nextService.getTime() - today.getTime()) < (30 * 24 * 60 * 60 * 1000)) {
-      return Colors.warning // Due within 30 days
+      return Colors.warning // Equipment needs attention, no active task
     } else {
       return Colors.success // All good
     }
@@ -68,6 +89,35 @@ export const EquipmentDetailScreen: React.FC<EquipmentDetailScreenProps> = ({ ro
     const today = new Date()
     const nextService = equipment.next_service_due ? new Date(equipment.next_service_due) : null
     
+    // Check for overdue tasks first
+    const overdueTasks = associatedTasks.filter(task => 
+      task.due_date && new Date(task.due_date) < today
+    )
+    
+    if (overdueTasks.length > 0) {
+      const oldestOverdue = overdueTasks.sort((a, b) => 
+        new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+      )[0]
+      const daysOverdue = Math.ceil((today.getTime() - new Date(oldestOverdue.due_date).getTime()) / (24 * 60 * 60 * 1000))
+      return `${overdueTasks.length} task${overdueTasks.length > 1 ? 's' : ''} overdue (${daysOverdue} days)`
+    }
+    
+    // Task-aware logic: Check for upcoming tasks (show as scheduled)
+    const upcomingTasks = associatedTasks.filter(task => 
+      task.due_date && 
+      new Date(task.due_date) >= today && 
+      (new Date(task.due_date).getTime() - today.getTime()) < (30 * 24 * 60 * 60 * 1000)
+    )
+    
+    if (upcomingTasks.length > 0) {
+      const nextTask = upcomingTasks.sort((a, b) => 
+        new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+      )[0]
+      const daysUntil = Math.ceil((new Date(nextTask.due_date).getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+      return `Task scheduled in ${daysUntil} days`
+    }
+    
+    // Check equipment service dates ONLY if no tasks exist
     if (!nextService) return 'No service scheduled'
     if (nextService < today) return 'Service overdue'
     

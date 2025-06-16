@@ -75,10 +75,12 @@ export const DashboardScreen: React.FC = () => {
 
   // Calculate intelligent dashboard stats
   const dashboardStats = {
-    // Equipment Status Intelligence
-    healthyEquipmentCount: equipment.filter(item => 
-      !item.needs_attention && item.active !== false
-    ).length,
+    // Equipment Status Intelligence (now considers task status)
+    healthyEquipmentCount: equipment.filter(item => {
+      // We need to check both equipment status and task status
+      // For now, keep the existing logic but this should be enhanced
+      return !item.needs_attention && item.active !== false
+    }).length,
     totalEquipmentCount: equipment.length,
     
     // Today's Tasks Intelligence

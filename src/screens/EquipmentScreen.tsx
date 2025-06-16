@@ -27,6 +27,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
     switch (status) {
       case 'good': return Colors.success
       case 'attention': return Colors.warning
+      case 'scheduled': return Colors.info
       case 'maintenance': return Colors.error
       default: return Colors.textSecondary
     }
@@ -36,6 +37,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
     switch (status) {
       case 'good': return 'check'
       case 'attention': return 'warning'
+      case 'scheduled': return 'calendar'
       case 'maintenance': return 'error'
       default: return 'info'
     }
@@ -45,6 +47,7 @@ const EquipmentCard: React.FC<EquipmentCardProps> = ({
     switch (status) {
       case 'good': return 'Good'
       case 'attention': return 'Attention'
+      case 'scheduled': return 'Scheduled'
       case 'maintenance': return 'Maintenance'
       default: return 'Unknown'
     }
@@ -189,15 +192,15 @@ export const EquipmentScreen: React.FC = () => {
     ).length
   }
 
-  // Add status to equipment data
+  // Add status to equipment data (now considers associated tasks)
   const equipmentWithStatus = equipment.map(eq => ({
     ...eq,
-    status: getEquipmentStatus(eq)
+    status: getEquipmentStatus(eq, tasks)
   }))
 
-  // Sort equipment by status priority (maintenance > attention > good)
+  // Sort equipment by status priority (maintenance > attention > scheduled > good)
   const sortedEquipment = equipmentWithStatus.sort((a, b) => {
-    const statusPriority: Record<string, number> = { maintenance: 3, attention: 2, good: 1 }
+    const statusPriority: Record<string, number> = { maintenance: 4, attention: 3, scheduled: 2, good: 1 }
     return (statusPriority[b.status] || 0) - (statusPriority[a.status] || 0)
   })
 
@@ -225,7 +228,7 @@ export const EquipmentScreen: React.FC = () => {
           <View style={styles.overviewStats}>
             <View style={styles.overviewStat}>
               <Text style={styles.overviewStatValue}>{equipment.length}</Text>
-              <Text style={styles.overviewStatLabel}>Total Equipment</Text>
+              <Text style={styles.overviewStatLabel}>Total</Text>
             </View>
             <View style={styles.overviewStat}>
               <Text style={[
@@ -234,7 +237,7 @@ export const EquipmentScreen: React.FC = () => {
               ]}>
                 {equipmentWithStatus.filter(eq => eq.status === 'maintenance').length}
               </Text>
-              <Text style={styles.overviewStatLabel}>Need Maintenance</Text>
+              <Text style={styles.overviewStatLabel}>Maintenance</Text>
             </View>
             <View style={styles.overviewStat}>
               <Text style={[
@@ -243,7 +246,16 @@ export const EquipmentScreen: React.FC = () => {
               ]}>
                 {equipmentWithStatus.filter(eq => eq.status === 'attention').length}
               </Text>
-              <Text style={styles.overviewStatLabel}>Need Attention</Text>
+              <Text style={styles.overviewStatLabel}>Attention</Text>
+            </View>
+            <View style={styles.overviewStat}>
+              <Text style={[
+                styles.overviewStatValue,
+                { color: Colors.info }
+              ]}>
+                {equipmentWithStatus.filter(eq => eq.status === 'scheduled').length}
+              </Text>
+              <Text style={styles.overviewStatLabel}>Scheduled</Text>
             </View>
           </View>
         </View>

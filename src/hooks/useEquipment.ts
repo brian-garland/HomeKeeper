@@ -56,16 +56,43 @@ export const useEquipment = (homeId?: string) => {
     loadEquipment()
   }, [loadEquipment])
 
-  const getEquipmentStatus = useCallback((equipment: Equipment) => {
-    // Simple status logic - could be enhanced based on maintenance dates
+  const getEquipmentStatus = useCallback((equipment: Equipment, tasks?: any[]) => {
     const today = new Date()
     const lastService = equipment.last_service_date ? new Date(equipment.last_service_date) : null
     const nextService = equipment.next_service_due ? new Date(equipment.next_service_due) : null
     
+    // Task-aware logic: Check for associated tasks first
+    if (tasks) {
+      const equipmentTasks = tasks.filter(task => 
+        task.equipment_id === equipment.id && !task.completed_at
+      )
+      
+      // Check if any tasks are overdue
+      const overdueTasks = equipmentTasks.filter(task => 
+        task.due_date && new Date(task.due_date) < today
+      )
+      
+      if (overdueTasks.length > 0) {
+        return 'maintenance' // Critical: has overdue tasks
+      }
+      
+      // Key task-aware improvement: If tasks exist for upcoming issues, show as "scheduled"
+      const upcomingTasks = equipmentTasks.filter(task => 
+        task.due_date && 
+        new Date(task.due_date) >= today && 
+        (new Date(task.due_date).getTime() - today.getTime()) < (30 * 24 * 60 * 60 * 1000)
+      )
+      
+      if (upcomingTasks.length > 0) {
+        return 'scheduled' // User already knows - task exists in system
+      }
+    }
+    
+    // Check equipment service dates ONLY if no tasks exist
     if (nextService && nextService < today) {
-      return 'maintenance' // Overdue
+      return 'maintenance' // Equipment service overdue, no active task
     } else if (nextService && (nextService.getTime() - today.getTime()) < (30 * 24 * 60 * 60 * 1000)) {
-      return 'attention' // Due within 30 days
+      return 'attention' // Equipment needs attention, no active task to handle it
     } else {
       return 'good' // All good
     }
