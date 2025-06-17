@@ -24,8 +24,19 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult<C
   try {
     // For MVP, let's use a simple approach with fetch to a free geocoding service
     // Using Nominatim (OpenStreetMap) which is free and doesn't require API key
-    const encodedAddress = encodeURIComponent(address);
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`;
+    
+    // Improve search query for US zip codes
+    let searchQuery = address.trim();
+    
+    // If it looks like a US zip code (5 digits or 5+4 format), be more specific
+    const zipCodePattern = /^\d{5}(-?\d{4})?$/;
+    if (zipCodePattern.test(searchQuery)) {
+      searchQuery = `${searchQuery}, United States`;
+      console.log(`🇺🇸 Searching for US zip code: ${searchQuery}`);
+    }
+    
+    const encodedAddress = encodeURIComponent(searchQuery);
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1&countrycodes=us`;
     
     const response = await fetch(url, {
       headers: {
@@ -55,11 +66,14 @@ export async function geocodeAddress(address: string): Promise<GeocodingResult<C
       longitude: parseFloat(location.lon)
     };
     
-    // Validate coordinates
-    if (isNaN(coordinates.latitude) || isNaN(coordinates.longitude)) {
+    // Validate coordinates are reasonable for US (roughly between Alaska and Florida, Hawaii and Maine)
+    if (isNaN(coordinates.latitude) || isNaN(coordinates.longitude) ||
+        coordinates.latitude < 18 || coordinates.latitude > 72 ||
+        coordinates.longitude < -180 || coordinates.longitude > -60) {
+      console.warn(`⚠️ Coordinates seem outside US bounds: ${coordinates.latitude}, ${coordinates.longitude}`);
       return {
         success: false,
-        error: 'Invalid coordinates returned'
+        error: 'Coordinates appear to be outside the United States'
       };
     }
     
