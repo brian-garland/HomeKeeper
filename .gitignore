@@ -115,4 +115,18 @@ coverage/
 # NOTE: Our database/ folder contains SQL scripts that should be version controlled
 # since they represent our schema and are not secrets.
 
-# NOTE: Project Documents/ folder should be kept in version control as documentation. 
+# NOTE: Project Documents/ folder should be kept in version control as documentation.
+
+# Added by Task Master AI
+dev-debug.log
+# Dependency directories
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
