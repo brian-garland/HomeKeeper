@@ -1,38 +1,122 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Mock AsyncStorage for testing
+// Define __DEV__ for React Native testing
+(global as any).__DEV__ = true;
+
+// Mock React Native to prevent module resolution issues  
+jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: jest.fn((obj) => obj.ios || obj.default || obj.native),
+  },
+  AccessibilityInfo: {
+    announceForAccessibility: jest.fn(),
+  },
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+  },
+  Dimensions: {
+    get: jest.fn(() => ({ width: 375, height: 812 })),
+  },
+}));
+
+// Enhanced AsyncStorage mock for comprehensive testing
 jest.mock('@react-native-async-storage/async-storage', () => {
   let store: { [key: string]: string } = {};
+  let shouldFailNext = false;
+  let failureReason = 'Storage operation failed';
   
-  return {
-    getItem: jest.fn((key: string) => Promise.resolve(store[key] || null)),
+  const mockAsyncStorage = {
+    getItem: jest.fn((key: string) => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
+      return Promise.resolve(store[key] || null);
+    }),
     setItem: jest.fn((key: string, value: string) => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
       store[key] = value;
       return Promise.resolve();
     }),
     removeItem: jest.fn((key: string) => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
       delete store[key];
       return Promise.resolve();
     }),
     clear: jest.fn(() => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
       store = {};
       return Promise.resolve();
     }),
-    getAllKeys: jest.fn(() => Promise.resolve(Object.keys(store))),
-    multiGet: jest.fn((keys: string[]) => 
-      Promise.resolve(keys.map(key => [key, store[key] || null]))
-    ),
+    getAllKeys: jest.fn(() => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
+      return Promise.resolve(Object.keys(store));
+    }),
+    multiGet: jest.fn((keys: string[]) => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
+      return Promise.resolve(keys.map(key => [key, store[key] || null]));
+    }),
     multiSet: jest.fn((pairs: [string, string][]) => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
       pairs.forEach(([key, value]) => {
         store[key] = value;
       });
       return Promise.resolve();
     }),
     multiRemove: jest.fn((keys: string[]) => {
+      if (shouldFailNext) {
+        shouldFailNext = false;
+        return Promise.reject(new Error(failureReason));
+      }
       keys.forEach(key => delete store[key]);
       return Promise.resolve();
     }),
+    
+    // Test utilities for controlling mock behavior
+    __getStore: () => ({ ...store }),
+    __setStore: (newStore: { [key: string]: string }) => {
+      store = { ...newStore };
+    },
+    __clearStore: () => {
+      store = {};
+    },
+    __simulateFailure: (reason: string = 'Storage operation failed') => {
+      shouldFailNext = true;
+      failureReason = reason;
+    },
+    __resetMocks: () => {
+      shouldFailNext = false;
+      failureReason = 'Storage operation failed';
+      store = {};
+      // Reset all jest mock call counts
+      Object.values(mockAsyncStorage).forEach(mockFn => {
+        if (jest.isMockFunction(mockFn)) {
+          mockFn.mockClear();
+        }
+      });
+    }
   };
+  
+  return mockAsyncStorage;
 });
 
 // Mock React Navigation
