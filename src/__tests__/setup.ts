@@ -1,4 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import '@testing-library/jest-native/extend-expect';
+
+// Setup axe-core for accessibility testing
+import { toHaveNoViolations } from 'jest-axe';
+
+// Add custom jest matchers for accessibility testing
+expect.extend(toHaveNoViolations);
 
 // Define __DEV__ for React Native testing
 (global as any).__DEV__ = true;
@@ -14,9 +21,45 @@ jest.mock('react-native', () => ({
   },
   StyleSheet: {
     create: jest.fn((styles) => styles),
+    flatten: jest.fn((style) => style),
+    compose: jest.fn((style1, style2) => [style1, style2]),
+    hairlineWidth: 1,
+    absoluteFill: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    },
   },
   Dimensions: {
     get: jest.fn(() => ({ width: 375, height: 812 })),
+  },
+  // Core UI Components for testing  
+  TouchableOpacity: jest.fn(({ children, onPress, disabled, ...props }) => {
+    const React = require('react');
+    return React.createElement('TouchableOpacity', {
+      ...props,
+      onPress: disabled ? undefined : onPress,
+      disabled,
+      children,
+    });
+  }),
+  TouchableHighlight: 'TouchableHighlight', 
+  TouchableWithoutFeedback: 'TouchableWithoutFeedback',
+  Pressable: 'Pressable',
+  Text: 'Text',
+  View: 'View',
+  ScrollView: 'ScrollView',
+  SafeAreaView: 'SafeAreaView',
+  ActivityIndicator: 'ActivityIndicator',
+  Image: 'Image',
+  TextInput: 'TextInput',
+  FlatList: 'FlatList',
+  SectionList: 'SectionList',
+  Modal: 'Modal',
+  Alert: {
+    alert: jest.fn(),
   },
 }));
 

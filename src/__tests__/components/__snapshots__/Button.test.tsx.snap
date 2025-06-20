@@ -1,0 +1,317 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PrimaryButton - Comprehensive Test Suite Snapshot Testing default button snapshot 1`] = `
+<TouchableOpacity
+  accessibilityLabel="Default Button"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "disabled": false,
+    }
+  }
+  accessible={true}
+  activeOpacity={0.8}
+  disabled={false}
+  onPress={[Function]}
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#B8860B",
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "minHeight": 48,
+      "opacity": 1,
+      "paddingHorizontal": 20,
+      "paddingVertical": 12,
+      "shadowColor": "#101828",
+      "shadowOffset": {
+        "height": 2,
+        "width": 0,
+      },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 4,
+      "width": undefined,
+    }
+  }
+>
+  <Text
+    numberOfLines={1}
+    style={
+      {
+        "color": "#FEFEFE",
+        "fontFamily": "Inter-SemiBold",
+        "fontSize": 16,
+        "includeFontPadding": false,
+        "letterSpacing": 0.1,
+        "lineHeight": 20,
+        "textAlign": "center",
+        "textAlignVertical": "center",
+      }
+    }
+  >
+    Default Button
+  </Text>
+</TouchableOpacity>
+`;
+
+exports[`PrimaryButton - Comprehensive Test Suite Snapshot Testing disabled button snapshot 1`] = `
+<TouchableOpacity
+  accessibilityLabel="Disabled Button"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "disabled": true,
+    }
+  }
+  accessible={true}
+  activeOpacity={0.8}
+  disabled={true}
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#D0D5DD",
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "minHeight": 48,
+      "opacity": 1,
+      "paddingHorizontal": 20,
+      "paddingVertical": 12,
+      "shadowColor": "#101828",
+      "shadowOffset": {
+        "height": 2,
+        "width": 0,
+      },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 4,
+      "width": undefined,
+    }
+  }
+>
+  <Text
+    numberOfLines={1}
+    style={
+      {
+        "color": "#98A2B3",
+        "fontFamily": "Inter-SemiBold",
+        "fontSize": 16,
+        "includeFontPadding": false,
+        "letterSpacing": 0.1,
+        "lineHeight": 20,
+        "textAlign": "center",
+        "textAlignVertical": "center",
+      }
+    }
+  >
+    Disabled Button
+  </Text>
+</TouchableOpacity>
+`;
+
+exports[`PrimaryButton - Comprehensive Test Suite Snapshot Testing full width button snapshot 1`] = `
+<TouchableOpacity
+  accessibilityLabel="Full Width Button"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "disabled": false,
+    }
+  }
+  accessible={true}
+  activeOpacity={0.8}
+  disabled={false}
+  onPress={[Function]}
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#B8860B",
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "minHeight": 48,
+      "opacity": 1,
+      "paddingHorizontal": 20,
+      "paddingVertical": 12,
+      "shadowColor": "#101828",
+      "shadowOffset": {
+        "height": 2,
+        "width": 0,
+      },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 4,
+      "width": "100%",
+    }
+  }
+>
+  <Text
+    numberOfLines={1}
+    style={
+      {
+        "color": "#FEFEFE",
+        "fontFamily": "Inter-SemiBold",
+        "fontSize": 16,
+        "includeFontPadding": false,
+        "letterSpacing": 0.1,
+        "lineHeight": 20,
+        "textAlign": "center",
+        "textAlignVertical": "center",
+      }
+    }
+  >
+    Full Width Button
+  </Text>
+</TouchableOpacity>
+`;
+
+exports[`PrimaryButton - Comprehensive Test Suite Snapshot Testing large button snapshot 1`] = `
+<TouchableOpacity
+  accessibilityLabel="Large Button"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "disabled": false,
+    }
+  }
+  accessible={true}
+  activeOpacity={0.8}
+  disabled={false}
+  onPress={[Function]}
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#B8860B",
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "minHeight": 56,
+      "opacity": 1,
+      "paddingHorizontal": 24,
+      "paddingVertical": 16,
+      "shadowColor": "#101828",
+      "shadowOffset": {
+        "height": 2,
+        "width": 0,
+      },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 4,
+      "width": undefined,
+    }
+  }
+>
+  <Text
+    numberOfLines={1}
+    style={
+      {
+        "color": "#FEFEFE",
+        "fontFamily": "Inter-SemiBold",
+        "fontSize": 18,
+        "includeFontPadding": false,
+        "letterSpacing": 0.1,
+        "lineHeight": 20,
+        "textAlign": "center",
+        "textAlignVertical": "center",
+      }
+    }
+  >
+    Large Button
+  </Text>
+</TouchableOpacity>
+`;
+
+exports[`PrimaryButton - Comprehensive Test Suite Snapshot Testing loading button snapshot 1`] = `
+<TouchableOpacity
+  accessibilityLabel="Loading Button"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "disabled": true,
+    }
+  }
+  accessible={true}
+  activeOpacity={0.8}
+  disabled={true}
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#B8860B",
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "minHeight": 48,
+      "opacity": 0.8,
+      "paddingHorizontal": 20,
+      "paddingVertical": 12,
+      "shadowColor": "#101828",
+      "shadowOffset": {
+        "height": 2,
+        "width": 0,
+      },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 4,
+      "width": undefined,
+    }
+  }
+>
+  <ActivityIndicator
+    accessibilityLabel="Loading"
+    color="#FEFEFE"
+    size="small"
+  />
+</TouchableOpacity>
+`;
+
+exports[`PrimaryButton - Comprehensive Test Suite Snapshot Testing success variant button snapshot 1`] = `
+<TouchableOpacity
+  accessibilityLabel="Success Button"
+  accessibilityRole="button"
+  accessibilityState={
+    {
+      "disabled": false,
+    }
+  }
+  accessible={true}
+  activeOpacity={0.8}
+  disabled={false}
+  onPress={[Function]}
+  style={
+    {
+      "alignItems": "center",
+      "backgroundColor": "#22C55E",
+      "borderRadius": 12,
+      "flexDirection": "row",
+      "justifyContent": "center",
+      "minHeight": 48,
+      "opacity": 1,
+      "paddingHorizontal": 20,
+      "paddingVertical": 12,
+      "shadowColor": "#101828",
+      "shadowOffset": {
+        "height": 2,
+        "width": 0,
+      },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 4,
+      "width": undefined,
+    }
+  }
+>
+  <Text
+    numberOfLines={1}
+    style={
+      {
+        "color": "#FEFEFE",
+        "fontFamily": "Inter-SemiBold",
+        "fontSize": 16,
+        "includeFontPadding": false,
+        "letterSpacing": 0.1,
+        "lineHeight": 20,
+        "textAlign": "center",
+        "textAlignVertical": "center",
+      }
+    }
+  >
+    Success Button
+  </Text>
+</TouchableOpacity>
+`;

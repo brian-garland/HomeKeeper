@@ -8,7 +8,7 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@testing-library|react-clone-referenced-element|@react-native-community|react-navigation)/)',
+    'node_modules/(?!(react-native|@react-native|@testing-library|react-clone-referenced-element|@react-native-community|react-navigation|@react-navigation|@expo/vector-icons)/)',
   ],
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
   moduleNameMapper: {
