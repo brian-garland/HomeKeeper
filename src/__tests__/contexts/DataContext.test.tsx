@@ -110,6 +110,34 @@ describe('DataContext - Home Management', () => {
       expect(result.current.homes[0]).toEqual(home1);
       expect(result.current.homes[1]).toEqual(home2);
     });
+
+    test('should handle rapid successive addHome calls without race condition', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      const home1: Home = { ...TEST_HOME, id: 'home-1', name: 'Home 1' };
+      const home2: Home = { ...TEST_HOME, id: 'home-2', name: 'Home 2' };
+      const home3: Home = { ...TEST_HOME, id: 'home-3', name: 'Home 3' };
+      
+      // Add homes in rapid succession to test race condition fix
+      await act(async () => {
+        result.current.addHome(home1);
+        result.current.addHome(home2);
+        result.current.addHome(home3);
+      });
+      
+      // Wait for all async storage operations to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
+      
+      expect(result.current.homes).toHaveLength(3);
+      expect(result.current.homes[0]).toEqual(home1);
+      expect(result.current.homes[1]).toEqual(home2);
+      expect(result.current.homes[2]).toEqual(home3);
+      
+      // Verify AsyncStorage was called the correct number of times
+      expect(AsyncStorage.setItem).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe('updateHome', () => {

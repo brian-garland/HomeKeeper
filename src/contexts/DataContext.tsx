@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createRecurringTask } from '../lib/services/recurringTaskService';
 import { updateTasksWithMoneySaved } from '../lib/utils/updateTasksWithMoneySaved';
@@ -51,6 +51,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(false);
   const [totalMoneySaved, setTotalMoneySaved] = useState(0);
 
+  // 🔧 FIX: Add storage operation queue to prevent race conditions
+  const storageQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  // 🔧 FIX: Queue storage operations to prevent race conditions
+  const queueStorageOperation = async (operation: () => Promise<void>): Promise<void> => {
+    const currentQueue = storageQueueRef.current;
+    storageQueueRef.current = currentQueue.then(operation).catch(error => {
+      console.error('Storage operation failed:', error);
+    });
+    return storageQueueRef.current;
+  };
+
   // Load data from AsyncStorage on app start
   useEffect(() => {
     loadAllData();
@@ -101,29 +113,38 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  // Save data to AsyncStorage
+  // 🔧 FIX: Modified save functions to use queuing
   const saveHomes = async (newHomes: Home[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.HOMES, JSON.stringify(newHomes));
-    } catch (error) {
-      console.error('Error saving homes:', error);
-    }
+    return queueStorageOperation(async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEYS.HOMES, JSON.stringify(newHomes));
+      } catch (error) {
+        console.error('Error saving homes:', error);
+        throw error;
+      }
+    });
   };
 
   const saveTasks = async (newTasks: Task[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(newTasks));
-    } catch (error) {
-      console.error('Error saving tasks:', error);
-    }
+    return queueStorageOperation(async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(newTasks));
+      } catch (error) {
+        console.error('Error saving tasks:', error);
+        throw error;
+      }
+    });
   };
 
   const saveEquipment = async (newEquipment: Equipment[]) => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.EQUIPMENT, JSON.stringify(newEquipment));
-    } catch (error) {
-      console.error('Error saving equipment:', error);
-    }
+    return queueStorageOperation(async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEYS.EQUIPMENT, JSON.stringify(newEquipment));
+      } catch (error) {
+        console.error('Error saving equipment:', error);
+        throw error;
+      }
+    });
   };
 
   // Home methods
@@ -133,20 +154,29 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addHome = (home: Home) => {
-    const newHomes = [...homes, home];
-    setHomes(newHomes);
+    setHomesState(prevHomes => {
+      const newHomes = [...prevHomes, home];
+      saveHomes(newHomes);
+      return newHomes;
+    });
   };
 
   const updateHome = (id: string, updates: Partial<Home>) => {
-    const newHomes = homes.map(home => 
-      home.id === id ? { ...home, ...updates } : home
-    );
-    setHomes(newHomes);
+    setHomesState(prevHomes => {
+      const newHomes = prevHomes.map(home => 
+        home.id === id ? { ...home, ...updates } : home
+      );
+      saveHomes(newHomes);
+      return newHomes;
+    });
   };
 
   const deleteHome = (id: string) => {
-    const newHomes = homes.filter(home => home.id !== id);
-    setHomes(newHomes);
+    setHomesState(prevHomes => {
+      const newHomes = prevHomes.filter(home => home.id !== id);
+      saveHomes(newHomes);
+      return newHomes;
+    });
   };
 
   // Task methods
@@ -156,8 +186,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addTask = (task: Task) => {
-    const newTasks = [...tasks, task];
-    setTasks(newTasks);
+    setTasksState(prevTasks => {
+      const newTasks = [...prevTasks, task];
+      saveTasks(newTasks);
+      return newTasks;
+    });
   };
 
   const updateTask = async (id: string, updates: Partial<Task>) => {
@@ -248,8 +281,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const deleteTask = (id: string) => {
-    const newTasks = tasks.filter(task => task.id !== id);
-    setTasks(newTasks);
+    setTasksState(prevTasks => {
+      const newTasks = prevTasks.filter(task => task.id !== id);
+      saveTasks(newTasks);
+      return newTasks;
+    });
   };
 
   // Equipment methods
@@ -259,20 +295,29 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addEquipment = (equipmentItem: Equipment) => {
-    const newEquipment = [...equipment, equipmentItem];
-    setEquipment(newEquipment);
+    setEquipmentState(prevEquipment => {
+      const newEquipment = [...prevEquipment, equipmentItem];
+      saveEquipment(newEquipment);
+      return newEquipment;
+    });
   };
 
   const updateEquipment = (id: string, updates: Partial<Equipment>) => {
-    const newEquipment = equipment.map(eq => 
-      eq.id === id ? { ...eq, ...updates } : eq
-    );
-    setEquipment(newEquipment);
+    setEquipmentState(prevEquipment => {
+      const newEquipment = prevEquipment.map(eq => 
+        eq.id === id ? { ...eq, ...updates } : eq
+      );
+      saveEquipment(newEquipment);
+      return newEquipment;
+    });
   };
 
   const deleteEquipment = (id: string) => {
-    const newEquipment = equipment.filter(eq => eq.id !== id);
-    setEquipment(newEquipment);
+    setEquipmentState(prevEquipment => {
+      const newEquipment = prevEquipment.filter(eq => eq.id !== id);
+      saveEquipment(newEquipment);
+      return newEquipment;
+    });
   };
 
   // Money tracking methods
