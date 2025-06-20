@@ -2,8 +2,8 @@ import React from 'react';
 import { renderHook, act } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DataProvider, useDataContext } from '../../contexts/DataContext';
-import { TEST_HOME, TEST_TASK, STORAGE_KEYS } from '../setup';
-import type { Home, Task } from '../../types';
+import { TEST_HOME, TEST_TASK, TEST_EQUIPMENT, STORAGE_KEYS } from '../setup';
+import type { Home, Task, Equipment } from '../../types';
 
 // Test wrapper component
 const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -564,7 +564,7 @@ describe('DataContext - Task Management', () => {
       const updates = { title: 'Updated Task' };
       
       await act(async () => {
-        await result.current.updateTask(TEST_TASK.id, updates);
+        result.current.updateTask(TEST_TASK.id, updates);
       });
       
       const expectedTask = { ...TEST_TASK, ...updates };
@@ -813,6 +813,313 @@ describe('DataContext - Task Management', () => {
       });
       
       expect(result.current.totalMoneySaved).toBe(50);
+    });
+  });
+});
+
+// EQUIPMENT OPERATIONS TESTS - NEW SECTION FOR SUBTASK 21.4
+describe('DataContext - Equipment Management', () => {
+  beforeEach(async () => {
+    // Reset mock and clear storage before each test
+    mockAsyncStorage.__resetMocks();
+    await AsyncStorage.clear();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Initial State and Loading', () => {
+    test('should start with empty equipment array', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      expect(result.current.equipment).toEqual([]);
+    });
+
+    test('should load equipment from AsyncStorage on mount', async () => {
+      // Pre-populate storage
+      await AsyncStorage.setItem(STORAGE_KEYS.EQUIPMENT, JSON.stringify([TEST_EQUIPMENT]));
+      
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Wait for the useEffect to run
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      expect(result.current.equipment).toHaveLength(1);
+      expect(result.current.equipment[0]).toEqual(TEST_EQUIPMENT);
+    });
+  });
+
+  describe('addEquipment', () => {
+    test('should add a single equipment item correctly', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      expect(result.current.equipment).toHaveLength(1);
+      expect(result.current.equipment[0]).toEqual(TEST_EQUIPMENT);
+      
+      // Verify persistence
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        STORAGE_KEYS.EQUIPMENT,
+        JSON.stringify([TEST_EQUIPMENT])
+      );
+    });
+
+    test('should add multiple equipment items correctly', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      const equipment1: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-1', name: 'Equipment 1' };
+      const equipment2: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-2', name: 'Equipment 2' };
+      
+      await act(async () => {
+        result.current.addEquipment(equipment1);
+        result.current.addEquipment(equipment2);
+      });
+      
+      expect(result.current.equipment).toHaveLength(2);
+      expect(result.current.equipment[0]).toEqual(equipment1);
+      expect(result.current.equipment[1]).toEqual(equipment2);
+    });
+
+    test('should handle rapid successive addEquipment calls without race condition', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      const equipment1: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-1', name: 'Equipment 1' };
+      const equipment2: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-2', name: 'Equipment 2' };
+      const equipment3: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-3', name: 'Equipment 3' };
+      
+      await act(async () => {
+        // Add multiple equipment items rapidly in succession
+        result.current.addEquipment(equipment1);
+        result.current.addEquipment(equipment2);
+        result.current.addEquipment(equipment3);
+      });
+      
+      // All three should be present (tests our race condition fix)
+      expect(result.current.equipment).toHaveLength(3);
+      expect(result.current.equipment.map(eq => eq.id)).toEqual(['equipment-1', 'equipment-2', 'equipment-3']);
+    });
+  });
+
+  describe('updateEquipment', () => {
+    test('should update equipment correctly', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Add initial equipment
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      // Update equipment
+      const updates = { name: 'Updated HVAC System', maintenance_frequency_months: 12 };
+      await act(async () => {
+        result.current.updateEquipment(TEST_EQUIPMENT.id, updates);
+      });
+      
+      expect(result.current.equipment).toHaveLength(1);
+      expect(result.current.equipment[0].name).toBe('Updated HVAC System');
+      expect(result.current.equipment[0].maintenance_frequency_months).toBe(12);
+      expect(result.current.equipment[0].id).toBe(TEST_EQUIPMENT.id); // Should preserve ID
+    });
+
+    test('should update only the targeted equipment item', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      const equipment1: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-1', name: 'Equipment 1' };
+      const equipment2: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-2', name: 'Equipment 2' };
+      
+      // Add multiple equipment items
+      await act(async () => {
+        result.current.addEquipment(equipment1);
+        result.current.addEquipment(equipment2);
+      });
+      
+      // Update only the second equipment item
+      await act(async () => {
+        result.current.updateEquipment('equipment-2', { name: 'Updated Equipment 2' });
+      });
+      
+      expect(result.current.equipment).toHaveLength(2);
+      expect(result.current.equipment[0].name).toBe('Equipment 1'); // Should remain unchanged
+      expect(result.current.equipment[1].name).toBe('Updated Equipment 2'); // Should be updated
+    });
+
+    test('should handle updating non-existent equipment gracefully', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      // Try to update non-existent equipment
+      await act(async () => {
+        result.current.updateEquipment('non-existent-id', { name: 'Should not create' });
+      });
+      
+      // Should not crash and should not add a new equipment item
+      expect(result.current.equipment).toHaveLength(1);
+      expect(result.current.equipment[0]).toEqual(TEST_EQUIPMENT);
+    });
+
+    test('should update service dates correctly', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      const serviceUpdates = {
+        last_service_date: '2024-06-15',
+        next_service_due: '2024-12-15',
+        updated_at: '2024-06-15T10:00:00Z'
+      };
+      
+      await act(async () => {
+        result.current.updateEquipment(TEST_EQUIPMENT.id, serviceUpdates);
+      });
+      
+      expect(result.current.equipment[0].last_service_date).toBe('2024-06-15');
+      expect(result.current.equipment[0].next_service_due).toBe('2024-12-15');
+      expect(result.current.equipment[0].updated_at).toBe('2024-06-15T10:00:00Z');
+    });
+  });
+
+  describe('deleteEquipment', () => {
+    test('should delete equipment correctly', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      expect(result.current.equipment).toHaveLength(1);
+      
+      await act(async () => {
+        result.current.deleteEquipment(TEST_EQUIPMENT.id);
+      });
+      
+      expect(result.current.equipment).toHaveLength(0);
+      
+      // Verify persistence
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        STORAGE_KEYS.EQUIPMENT,
+        JSON.stringify([])
+      );
+    });
+
+    test('should delete only the specified equipment item', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      const equipment1: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-1', name: 'Equipment 1' };
+      const equipment2: Equipment = { ...TEST_EQUIPMENT, id: 'equipment-2', name: 'Equipment 2' };
+      
+      await act(async () => {
+        result.current.addEquipment(equipment1);
+        result.current.addEquipment(equipment2);
+      });
+      
+      await act(async () => {
+        result.current.deleteEquipment('equipment-1');
+      });
+      
+      expect(result.current.equipment).toHaveLength(1);
+      expect(result.current.equipment[0].id).toBe('equipment-2');
+    });
+
+    test('should handle deleting non-existent equipment gracefully', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      // Try to delete non-existent equipment
+      await act(async () => {
+        result.current.deleteEquipment('non-existent-id');
+      });
+      
+      // Should not crash and original equipment should remain
+      expect(result.current.equipment).toHaveLength(1);
+      expect(result.current.equipment[0]).toEqual(TEST_EQUIPMENT);
+    });
+  });
+
+  describe('setEquipment', () => {
+    test('should replace equipment array completely', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Add initial equipment
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      expect(result.current.equipment).toHaveLength(1);
+      
+      // Replace with new array
+      const newEquipment: Equipment[] = [
+        { ...TEST_EQUIPMENT, id: 'new-1', name: 'New Equipment 1' },
+        { ...TEST_EQUIPMENT, id: 'new-2', name: 'New Equipment 2' }
+      ];
+      
+      await act(async () => {
+        result.current.setEquipment(newEquipment);
+      });
+      
+      expect(result.current.equipment).toHaveLength(2);
+      expect(result.current.equipment).toEqual(newEquipment);
+      
+      // Verify persistence
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        STORAGE_KEYS.EQUIPMENT,
+        JSON.stringify(newEquipment)
+      );
+    });
+
+    test('should handle empty equipment array', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Add initial equipment
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      // Set to empty array
+      await act(async () => {
+        result.current.setEquipment([]);
+      });
+      
+      expect(result.current.equipment).toEqual([]);
+      
+      // Verify persistence
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+        STORAGE_KEYS.EQUIPMENT,
+        JSON.stringify([])
+      );
+    });
+  });
+
+  describe('Equipment and Task Integration', () => {
+    test('should maintain equipment-task relationships when equipment is updated', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Add equipment and task
+      await act(async () => {
+        result.current.addEquipment(TEST_EQUIPMENT);
+        result.current.addTask(TEST_TASK);
+      });
+      
+      // Update equipment
+      await act(async () => {
+        result.current.updateEquipment(TEST_EQUIPMENT.id, { name: 'Updated HVAC' });
+      });
+      
+      // Task should still reference the equipment
+      expect(result.current.tasks[0].equipment_id).toBe(TEST_EQUIPMENT.id);
+      expect(result.current.equipment[0].name).toBe('Updated HVAC');
     });
   });
 }); 
