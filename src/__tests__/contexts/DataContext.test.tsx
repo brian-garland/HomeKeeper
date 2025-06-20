@@ -25,10 +25,18 @@ describe('DataContext - Home Management', () => {
   });
 
   describe('Initial State and Loading', () => {
-    test('should start with empty homes array', () => {
+    test('should start with empty homes array', async () => {
       const { result } = renderHook(() => useDataContext(), { wrapper });
       
       expect(result.current.homes).toEqual([]);
+      expect(result.current.loading).toBe(true);
+      
+      // Wait for initialization to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      // After initialization, loading should be false
       expect(result.current.loading).toBe(false);
     });
 
@@ -357,30 +365,202 @@ describe('DataContext - Home Management', () => {
   });
 
   describe('Error Handling', () => {
-    test('should handle AsyncStorage setItem errors gracefully', async () => {
+    test('should handle AsyncStorage setItem errors gracefully during save operations', async () => {
       const { result } = renderHook(() => useDataContext(), { wrapper });
-      
-      // Mock AsyncStorage to fail
-      mockAsyncStorage.__simulateFailure('Storage quota exceeded');
-      
-      // Spy on console.error to verify error logging
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       
+      // Wait for initial loading to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      // Reset console spy after initialization
+      consoleSpy.mockClear();
+      
+      // Mock setItem to fail for save operations (not initial loading)
+      mockAsyncStorage.setItem.mockRejectedValueOnce(new Error('Storage quota exceeded'));
+      
+      // Try to add a home, which should trigger a save error
       await act(async () => {
         result.current.addHome(TEST_HOME);
       });
       
-      // Should not crash, but should log error
+      // Should not crash, and should log the save error
       expect(consoleSpy).toHaveBeenCalledWith(
         'Error saving homes:',
         expect.any(Error)
       );
       
-      // State should still be updated despite storage failure
-      expect(result.current.homes).toHaveLength(1);
-      expect(result.current.homes[0]).toEqual(TEST_HOME);
+      consoleSpy.mockRestore();
+    });
+
+    test('should handle AsyncStorage getItem errors gracefully during load operations', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Mock getItem to fail during initial load
+      mockAsyncStorage.getItem.mockRejectedValueOnce(new Error('Storage access denied'));
+      
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Wait for loading to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      // Should not crash, should log the load error, and loading should be false
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error loading data from AsyncStorage:',
+        expect.any(Error)
+      );
+      expect(result.current.loading).toBe(false);
+      expect(result.current.homes).toEqual([]);
       
       consoleSpy.mockRestore();
+    });
+
+    test('should maintain stable state after storage errors', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Wait for initial loading
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      // Add a home successfully first
+      await act(async () => {
+        result.current.addHome(TEST_HOME);
+      });
+      
+      expect(result.current.homes).toHaveLength(1);
+      
+      // Mock storage to fail for next operation
+      mockAsyncStorage.setItem.mockRejectedValueOnce(new Error('Network error'));
+      
+      // Try to add another home
+      const home2 = { ...TEST_HOME, id: 'home-2', name: 'Home 2' };
+      await act(async () => {
+        result.current.addHome(home2);
+      });
+      
+      // State should still be updated even if storage fails
+      expect(result.current.homes).toHaveLength(2);
+      expect(result.current.homes[1]).toEqual(home2);
+    });
+
+    test('should handle multiple concurrent storage failures gracefully', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      
+      // Wait for initial loading
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      consoleSpy.mockClear();
+      
+      // Mock all storage operations to fail
+      mockAsyncStorage.setItem.mockRejectedValue(new Error('Storage full'));
+      
+      // Try multiple operations that should fail storage but succeed in memory
+      await act(async () => {
+        result.current.addHome({ ...TEST_HOME, id: 'home-1', name: 'Home 1' });
+        result.current.addTask({ ...TEST_TASK, id: 'task-1', title: 'Task 1' });
+        result.current.addEquipment({ ...TEST_EQUIPMENT, id: 'equipment-1', name: 'Equipment 1' });
+      });
+      
+      // All operations should succeed in memory despite storage failures
+      expect(result.current.homes).toHaveLength(1);
+      expect(result.current.tasks).toHaveLength(1);
+      expect(result.current.equipment).toHaveLength(1);
+      
+      // Should have logged multiple storage errors
+      expect(consoleSpy).toHaveBeenCalledWith('Error saving homes:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('Error saving tasks:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('Error saving equipment:', expect.any(Error));
+      
+      consoleSpy.mockRestore();
+      mockAsyncStorage.setItem.mockResolvedValue(); // Reset mock
+    });
+  });
+
+  describe('Loading State Management', () => {
+    test('should properly manage loading state during initialization', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Should start loading
+      expect(result.current.loading).toBe(true);
+      
+      // Wait for initialization to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      // Should finish loading
+      expect(result.current.loading).toBe(false);
+    });
+
+    test('should maintain loading false during normal operations', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Wait for initialization
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      expect(result.current.loading).toBe(false);
+      
+      // Perform various operations
+      await act(async () => {
+        result.current.addHome(TEST_HOME);
+        result.current.addTask(TEST_TASK);
+        result.current.addEquipment(TEST_EQUIPMENT);
+      });
+      
+      // Loading should remain false during normal operations
+      expect(result.current.loading).toBe(false);
+    });
+
+    test('should handle manual loading state changes', async () => {
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Wait for initialization
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      expect(result.current.loading).toBe(false);
+      
+      // Manually set loading to true
+      await act(async () => {
+        result.current.setLoading(true);
+      });
+      
+      expect(result.current.loading).toBe(true);
+      
+      // Manually set loading to false
+      await act(async () => {
+        result.current.setLoading(false);
+      });
+      
+      expect(result.current.loading).toBe(false);
+    });
+
+    test('should handle loading state during error scenarios', async () => {
+      // Mock getItem to fail during initialization
+      mockAsyncStorage.getItem.mockRejectedValueOnce(new Error('Storage error'));
+      
+      const { result } = renderHook(() => useDataContext(), { wrapper });
+      
+      // Should start loading
+      expect(result.current.loading).toBe(true);
+      
+      // Wait for error handling to complete
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      
+      // Should finish loading even after error
+      expect(result.current.loading).toBe(false);
     });
   });
 });
@@ -405,20 +585,30 @@ describe('DataContext - Task Management', () => {
     });
 
     test('should load tasks from AsyncStorage on initialization', async () => {
-      // Pre-populate storage with test task data
-      const testTasks = [TEST_TASK];
-      await AsyncStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(testTasks));
+      // Pre-populate AsyncStorage with task data
+      await AsyncStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify([TEST_TASK]));
+      
+      // Ensure the mock returns the data we just set
+      mockAsyncStorage.getItem.mockImplementation((key: string) => {
+        if (key === STORAGE_KEYS.TASKS) {
+          return Promise.resolve(JSON.stringify([TEST_TASK]));
+        }
+        return Promise.resolve(null);
+      });
       
       const { result } = renderHook(() => useDataContext(), { wrapper });
       
-      // Wait for async loading to complete
+      // Wait for the useEffect to run and load data
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
       
       expect(result.current.tasks).toHaveLength(1);
       expect(result.current.tasks[0].id).toBe(TEST_TASK.id);
       expect(result.current.tasks[0].title).toBe(TEST_TASK.title);
+      
+      // Reset mock
+      mockAsyncStorage.getItem.mockResolvedValue(null);
     });
   });
 
@@ -836,18 +1026,29 @@ describe('DataContext - Equipment Management', () => {
     });
 
     test('should load equipment from AsyncStorage on mount', async () => {
-      // Pre-populate storage
+      // Pre-populate AsyncStorage with equipment data
       await AsyncStorage.setItem(STORAGE_KEYS.EQUIPMENT, JSON.stringify([TEST_EQUIPMENT]));
+      
+      // Ensure the mock returns the data we just set
+      mockAsyncStorage.getItem.mockImplementation((key: string) => {
+        if (key === STORAGE_KEYS.EQUIPMENT) {
+          return Promise.resolve(JSON.stringify([TEST_EQUIPMENT]));
+        }
+        return Promise.resolve(null);
+      });
       
       const { result } = renderHook(() => useDataContext(), { wrapper });
       
-      // Wait for the useEffect to run
+      // Wait for the useEffect to run and load data
       await act(async () => {
         await new Promise(resolve => setTimeout(resolve, 0));
       });
       
       expect(result.current.equipment).toHaveLength(1);
       expect(result.current.equipment[0]).toEqual(TEST_EQUIPMENT);
+      
+      // Reset mock
+      mockAsyncStorage.getItem.mockResolvedValue(null);
     });
   });
 
