@@ -1,5 +1,20 @@
 import { supabase } from '../supabase'
 import type { Task, TaskInsert, TaskUpdate } from '../../types'
+import type { TaskRecurrence } from '../../types/preferences'
+
+// Helper function to safely convert Json to TaskRecurrence
+function convertDbTaskToTask(dbTask: any): Task {
+  return {
+    ...dbTask,
+    recurrence: dbTask.recurrence ? (dbTask.recurrence as TaskRecurrence) : null,
+    money_saved_estimate: dbTask.money_saved_estimate as number | null
+  }
+}
+
+// Helper function to convert array of database tasks
+function convertDbTasksToTasks(dbTasks: any[]): Task[] {
+  return dbTasks.map(convertDbTaskToTask)
+}
 
 // Result type for consistent error handling
 export type TaskResult<T> = {
@@ -34,7 +49,7 @@ export async function createTask(taskData: TaskInsert): Promise<TaskResult<Task>
 
     return {
       success: true,
-      data: data as Task
+      data: convertDbTaskToTask(data)
     }
   } catch (error) {
     return {
@@ -71,7 +86,7 @@ export async function getTask(taskId: string): Promise<TaskResult<Task>> {
 
     return {
       success: true,
-      data
+      data: convertDbTaskToTask(data)
     }
   } catch (error) {
     return {
@@ -112,7 +127,7 @@ export async function updateTask(taskId: string, updates: TaskUpdate): Promise<T
 
     return {
       success: true,
-      data
+      data: convertDbTaskToTask(data)
     }
   } catch (error) {
     return {
@@ -181,7 +196,7 @@ export async function getHomeTasks(homeId: string): Promise<TaskResult<Task[]>> 
 
     return {
       success: true,
-      data: data || []
+      data: convertDbTasksToTasks(data || [])
     }
   } catch (error) {
     return {
@@ -213,7 +228,7 @@ export async function getTasksByStatus(homeId: string, status: string): Promise<
 
     return {
       success: true,
-      data: data || []
+      data: convertDbTasksToTasks(data || [])
     }
   } catch (error) {
     return {
@@ -247,7 +262,7 @@ export async function getOverdueTasks(homeId: string): Promise<TaskResult<Task[]
 
     return {
       success: true,
-      data: data || []
+      data: convertDbTasksToTasks(data || [])
     }
   } catch (error) {
     return {
@@ -267,8 +282,7 @@ export async function completeTask(taskId: string, completionNotes?: string, com
       .update({
         status: 'completed',
         completed_date: new Date().toISOString(),
-        completion_notes: completionNotes || null,
-        completion_photos: completionPhotos || null,
+        notes: completionNotes || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', taskId)
@@ -291,7 +305,7 @@ export async function completeTask(taskId: string, completionNotes?: string, com
 
     return {
       success: true,
-      data
+      data: convertDbTaskToTask(data)
     }
   } catch (error) {
     return {

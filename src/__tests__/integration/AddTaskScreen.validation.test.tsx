@@ -144,9 +144,9 @@ describe('AddTaskScreen Form Validation - Integration Tests', () => {
         </TestWrapper>
       );
 
-      // Fill with whitespace-only title
+      // Fill with whitespace-only title (actual whitespace characters)
       const titleInput = getByPlaceholderText('Enter task title');
-      fireEvent.changeText(titleInput, '   \\n\\t   ');
+      fireEvent.changeText(titleInput, '   \n\t   ');
 
       // Fill valid description
       const descriptionInput = getByPlaceholderText('Describe what needs to be done');
@@ -173,9 +173,9 @@ describe('AddTaskScreen Form Validation - Integration Tests', () => {
       const titleInput = getByPlaceholderText('Enter task title');
       fireEvent.changeText(titleInput, 'Valid title');
 
-      // Fill with whitespace-only description
+      // Fill with whitespace-only description (actual whitespace characters)
       const descriptionInput = getByPlaceholderText('Describe what needs to be done');
-      fireEvent.changeText(descriptionInput, '   \\n\\t   ');
+      fireEvent.changeText(descriptionInput, '   \n\t   ');
 
       // Try to save
       const saveButton = getByText('Create Task');
@@ -318,32 +318,39 @@ describe('AddTaskScreen Form Validation - Integration Tests', () => {
   // ========================================
   describe('Priority Selection', () => {
     test('should select priority levels correctly', () => {
-      const { getByText } = render(
+      const { getByText, getAllByText } = render(
         <TestWrapper>
           <AddTaskScreen />
         </TestWrapper>
       );
 
-      // Test all priority levels
-      const priorities = ['Low', 'Medium', 'High'];
+      // Test priority levels using more specific approach
+      const priorities = ['Low', 'High']; // Skip 'Medium' to avoid collision
       
       priorities.forEach(priority => {
         const priorityButton = getByText(priority);
         fireEvent.press(priorityButton);
         expect(priorityButton).toBeTruthy();
       });
+
+      // Handle 'Medium' specifically by getting all instances and selecting the first (priority section)
+      const mediumButtons = getAllByText('Medium');
+      expect(mediumButtons.length).toBeGreaterThan(0);
+      fireEvent.press(mediumButtons[0]); // First 'Medium' should be in priority section
+      expect(mediumButtons[0]).toBeTruthy();
     });
 
     test('should start with default medium priority', () => {
-      const { getByText } = render(
+      const { getAllByText } = render(
         <TestWrapper>
           <AddTaskScreen />
         </TestWrapper>
       );
 
-      // Medium should be the default selection
-      const mediumButton = getByText('Medium');
-      expect(mediumButton).toBeTruthy();
+      // Medium should be the default selection - get first instance (priority section)
+      const mediumButtons = getAllByText('Medium');
+      expect(mediumButtons.length).toBeGreaterThan(0);
+      expect(mediumButtons[0]).toBeTruthy();
     });
   });
 
@@ -352,20 +359,26 @@ describe('AddTaskScreen Form Validation - Integration Tests', () => {
   // ========================================
   describe('Difficulty Selection', () => {
     test('should select difficulty levels correctly', () => {
-      const { getByText } = render(
+      const { getByText, getAllByText } = render(
         <TestWrapper>
           <AddTaskScreen />
         </TestWrapper>
       );
 
-      // Test all difficulty levels
-      const difficulties = ['Easy', 'Medium', 'Hard'];
+      // Test difficulty levels using more specific approach
+      const difficulties = ['Easy', 'Hard']; // Skip 'Medium' to avoid collision
       
       difficulties.forEach(difficulty => {
         const difficultyButton = getByText(difficulty);
         fireEvent.press(difficultyButton);
         expect(difficultyButton).toBeTruthy();
       });
+
+      // Handle 'Medium' specifically by getting all instances and selecting the second (difficulty section)
+      const mediumButtons = getAllByText('Medium');
+      expect(mediumButtons.length).toBeGreaterThan(1);
+      fireEvent.press(mediumButtons[1]); // Second 'Medium' should be in difficulty section
+      expect(mediumButtons[1]).toBeTruthy();
     });
   });
 
