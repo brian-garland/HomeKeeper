@@ -7,6 +7,8 @@ import {
   Dimensions,
   Animated,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -118,7 +120,11 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
   };
 
   return (
-    <View style={styles.stepContainer}>
+    <KeyboardAvoidingView 
+      style={styles.stepContainer}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={insets.top + 50}
+    >
       <View style={styles.stepHeader}>
         <Text style={styles.stepTitle}>Where's your home?</Text>
         <Text style={styles.stepSubtitle}>
@@ -126,16 +132,11 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
         </Text>
       </View>
       
-      <KeyboardAwareScrollView 
+      <ScrollView 
         style={{ flex: 1 }}
-        showsVerticalScrollIndicator={false}
-        enableOnAndroid={true}
-        extraScrollHeight={insets.top + 150}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 120, justifyContent: 'space-between', flex: 1 }}
-        enableResetScrollToCoords={false}
-        keyboardOpeningTime={250}
-        enableAutomaticScroll={true}
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.inputSection}>
           <TextInput
@@ -153,14 +154,16 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
           </View>
         </View>
         
-        <PrimaryButton
-          title={isValidating ? "Validating..." : "Continue"}
-          onPress={handleNext}
-          disabled={!address.trim() || isValidating}
-          style={styles.primaryButton}
-        />
-      </KeyboardAwareScrollView>
-    </View>
+        <View style={styles.buttonContainer}>
+          <PrimaryButton
+            title={isValidating ? "Validating..." : "Continue"}
+            onPress={handleNext}
+            disabled={!address.trim() || isValidating}
+            style={styles.primaryButton}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -817,8 +820,10 @@ const styles = StyleSheet.create({
   
   // Form Styles
   inputSection: {
-    flex: 1,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.md,
     justifyContent: 'center',
+    flex: 1,
   },
   addressInput: {
     marginBottom: Spacing.md,
