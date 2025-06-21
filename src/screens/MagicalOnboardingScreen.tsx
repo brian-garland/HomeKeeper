@@ -8,7 +8,7 @@ import {
   Animated,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
@@ -102,6 +102,7 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
 const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }) => {
   const [address, setAddress] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handleNext = async () => {
     if (!address.trim()) {
@@ -125,28 +126,40 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
         </Text>
       </View>
       
-      <View style={styles.inputSection}>
-        <TextInput
-          placeholder="Enter your home address"
-          value={address}
-          onChangeText={setAddress}
-          style={styles.addressInput}
-        />
-        
-        <View style={styles.privacyNote}>
-          <Icon name="settings" size="sm" color={Colors.textSecondary} />
-          <Text style={styles.privacyText}>
-            Your address is kept private and secure
-          </Text>
+      <KeyboardAwareScrollView 
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        enableOnAndroid={true}
+        extraScrollHeight={insets.top + 150}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 120, justifyContent: 'space-between', flex: 1 }}
+        enableResetScrollToCoords={false}
+        keyboardOpeningTime={250}
+        enableAutomaticScroll={true}
+      >
+        <View style={styles.inputSection}>
+          <TextInput
+            placeholder="Enter your home address"
+            value={address}
+            onChangeText={setAddress}
+            style={styles.addressInput}
+          />
+          
+          <View style={styles.privacyNote}>
+            <Icon name="settings" size="sm" color={Colors.textSecondary} />
+            <Text style={styles.privacyText}>
+              Your address is kept private and secure
+            </Text>
+          </View>
         </View>
-      </View>
-      
-      <PrimaryButton
-        title={isValidating ? "Validating..." : "Continue"}
-        onPress={handleNext}
-        disabled={!address.trim() || isValidating}
-        style={styles.primaryButton}
-      />
+        
+        <PrimaryButton
+          title={isValidating ? "Validating..." : "Continue"}
+          onPress={handleNext}
+          disabled={!address.trim() || isValidating}
+          style={styles.primaryButton}
+        />
+      </KeyboardAwareScrollView>
     </View>
   );
 };
@@ -156,6 +169,8 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
   const [homeType, setHomeType] = useState<string>('');
   const [yearBuilt, setYearBuilt] = useState<string>('');
   const [squareFootage, setSquareFootage] = useState<string>('');
+  const insets = useSafeAreaInsets();
+  const scrollViewRef = useRef<any>(null);
 
   const homeTypes = [
     { id: 'single_family', label: 'Single Family Home' },
@@ -173,6 +188,12 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
     onNext(characteristics);
   };
 
+  const handleSquareFootageFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
   return (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
@@ -183,11 +204,16 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
       </View>
       
       <KeyboardAwareScrollView 
+        ref={scrollViewRef}
         style={styles.characteristicsForm} 
         showsVerticalScrollIndicator={false}
         enableOnAndroid={true}
-        extraScrollHeight={50}
+        extraScrollHeight={140}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 200 }}
+        enableResetScrollToCoords={false}
+        keyboardOpeningTime={250}
+        enableAutomaticScroll={true}
       >
         <View style={styles.formSection}>
           <Text style={styles.formLabel}>Home Type</Text>
@@ -222,23 +248,26 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
           />
         </View>
         
-        <View style={styles.formSection}>
+        <View style={[styles.formSection, { marginBottom: 40 }]}>
           <Text style={styles.formLabel}>Square Footage (Optional)</Text>
           <TextInput
             placeholder="e.g., 2500"
             value={squareFootage}
             onChangeText={setSquareFootage}
+            onFocus={handleSquareFootageFocus}
             style={styles.formInput}
           />
         </View>
+        
+        <View style={{ height: 60 }} />
+        
+        <PrimaryButton
+          title="Continue"
+          onPress={handleNext}
+          disabled={!homeType}
+          style={styles.primaryButton}
+        />
       </KeyboardAwareScrollView>
-      
-      <PrimaryButton
-        title="Continue"
-        onPress={handleNext}
-        disabled={!homeType}
-        style={styles.primaryButton}
-      />
     </View>
   );
 };
@@ -628,50 +657,41 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAwareScrollView 
-        style={styles.container}
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        extraScrollHeight={150}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${((currentStep + 1) / steps.length) * 100}%` }
-              ]} 
-            />
-          </View>
-          <Text style={styles.progressText}>
-            {currentStep + 1} of {steps.length}
-          </Text>
+      {/* Fixed Progress Indicator */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBar}>
+          <View 
+            style={[
+              styles.progressFill, 
+              { width: `${((currentStep + 1) / steps.length) * 100}%` }
+            ]} 
+          />
         </View>
+        <Text style={styles.progressText}>
+          {currentStep + 1} of {steps.length}
+        </Text>
+      </View>
 
-        {/* Step Content */}
-        <View style={styles.stepsContainer}>
-          <View style={styles.stepWrapper}>
-            {currentStep === 0 && (
-              <WelcomeStep onNext={handleNext} />
-            )}
-            {currentStep === 1 && (
-              <AddressStep onNext={(address) => handleStepData('address', address)} />
-            )}
-            {currentStep === 2 && (
-              <HomeCharacteristicsStep onNext={(characteristics) => handleStepData('characteristics', characteristics)} />
-            )}
-            {currentStep === 3 && (
-              <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
-            )}
-            {currentStep === 4 && (
-              <CalendarRevealStep onComplete={handleComplete} onboardingData={onboardingData} />
-            )}
-          </View>
+      {/* Step Content */}
+      <View style={styles.stepsContainer}>
+        <View style={styles.stepWrapper}>
+          {currentStep === 0 && (
+            <WelcomeStep onNext={handleNext} />
+          )}
+          {currentStep === 1 && (
+            <AddressStep onNext={(address) => handleStepData('address', address)} />
+          )}
+          {currentStep === 2 && (
+            <HomeCharacteristicsStep onNext={(characteristics) => handleStepData('characteristics', characteristics)} />
+          )}
+          {currentStep === 3 && (
+            <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
+          )}
+          {currentStep === 4 && (
+            <CalendarRevealStep onComplete={handleComplete} onboardingData={onboardingData} />
+          )}
         </View>
-      </KeyboardAwareScrollView>
+      </View>
     </SafeAreaView>
   );
 };

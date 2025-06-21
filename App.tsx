@@ -7,6 +7,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { DataProvider } from './src/contexts/DataContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -14,13 +15,15 @@ import { Colors } from './src/theme/colors';
 
 export default function App() {
   return (
-    <ErrorBoundary>
-      <DataProvider>
-        <NavigationContainer>
-          <StatusBar style="dark" backgroundColor={Colors.white} />
-          <AppNavigator />
-        </NavigationContainer>
-      </DataProvider>
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <DataProvider>
+          <NavigationContainer>
+            <StatusBar style="dark" backgroundColor={Colors.white} />
+            <AppNavigator />
+          </NavigationContainer>
+        </DataProvider>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
