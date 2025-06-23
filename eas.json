@@ -6,17 +6,46 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_ENV": "preview"
+      }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_ENV": "production"
+      },
+      "ios": {
+        "distribution": "store",
+        "autoIncrement": true,
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "distribution": "store",
+        "autoIncrement": true,
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@email.com",
+        "ascAppId": "placeholder-will-update-after-app-creation",
+        "appleTeamId": "placeholder-will-update-after-approval"
+      },
+      "android": {
+        "serviceAccountKeyPath": "path/to/service-account-key.json",
+        "track": "internal"
+      }
+    }
   }
 }

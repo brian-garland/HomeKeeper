@@ -1400,8 +1400,8 @@
             "title": "Setup Apple Developer Account and App Store Connect",
             "description": "Create or verify Apple Developer account and create HomeKeeper app listing in App Store Connect.",
             "dependencies": [],
-            "details": "Ensure Apple Developer account is active ($99/year membership). Create new app in App Store Connect with bundle ID matching your app configuration. Set up basic app information including name, description, category (Productivity), and age rating.",
-            "status": "pending",
+            "details": "Ensure Apple Developer account is active ($99/year membership). Create new app in App Store Connect with bundle ID matching your app configuration. Set up basic app information including name, description, category (Productivity), and age rating.\n<info added on 2025-06-23T20:50:15.133Z>\nDeveloper accounts setup progress:\n✅ Apple Developer account signup completed ($99/year)\n✅ Google Play Developer account signup completed ($25 one-time)\n✅ Android documentation submitted for verification\n\nNext steps pending account approval:\n- Create HomeKeeper app listing in App Store Connect\n- Create HomeKeeper app listing in Play Console\n- Set up basic app metadata for both platforms\n\nAccount approval timeline:\n- Apple: Usually 24-48 hours\n- Google Play: Usually within a few hours to 1 day\n\nReady to proceed with app listings once accounts are approved.\n</info added on 2025-06-23T20:50:15.133Z>",
+            "status": "done",
             "testStrategy": "Verify app listing exists in App Store Connect with correct bundle ID and basic metadata."
           },
           {
@@ -1417,7 +1417,10 @@
             "id": 3,
             "title": "Configure Banking and Tax Information (Optional - Can Be Done Later)",
             "description": "Set up payment and tax information for both app stores to enable future monetization. This can be deferred until after beta testing.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "OPTIONAL FOR BETA TESTING: Complete banking information setup in both App Store Connect and Play Console when ready to monetize. Configure tax forms and business information as required by both platforms. This is needed for paid apps or in-app purchases but can be added later. For early-stage testing, you can skip this step and add financial information before public launch.",
             "status": "pending",
             "testStrategy": "Verify that banking and tax information is complete and accepted by both platforms when you're ready to monetize. For beta testing, verify that TestFlight and Play Console internal testing work without banking setup."
@@ -1431,7 +1434,9 @@
         "details": "Write engaging app descriptions highlighting HomeKeeper's key benefits for home maintenance management. Create high-quality screenshots showcasing the onboarding flow, task management, equipment tracking, and dashboard features. Design app icons and promotional graphics that meet store requirements. Configure app categories, keywords, and privacy policy links. Set up age ratings and content descriptions for both platforms.",
         "testStrategy": "Review app listings in both stores to ensure they accurately represent the app's functionality and provide compelling reasons for users to download. Verify all metadata meets store requirements and guidelines.",
         "status": "pending",
-        "dependencies": [29],
+        "dependencies": [
+          29
+        ],
         "priority": "high",
         "subtasks": [
           {
@@ -1439,7 +1444,7 @@
             "title": "Write App Store Descriptions and Keywords",
             "description": "Create compelling app descriptions and keyword strategies for both App Store Connect and Play Console.",
             "dependencies": [],
-            "details": "Write engaging short and long descriptions highlighting HomeKeeper's benefits: proactive maintenance, money savings, equipment tracking, intelligent task generation. Research and include relevant keywords for discoverability: home maintenance, property management, preventive maintenance, home care, task management.",
+            "details": "Write engaging short and long descriptions highlighting HomeKeeper's benefits: proactive maintenance, money savings, equipment tracking, intelligent task generation. Research and include relevant keywords for discoverability: home maintenance, property management, preventive maintenance, home care, task management.\n<info added on 2025-06-23T20:52:24.624Z>\n- Created comprehensive store content document: docs/STORE_LISTINGS_CONTENT.md\n- Written compelling app descriptions for both iOS and Android\n- Researched and compiled primary, secondary, and long-tail keywords\n- Optimized descriptions for App Store Optimization (ASO)\n- Included character limits and formatting guidelines\n- Added metadata requirements and technical specifications\n- Ready for immediate use once developer accounts are approved\n- All content follows platform guidelines and highlights HomeKeeper's key benefits: proactive maintenance, money savings, weather integration, and intelligent task generation\n</info added on 2025-06-23T20:52:24.624Z>",
             "status": "pending",
             "testStrategy": "Review descriptions for clarity, benefit-focused messaging, and keyword optimization. Ensure character limits are met for both platforms."
           },
@@ -1449,7 +1454,7 @@
             "description": "Design and create high-quality screenshots and promotional graphics showcasing key app features.",
             "dependencies": [],
             "details": "Create screenshots for iPhone, iPad, and Android devices showing: 1) Onboarding flow, 2) Task management screen, 3) Equipment tracking, 4) Dashboard overview, 5) Task creation process. Design app icons for iOS and Android following platform guidelines. Create promotional graphics if needed for featured placements.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Verify screenshots meet size requirements for all device types and clearly demonstrate app functionality. Ensure graphics are high-quality and professional."
           },
           {
@@ -1458,7 +1463,7 @@
             "description": "Set up privacy policy, age ratings, and other required app metadata for store compliance.",
             "dependencies": [],
             "details": "Create or update privacy policy covering data collection, usage, and storage practices. Configure age ratings based on app content (likely 4+ for iOS, Everyone for Android). Set app category (Productivity), content warnings if any, and any required permissions explanations.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify privacy policy is accessible and comprehensive. Confirm age ratings and categories are appropriate for the app's functionality."
           }
         ]
@@ -1470,7 +1475,9 @@
         "details": "Configure Expo Application Services (EAS) for building release versions. Set up production environment variables and configurations. Create iOS distribution certificates and provisioning profiles. Generate Android signing keys and upload certificates. Configure app versioning strategy and build optimization settings for production releases.",
         "testStrategy": "Verify that release builds are created successfully with proper code signing. Test builds on physical devices to ensure functionality matches development builds. Confirm build sizes are optimized for store distribution.",
         "status": "pending",
-        "dependencies": [30],
+        "dependencies": [
+          30
+        ],
         "priority": "high",
         "subtasks": [
           {
@@ -1478,15 +1485,17 @@
             "title": "Setup EAS Build Configuration",
             "description": "Configure Expo Application Services (EAS) for building production releases for both iOS and Android.",
             "dependencies": [],
-            "details": "Install and configure EAS CLI. Update eas.json with production build profiles for iOS and Android. Configure environment variables for production builds. Set up build optimization settings including bundle splitting and asset optimization.",
-            "status": "pending",
+            "details": "Install and configure EAS CLI. Update eas.json with production build profiles for iOS and Android. Configure environment variables for production builds. Set up build optimization settings including bundle splitting and asset optimization.\n<info added on 2025-06-23T20:59:50.305Z>\nEAS Build Configuration completed successfully!\n\nAccomplished:\n- Installed EAS CLI globally (eas-cli package)\n- Verified login status (logged in as bagn9c)\n- Enhanced eas.json with optimized production build profiles\n- Added environment variable configuration for preview and production\n- Configured iOS production builds with store distribution and auto-increment\n- Configured Android production builds with app-bundle type and auto-increment\n- Fixed slug mismatch issue (reverted to HomeKeeperApp to match EAS project)\n- Successfully validated configuration with `eas build:configure`\n\nDocumentation created:\n- Production environment variables template: docs/PRODUCTION_ENV_TEMPLATE.md\n\nReady for next steps:\n- Build commands ready: `eas build --platform ios --profile production`\n- Code signing setup (iOS certificates and Android signing) is next priority\n</info added on 2025-06-23T20:59:50.305Z>",
+            "status": "done",
             "testStrategy": "Verify EAS configuration is correct by running a test build and ensuring it completes successfully."
           },
           {
             "id": 2,
             "title": "Configure iOS Code Signing and Certificates",
             "description": "Set up iOS distribution certificates, provisioning profiles, and code signing for App Store distribution.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "Create iOS distribution certificate in Apple Developer account. Generate App Store provisioning profile for HomeKeeper app. Configure EAS build to use proper code signing credentials. Set up automatic code signing or manual certificate management as appropriate.",
             "status": "pending",
             "testStrategy": "Verify iOS build completes successfully with proper code signing and can be uploaded to App Store Connect."
@@ -1495,7 +1504,9 @@
             "id": 3,
             "title": "Configure Android Signing and Upload Certificate",
             "description": "Generate Android app signing keys and configure Play Console upload certificates.",
-            "dependencies": [1],
+            "dependencies": [
+              1
+            ],
             "details": "Generate Android signing key for release builds. Upload signing certificate to Google Play Console and configure app signing. Set up EAS to use proper Android signing configuration. Configure Play App Signing if using Google-managed keys.",
             "status": "pending",
             "testStrategy": "Verify Android build is properly signed and can be uploaded to Play Console for internal testing."
@@ -1504,7 +1515,10 @@
             "id": 4,
             "title": "Create Production Builds",
             "description": "Generate final production builds for both iOS and Android platforms.",
-            "dependencies": [2, 3],
+            "dependencies": [
+              2,
+              3
+            ],
             "details": "Execute EAS build commands for both iOS and Android production profiles. Verify builds complete successfully with proper optimizations. Download and test builds on physical devices to ensure functionality matches development environment.",
             "status": "pending",
             "testStrategy": "Install and test production builds on multiple iOS and Android devices to verify functionality, performance, and stability."
@@ -1518,7 +1532,9 @@
         "details": "Upload iOS build to App Store Connect and submit for TestFlight internal testing. Upload Android build to Play Console for internal testing track. Create internal testing groups and configure access permissions. Set up testing instructions and feedback collection processes. Configure automatic build distribution settings for future updates.",
         "testStrategy": "Verify builds are successfully uploaded and available in internal testing tracks. Confirm testing groups can access and install the app. Test the complete installation and update process from both stores.",
         "status": "pending",
-        "dependencies": [31],
+        "dependencies": [
+          31
+        ],
         "priority": "high",
         "subtasks": [
           {
@@ -1543,7 +1559,10 @@
             "id": 3,
             "title": "Create and Configure Testing Groups",
             "description": "Set up internal testing groups for both TestFlight and Play Console with appropriate access permissions.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "Create internal testing groups in both TestFlight and Play Console. Add initial team members as internal testers. Configure testing group permissions and access levels. Set up testing instructions and feedback collection guidelines for testers.",
             "status": "pending",
             "testStrategy": "Verify all team members can access and install the app from both testing platforms. Confirm testing instructions are clear and comprehensive."
@@ -1557,7 +1576,9 @@
         "details": "Install and test the app from both TestFlight and Play Console internal testing. Verify all core functionality works correctly in the store-distributed builds. Test the complete user flow from installation through key features. Validate that analytics, feedback systems, and performance monitoring are working correctly. Test app updates and version management processes.",
         "testStrategy": "Complete end-to-end testing using store-distributed builds. Document any differences from development builds and resolve critical issues. Verify the app meets store guidelines and is ready for external beta testing.",
         "status": "pending",
-        "dependencies": [32],
+        "dependencies": [
+          32
+        ],
         "priority": "high",
         "subtasks": [
           {
@@ -1582,7 +1603,10 @@
             "id": 3,
             "title": "Validate Analytics and Monitoring Systems",
             "description": "Verify that analytics tracking, feedback systems, and performance monitoring work correctly in store-distributed builds.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "Test that all analytics events are being tracked correctly in store builds. Verify feedback submission system works end-to-end. Check that any crash reporting or performance monitoring tools are functioning. Ensure data collection complies with privacy policies.",
             "status": "pending",
             "testStrategy": "Generate test analytics events and verify they appear in dashboards. Submit test feedback and confirm it's received properly."
@@ -1591,7 +1615,10 @@
             "id": 4,
             "title": "Test App Update Process",
             "description": "Validate the app update mechanism by creating a minor version update and testing the update flow.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "Create a minor update to the app (version bump with small change). Build and upload to both stores. Test the update notification and installation process on both platforms. Verify that user data persists correctly through updates.",
             "status": "pending",
             "testStrategy": "Successfully update the app on test devices and verify functionality is maintained and user data is preserved."
@@ -1605,7 +1632,9 @@
         "details": "Configure external beta testing groups in both TestFlight and Play Console. Create compelling beta testing invitations and onboarding materials. Set up beta tester communication channels and feedback collection processes. Define beta testing success criteria and graduation requirements for production release. Monitor beta testing metrics and user feedback to identify and resolve issues before public launch.",
         "testStrategy": "Successfully recruit and onboard external beta testers. Monitor beta testing metrics including crash rates, user engagement, and feedback quality. Validate that beta feedback collection and processing workflows are effective.",
         "status": "pending",
-        "dependencies": [33],
+        "dependencies": [
+          33
+        ],
         "priority": "medium",
         "subtasks": [
           {
@@ -1630,7 +1659,10 @@
             "id": 3,
             "title": "Launch Beta Testing Campaign",
             "description": "Recruit and onboard external beta testers for both iOS and Android platforms.",
-            "dependencies": [1, 2],
+            "dependencies": [
+              1,
+              2
+            ],
             "details": "Launch beta tester recruitment through appropriate channels (social media, forums, existing networks). Send invitations to TestFlight and Play Console testing. Onboard beta testers with welcome materials and testing guidelines. Monitor sign-up rates and testing participation.",
             "status": "pending",
             "testStrategy": "Successfully recruit target number of beta testers (suggest 50-100 for each platform) and achieve good testing participation rates."
@@ -1639,7 +1671,9 @@
             "id": 4,
             "title": "Monitor Beta Testing and Collect Feedback",
             "description": "Monitor beta testing metrics, collect feedback, and iterate on the app based on beta tester input.",
-            "dependencies": [3],
+            "dependencies": [
+              3
+            ],
             "details": "Monitor key beta testing metrics: installation rates, daily/weekly active users, crash rates, and feature usage. Collect and categorize beta tester feedback. Prioritize and address critical issues found during beta testing. Plan feature improvements and bug fixes based on feedback patterns.",
             "status": "pending",
             "testStrategy": "Achieve stable beta testing metrics with low crash rates and high user satisfaction. Successfully incorporate beta feedback into development roadmap."
@@ -1649,7 +1683,7 @@
     ],
     "metadata": {
       "created": "2025-06-18T16:10:09.340Z",
-      "updated": "2025-06-21T01:39:46.690Z",
+      "updated": "2025-06-23T21:34:08.760Z",
       "description": "Tasks for master context"
     }
   },

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "HomeKeeperApp",
+    "name": "HomeKeeper",
     "slug": "HomeKeeperApp",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bagn9c.homekeeper"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.bagn9c.HomeKeeperApp"
+      "package": "com.bagn9c.homekeeper"
     },
     "web": {
       "favicon": "./assets/favicon.png"

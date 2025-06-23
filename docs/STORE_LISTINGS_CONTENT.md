@@ -163,7 +163,7 @@ home maintenance, house care, property management, maintenance tracker, equipmen
 ### Support Information
 - **Support Email**: [YOUR_EMAIL_ADDRESS]
 - **Website**: [YOUR_WEBSITE_URL]  
-- **Privacy Policy URL**: https://gist.githubusercontent.com/brian-garland/b45dcdb2c7f8e5b54bc7d2aed1ff928b/raw/2270a7eedcf70ad9bcba185f6cc86f94f7f44983/privacy-policy.html
+- **Privacy Policy URL**: https://homekeeper-privacy.surge.sh
 
 ## Store Submission Checklist
 
