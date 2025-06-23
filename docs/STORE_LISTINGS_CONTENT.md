@@ -25,11 +25,11 @@ This document contains all the content needed for HomeKeeper's App Store Connect
   - [ ] Add website URL (or privacy policy URL)
   - [ ] Host at publicly accessible URL
 
-### Privacy Policy URL (To Be Completed)
+### Privacy Policy URL (LIVE ✅)
 ```
-https://[YOUR_GITHUB_USERNAME].github.io/HomeKeeper/privacy-policy
+https://gist.githubusercontent.com/brian-garland/b45dcdb2c7f8e5b54bc7d2aed1ff928b/raw/2270a7eedcf70ad9bcba185f6cc86f94f7f44983/privacy-policy.html
 ```
-*This will be the URL you provide to App Store Connect and Play Console*
+*This is the URL you'll provide to App Store Connect and Play Console*
 
 ## App Store Description (iOS)
 
@@ -163,12 +163,12 @@ home maintenance, house care, property management, maintenance tracker, equipmen
 ### Support Information
 - **Support Email**: [YOUR_EMAIL_ADDRESS]
 - **Website**: [YOUR_WEBSITE_URL]  
-- **Privacy Policy URL**: [TO BE HOSTED - see Privacy Policy section above]
+- **Privacy Policy URL**: https://gist.githubusercontent.com/brian-garland/b45dcdb2c7f8e5b54bc7d2aed1ff928b/raw/2270a7eedcf70ad9bcba185f6cc86f94f7f44983/privacy-policy.html
 
 ## Store Submission Checklist
 
 ### Before Submission
-- [ ] Privacy Policy hosted at public URL
+- [x] Privacy Policy hosted at public URL
 - [ ] Screenshots captured and optimized
 - [ ] App icon meets requirements
 - [ ] Age rating confirmed
