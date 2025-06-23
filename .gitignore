@@ -57,6 +57,7 @@ metro.config.js.bak
 # Development Tools
 # ================================================================
 .vscode/
+.cursor/
 .idea/
 *.swp
 *.swo
