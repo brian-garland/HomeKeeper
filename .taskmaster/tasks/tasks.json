@@ -1454,7 +1454,7 @@
             "description": "Design and create high-quality screenshots and promotional graphics showcasing key app features.",
             "dependencies": [],
             "details": "Create screenshots for iPhone, iPad, and Android devices showing: 1) Onboarding flow, 2) Task management screen, 3) Equipment tracking, 4) Dashboard overview, 5) Task creation process. Design app icons for iOS and Android following platform guidelines. Create promotional graphics if needed for featured placements.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Verify screenshots meet size requirements for all device types and clearly demonstrate app functionality. Ensure graphics are high-quality and professional."
           },
           {
@@ -1474,7 +1474,7 @@
         "description": "Create production-ready builds for both iOS and Android with proper code signing and optimization.",
         "details": "Configure Expo Application Services (EAS) for building release versions. Set up production environment variables and configurations. Create iOS distribution certificates and provisioning profiles. Generate Android signing keys and upload certificates. Configure app versioning strategy and build optimization settings for production releases.",
         "testStrategy": "Verify that release builds are created successfully with proper code signing. Test builds on physical devices to ensure functionality matches development builds. Confirm build sizes are optimized for store distribution.",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           30
         ],
@@ -1497,7 +1497,7 @@
               1
             ],
             "details": "Create iOS distribution certificate in Apple Developer account. Generate App Store provisioning profile for HomeKeeper app. Configure EAS build to use proper code signing credentials. Set up automatic code signing or manual certificate management as appropriate.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": "Verify iOS build completes successfully with proper code signing and can be uploaded to App Store Connect."
           },
           {
@@ -1683,7 +1683,7 @@
     ],
     "metadata": {
       "created": "2025-06-18T16:10:09.340Z",
-      "updated": "2025-06-23T21:34:08.760Z",
+      "updated": "2025-06-24T02:00:17.482Z",
       "description": "Tasks for master context"
     }
   },

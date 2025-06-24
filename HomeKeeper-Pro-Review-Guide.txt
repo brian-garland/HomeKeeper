@@ -1,0 +1,86 @@
+HomeKeeper Pro - Apple App Store Review Guide
+
+==============================================
+QUICK START TESTING INSTRUCTIONS
+==============================================
+
+1. ONBOARDING SETUP:
+   • Enter zip code "64113" during initial setup
+   • Select "Single Family Home" for home type
+   • Choose any square footage (suggest 2000 sq ft)
+   • Select "1960s" for home age
+   • Choose "Proactive" maintenance style
+   • App automatically generates 5 sample tasks and 9 equipment items
+
+2. NO LOGIN REQUIRED:
+   • App works entirely with local storage
+   • No user accounts, passwords, or internet required
+   • All data stored securely on device only
+
+==============================================
+KEY FEATURES TO TEST
+==============================================
+
+DASHBOARD SCREEN:
+• Real weather integration (87°F scattered clouds for Kansas City)
+• Home location display
+• Task summary with completion tracking
+• Money saved from maintenance tracking
+
+TASK MANAGEMENT:
+• View 5 pre-loaded maintenance tasks
+• Complete tasks to see recurring task generation
+• Money saved calculation (e.g., $400 for deep cleaning)
+• Smart scheduling based on equipment and seasons
+
+EQUIPMENT TRACKING:
+• 9 pre-loaded equipment items (HVAC, Water Heater, etc.)
+• Equipment-specific maintenance recommendations
+• Age-based maintenance scheduling
+
+ADD NEW TASKS:
+• Create custom maintenance tasks
+• Set priorities and schedules
+• Equipment association options
+
+==============================================
+SAMPLE TEST DATA PROVIDED
+==============================================
+
+LOCATION: Kansas City area (39.0184995, -94.5920501)
+WEATHER: Real-time integration with OpenWeatherMap
+TASKS: Replace HVAC Filter, Water Heater Inspection, Test Smoke Detectors, etc.
+EQUIPMENT: HVAC System, Water Heater, Smoke Detectors, Roof, Gutters, etc.
+
+==============================================
+TECHNICAL NOTES
+==============================================
+
+• Built with React Native/Expo
+• Local AsyncStorage for data persistence
+• Weather API integration with fallback to mock data
+• No backend servers or databases required
+• Fully functional offline
+
+==============================================
+CONTACT INFORMATION
+==============================================
+
+Developer: Brian Garland
+Email: bgarland723@gmail.com
+App Version: 1.0.0
+Bundle ID: com.bagn9c.homekeeper
+
+For any questions during review, please contact the developer directly.
+
+==============================================
+EXPECTED USER FLOW
+==============================================
+
+1. Download app → 2. Complete 5-step onboarding → 3. View dashboard with weather 
+→ 4. Browse maintenance tasks → 5. Complete a task to see money saved tracking 
+→ 6. Check equipment section → 7. Add new custom task
+
+Total test time: 5-10 minutes for full feature coverage.
+
+Thank you for reviewing HomeKeeper Pro! 
