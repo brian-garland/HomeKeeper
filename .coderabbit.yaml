@@ -1,6 +1,9 @@
 # CodeRabbit configuration for HomeKeeper
 # React Native + TypeScript + Expo project
 
+# Language code for CodeRabbit interface
+language: "en-US"
+
 # Review settings
 reviews:
   # High-level project context
@@ -19,19 +22,15 @@ reviews:
     - "!**/coverage/**"
     - "!**/.expo/**"
     - "!**/.taskmaster/**"
-
-# Language and framework specific rules
-language:
-  typescript:
-    # Focus on TypeScript best practices
-    enabled: true
-    strict_mode: true
-    
-  react:
-    # React Native specific checks
-    enabled: true
-    hooks_rules: true
-    performance: true
+  
+  # Tool-specific configurations
+  tools:
+    # ESLint configuration for TypeScript and React
+    eslint:
+      enabled: true
+      typescript_strict: true
+      react_hooks: true
+      react_native: true
     
 # Project-specific focus areas
 focus_areas:
