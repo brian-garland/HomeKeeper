@@ -78,26 +78,29 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
   // Get size styles
   const getSizeStyles = () => {
+    const baseMinHeight = AccessibilitySpacing.largeTouchTarget;
+    const scaledMinHeight = Math.max(baseMinHeight, ButtonTypography.primary.lineHeight + 16);
+    
     switch (size) {
       case 'small':
         return {
           paddingVertical: ComponentSpacing.buttonPaddingVertical - 4,
           paddingHorizontal: ComponentSpacing.buttonPaddingHorizontal - 4,
-          minHeight: 40,
-          fontSize: 14,
+          minHeight: Math.max(40, ButtonTypography.tertiary.lineHeight + 12),
+          fontSize: ButtonTypography.tertiary.fontSize,
         };
       case 'large':
         return {
           paddingVertical: ComponentSpacing.buttonPaddingVertical + 4,
           paddingHorizontal: ComponentSpacing.buttonPaddingHorizontal + 4,
-          minHeight: 56,
-          fontSize: 18,
+          minHeight: Math.max(56, ButtonTypography.primary.lineHeight + 20),
+          fontSize: ButtonTypography.primary.fontSize,
         };
       default:
         return {
           paddingVertical: ComponentSpacing.buttonPaddingVertical,
           paddingHorizontal: ComponentSpacing.buttonPaddingHorizontal,
-          minHeight: AccessibilitySpacing.largeTouchTarget,
+          minHeight: scaledMinHeight,
           fontSize: ButtonTypography.primary.fontSize,
         };
     }

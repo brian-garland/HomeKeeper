@@ -87,7 +87,7 @@ This is a feature request rather than a bug. Would enhance user experience by al
 - **Device/Platform:** [To be specified]
 - **App Version:** [To be specified]
 - **Severity:** High
-- **Status:** New
+- **Status:** In Progress
 - **Category:** UI/UX
 
 **Description:**
@@ -172,8 +172,8 @@ This affects the accuracy of task organization and could lead to confusion when 
 ## Issue Statistics
 
 ### By Category
-- **UI/UX:** 0
-- **Functionality:** 0
+- **UI/UX:** 1
+- **Functionality:** 2
 - **Performance:** 0
 - **Data:** 0
 - **Crashes:** 0
@@ -181,13 +181,13 @@ This affects the accuracy of task organization and could lead to confusion when 
 
 ### By Severity
 - **Critical:** 0
-- **High:** 0
-- **Medium:** 0
+- **High:** 2
+- **Medium:** 1
 - **Low:** 0
 
 ### By Status
-- **New:** 0
-- **In Progress:** 0
+- **New:** 2
+- **In Progress:** 1
 - **Fixed:** 0
 - **Won't Fix:** 0
 - **Need More Info:** 0

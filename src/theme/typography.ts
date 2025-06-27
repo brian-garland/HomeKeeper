@@ -7,8 +7,32 @@
  * Platform: Optimized for iOS and Android native feel
  */
 
-import { Platform } from 'react-native';
+import { Platform, PixelRatio } from 'react-native';
 import { Colors } from './colors';
+
+// Font scaling utility for accessibility
+export const getFontScale = () => {
+  try {
+    const scale = PixelRatio.getFontScale();
+    // Clamp the scale to prevent extreme sizes that break layouts
+    const maxScale = 2.0; // Maximum 200% scaling
+    const minScale = 0.85; // Minimum 85% scaling
+    return Math.max(minScale, Math.min(maxScale, scale));
+  } catch (error) {
+    // Fallback for test environments or when PixelRatio is not available
+    return 1.0;
+  }
+};
+
+// Helper function to create responsive font sizes
+export const getResponsiveFontSize = (baseSize: number): number => {
+  return Math.round(baseSize * getFontScale());
+};
+
+// Helper function to create responsive line heights
+export const getResponsiveLineHeight = (baseSize: number, ratio: number = 1.4): number => {
+  return Math.round(baseSize * getFontScale() * ratio);
+};
 
 // Font Family Strategy
 const FontFamily = {
@@ -39,8 +63,8 @@ export const Typography = {
   // Large Display - Hero sections, onboarding
   displayLarge: {
     fontFamily: FontFamily.bold,
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: getResponsiveFontSize(32),
+    lineHeight: getResponsiveLineHeight(32, 1.25),
     letterSpacing: -0.5,
     color: Colors.textPrimary,
   },
@@ -48,8 +72,8 @@ export const Typography = {
   // Medium Display - Section headers
   displayMedium: {
     fontFamily: FontFamily.bold,
-    fontSize: 28,
-    lineHeight: 36,
+    fontSize: getResponsiveFontSize(28),
+    lineHeight: getResponsiveLineHeight(28, 1.29),
     letterSpacing: -0.25,
     color: Colors.textPrimary,
   },
@@ -57,8 +81,8 @@ export const Typography = {
   // Small Display - Card headers
   displaySmall: {
     fontFamily: FontFamily.bold,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: getResponsiveFontSize(24),
+    lineHeight: getResponsiveLineHeight(24, 1.33),
     letterSpacing: 0,
     color: Colors.textPrimary,
   },
@@ -66,8 +90,8 @@ export const Typography = {
   // Large Headline - Screen titles
   headlineLarge: {
     fontFamily: FontFamily.semibold,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: getResponsiveFontSize(24),
+    lineHeight: getResponsiveLineHeight(24, 1.33),
     letterSpacing: 0,
     color: Colors.textPrimary,
   },
@@ -75,8 +99,8 @@ export const Typography = {
   // Medium Headline - Card titles
   headlineMedium: {
     fontFamily: FontFamily.semibold,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: getResponsiveFontSize(20),
+    lineHeight: getResponsiveLineHeight(20, 1.4),
     letterSpacing: 0,
     color: Colors.textPrimary,
   },
@@ -84,8 +108,8 @@ export const Typography = {
   // Small Headline - Section titles
   headlineSmall: {
     fontFamily: FontFamily.semibold,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(18),
+    lineHeight: getResponsiveLineHeight(18, 1.33),
     letterSpacing: 0,
     color: Colors.textPrimary,
   },
@@ -93,8 +117,8 @@ export const Typography = {
   // Large Title - Navigation titles
   titleLarge: {
     fontFamily: FontFamily.medium,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(18),
+    lineHeight: getResponsiveLineHeight(18, 1.33),
     letterSpacing: 0,
     color: Colors.textPrimary,
   },
@@ -102,8 +126,8 @@ export const Typography = {
   // Medium Title - Form labels, important text
   titleMedium: {
     fontFamily: FontFamily.medium,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.5),
     letterSpacing: 0.1,
     color: Colors.textPrimary,
   },
@@ -111,8 +135,8 @@ export const Typography = {
   // Small Title - Input labels
   titleSmall: {
     fontFamily: FontFamily.medium,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.1,
     color: Colors.textSecondary,
   },
@@ -120,8 +144,8 @@ export const Typography = {
   // Large Label - Button text, tabs
   labelLarge: {
     fontFamily: FontFamily.medium,
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.25),
     letterSpacing: 0.1,
     color: Colors.textPrimary,
   },
@@ -129,8 +153,8 @@ export const Typography = {
   // Medium Label - Secondary buttons
   labelMedium: {
     fontFamily: FontFamily.medium,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.2,
     color: Colors.textSecondary,
   },
@@ -138,8 +162,8 @@ export const Typography = {
   // Small Label - Tags, badges
   labelSmall: {
     fontFamily: FontFamily.medium,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: getResponsiveFontSize(12),
+    lineHeight: getResponsiveLineHeight(12, 1.33),
     letterSpacing: 0.4,
     color: Colors.textTertiary,
   },
@@ -147,8 +171,8 @@ export const Typography = {
   // Large Body - Main content
   bodyLarge: {
     fontFamily: FontFamily.regular,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.5),
     letterSpacing: 0.1,
     color: Colors.textPrimary,
   },
@@ -156,8 +180,8 @@ export const Typography = {
   // Medium Body - Standard text
   bodyMedium: {
     fontFamily: FontFamily.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.2,
     color: Colors.textSecondary,
   },
@@ -165,8 +189,8 @@ export const Typography = {
   // Small Body - Captions, metadata
   bodySmall: {
     fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: getResponsiveFontSize(12),
+    lineHeight: getResponsiveLineHeight(12, 1.33),
     letterSpacing: 0.3,
     color: Colors.textTertiary,
   },
@@ -174,8 +198,8 @@ export const Typography = {
   // Caption - Small supporting text
   caption: {
     fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: getResponsiveFontSize(12),
+    lineHeight: getResponsiveLineHeight(12, 1.33),
     letterSpacing: 0.4,
     color: Colors.textTertiary,
   },
@@ -183,8 +207,8 @@ export const Typography = {
   // Overline - Small caps labels
   overline: {
     fontFamily: FontFamily.medium,
-    fontSize: 10,
-    lineHeight: 16,
+    fontSize: getResponsiveFontSize(10),
+    lineHeight: getResponsiveLineHeight(10, 1.6),
     letterSpacing: 1.5,
     color: Colors.textTertiary,
     textTransform: 'uppercase' as const,
@@ -195,22 +219,22 @@ export const Typography = {
 export const ButtonTypography = {
   primary: {
     fontFamily: FontFamily.semibold,
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.25),
     letterSpacing: 0.1,
     color: Colors.white,
   },
   secondary: {
     fontFamily: FontFamily.medium,
-    fontSize: 16,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.25),
     letterSpacing: 0.1,
     color: Colors.primary,
   },
   tertiary: {
     fontFamily: FontFamily.medium,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.2,
     color: Colors.textSecondary,
   },
@@ -220,36 +244,36 @@ export const ButtonTypography = {
 export const InputTypography = {
   input: {
     fontFamily: FontFamily.regular,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.5),
     letterSpacing: 0.1,
     color: Colors.textPrimary,
   },
   placeholder: {
     fontFamily: FontFamily.regular,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.5),
     letterSpacing: 0.1,
     color: Colors.textTertiary,
   },
   label: {
     fontFamily: FontFamily.medium,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.1,
     color: Colors.textSecondary,
   },
   helper: {
     fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: getResponsiveFontSize(12),
+    lineHeight: getResponsiveLineHeight(12, 1.33),
     letterSpacing: 0.3,
     color: Colors.textTertiary,
   },
   error: {
     fontFamily: FontFamily.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: getResponsiveFontSize(12),
+    lineHeight: getResponsiveLineHeight(12, 1.33),
     letterSpacing: 0.3,
     color: Colors.error,
   },
@@ -259,29 +283,29 @@ export const InputTypography = {
 export const EducationalTypography = {
   stepTitle: {
     fontFamily: FontFamily.semibold,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(18),
+    lineHeight: getResponsiveLineHeight(18, 1.33),
     letterSpacing: 0,
     color: Colors.textPrimary,
   },
   stepDescription: {
     fontFamily: FontFamily.regular,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveLineHeight(16, 1.5),
     letterSpacing: 0.1,
     color: Colors.textSecondary,
   },
   safetyTip: {
     fontFamily: FontFamily.medium,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.1,
     color: Colors.warning,
   },
   learningObjective: {
     fontFamily: FontFamily.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: getResponsiveFontSize(14),
+    lineHeight: getResponsiveLineHeight(14, 1.43),
     letterSpacing: 0.1,
     color: Colors.info,
   },

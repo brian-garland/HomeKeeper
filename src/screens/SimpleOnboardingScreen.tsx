@@ -234,7 +234,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.xl,
-    justifyContent: 'space-between',
     minHeight: 600,
   },
   
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
   // Form Styles
   inputSection: {
     flex: 1,
-    justifyContent: 'center',
+    paddingVertical: Spacing.lg,
   },
   input: {
     marginBottom: Spacing.md,
@@ -311,7 +310,7 @@ const styles = StyleSheet.create({
   // Home Type Styles
   homeTypeSection: {
     flex: 1,
-    justifyContent: 'center',
+    paddingVertical: Spacing.lg,
   },
   homeTypeOption: {
     marginBottom: Spacing.sm,

@@ -43,7 +43,11 @@ interface OnboardingStep {
 // Welcome Screen Component
 const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
   <View style={styles.stepContainer}>
-    <View>
+    <ScrollView 
+      style={styles.scrollableContent}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.heroSection}>
         <View style={styles.iconContainer}>
           <Icon name="home" size="xl" color={Colors.primary} />
@@ -88,7 +92,7 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
     
     <View style={styles.buttonContainer}>
       <PrimaryButton
@@ -570,54 +574,62 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void; onboardingData: any
 
   return (
     <View style={styles.stepContainer}>
-      <Animated.View 
-        style={[
-          styles.revealContainer,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}
+      <ScrollView 
+        style={styles.scrollableContent}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.celebrationHeader}>
-          <View style={styles.celebrationIcon}>
-            <Icon name="check" size="xl" color={Colors.success} />
-          </View>
-          <Text style={styles.celebrationTitle}>Your schedule is ready! 🎉</Text>
-          <Text style={styles.celebrationSubtitle}>
-            We've created a personalized maintenance plan just for you
-          </Text>
-        </View>
-        
-        <View style={styles.schedulePreview}>
-          <Text style={styles.previewTitle}>Coming up this month:</Text>
-          {previewTasks.map((task, index) => (
-            <View key={task.id} style={styles.taskPreview}>
-              <Icon 
-                name={getTaskIcon(task)} 
-                size="md" 
-                color={getTaskColor(task)} 
-              />
-              <View style={styles.taskInfo}>
-                <Text style={styles.taskTitle}>{task.title}</Text>
-                <Text style={styles.taskDate}>{getTaskSchedule(task, index)}</Text>
-              </View>
+        <Animated.View 
+          style={[
+            styles.revealContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          <View style={styles.celebrationHeader}>
+            <View style={styles.celebrationIcon}>
+              <Icon name="check" size="xl" color={Colors.success} />
             </View>
-          ))}
-        </View>
-        
-        <View style={styles.valueHighlight}>
-          <Text style={styles.valueHighlightText}>
-            You're all set to keep your home in perfect condition! 🏠
-          </Text>
-        </View>
-      </Animated.View>
+            <Text style={styles.celebrationTitle}>Your schedule is ready! 🎉</Text>
+            <Text style={styles.celebrationSubtitle}>
+              We've created a personalized maintenance plan just for you
+            </Text>
+          </View>
+          
+          <View style={styles.schedulePreview}>
+            <Text style={styles.previewTitle}>Coming up this month:</Text>
+            {previewTasks.map((task, index) => (
+              <View key={task.id} style={styles.taskPreview}>
+                <Icon 
+                  name={getTaskIcon(task)} 
+                  size="md" 
+                  color={getTaskColor(task)} 
+                />
+                <View style={styles.taskInfo}>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <Text style={styles.taskDate}>{getTaskSchedule(task, index)}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          
+          <View style={styles.valueHighlight}>
+            <Text style={styles.valueHighlightText}>
+              You're all set to keep your home in perfect condition! 🏠
+            </Text>
+          </View>
+        </Animated.View>
+      </ScrollView>
       
-      <PrimaryButton
-        title="Start Using HomeKeeper"
-        onPress={onComplete}
-        style={styles.primaryButton}
-      />
+      <View style={styles.buttonContainer}>
+        <PrimaryButton
+          title="Start Using HomeKeeper"
+          onPress={onComplete}
+          style={styles.primaryButton}
+        />
+      </View>
     </View>
   );
 };
@@ -738,9 +750,15 @@ const styles = StyleSheet.create({
   stepContainer: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
-    justifyContent: 'space-between',
     paddingVertical: Spacing.lg,
     minHeight: 500,
+  },
+  scrollableContent: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: Spacing.lg,
   },
   
   // Welcome Step Styles
@@ -903,6 +921,7 @@ const styles = StyleSheet.create({
   },
   celebrationHeader: {
     alignItems: 'center',
+    marginTop: Spacing.xl,
     marginBottom: Spacing.xl,
   },
   celebrationIcon: {
@@ -917,6 +936,7 @@ const styles = StyleSheet.create({
     ...Typography.bodyLarge,
     color: Colors.textSecondary,
     textAlign: 'center',
+    marginBottom: Spacing.md,
   },
   schedulePreview: {
     backgroundColor: Colors.surface,
@@ -949,7 +969,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.successLight,
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   valueHighlightText: {
     ...Typography.bodyLarge,
@@ -961,9 +981,12 @@ const styles = StyleSheet.create({
   // Button Styles
   buttonContainer: {
     paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    backgroundColor: Colors.background,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
   primaryButton: {
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.lg,
+    width: '100%',
   },
 }); 
