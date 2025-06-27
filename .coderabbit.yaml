@@ -1,0 +1,56 @@
+# CodeRabbit configuration for HomeKeeper
+# React Native + TypeScript + Expo project
+
+# Review settings
+reviews:
+  # High-level project context
+  high_level_summary: true
+  
+  # Focus areas for HomeKeeper
+  auto_review:
+    enabled: true
+    drafts: false
+  
+  # Path-based review rules
+  path_filters:
+    - "!**/*.test.{js,jsx,ts,tsx}"
+    - "!**/__tests__/**"
+    - "!**/node_modules/**"
+    - "!**/coverage/**"
+    - "!**/.expo/**"
+    - "!**/.taskmaster/**"
+
+# Language and framework specific rules
+language:
+  typescript:
+    # Focus on TypeScript best practices
+    enabled: true
+    strict_mode: true
+    
+  react:
+    # React Native specific checks
+    enabled: true
+    hooks_rules: true
+    performance: true
+    
+# Project-specific focus areas
+focus_areas:
+  - "Performance optimization"
+  - "React Native best practices"
+  - "TypeScript type safety"
+  - "Error handling"
+  - "Code organization"
+  - "Testing coverage"
+  - "Security best practices"
+
+# Custom instructions for HomeKeeper context
+instructions: |
+  This is a React Native home maintenance app called HomeKeeper.
+  Focus on:
+  - Mobile app performance and user experience
+  - Data persistence and offline functionality  
+  - Component reusability and organization
+  - TypeScript type safety for data models
+  - React Native navigation patterns
+  - Supabase integration best practices
+  - Testing strategy for mobile components 

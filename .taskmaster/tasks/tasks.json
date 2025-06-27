@@ -1542,7 +1542,7 @@
             "title": "Upload iOS Build to TestFlight",
             "description": "Upload production iOS build to App Store Connect and configure for TestFlight internal testing.",
             "dependencies": [],
-            "details": "Upload iOS .ipa file to App Store Connect using Transporter, EAS Submit, or Xcode. Complete required metadata for TestFlight including test notes and app description. Submit build for internal testing review (usually automatic approval).",
+            "details": "Upload iOS .ipa file to App Store Connect using Transporter, EAS Submit, or Xcode. Complete required metadata for TestFlight including test notes and app description. Submit build for internal testing review (usually automatic approval).\n<info added on 2025-06-24T17:12:33.384Z>\nBuild ID: e4f3aa1a-d003-4f99-ad69-a7cdeb76234c is ready for TestFlight configuration.\n\nNext steps:\n1. Navigate to App Store Connect → HomeKeeper Pro → TestFlight tab\n2. Set up Internal Testing group\n3. Add internal testers (starting with bgarland723@gmail.com)\n4. Enable the build for internal testing\n5. Add test notes for testers\n\nThis subtask can be marked as essentially complete - the build upload is done, just need TestFlight configuration now.\n</info added on 2025-06-24T17:12:33.384Z>",
             "status": "pending",
             "testStrategy": "Verify build appears in TestFlight with 'Ready to Test' status and can be installed by internal testers."
           },
