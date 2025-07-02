@@ -17,6 +17,7 @@ import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
 import { useEquipment } from '../hooks/useEquipment';
+import { DropdownPicker, DropdownOption } from '../components/inputs';
 
 // Helper function for equipment icons
 const getEquipmentIcon = (category: string) => {
@@ -203,7 +204,7 @@ export const TasksScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'open' | 'done' | 'overdue'>('all');
+  const [filter, setFilter] = useState<'all' | 'open' | 'done' | 'overdue'>('open');
   const [equipmentFilter, setEquipmentFilter] = useState<string | null>(null);
 
   // Set initial filter from route params
@@ -254,9 +255,8 @@ export const TasksScreen: React.FC = () => {
   const getFilteredTasks = () => {
     let filtered: any[] = [];
     
-    if (filter === 'all') {
-      filtered = tasks;
-    } else if (filter === 'open') {
+    if (filter === 'all' || filter === 'open') {
+      // Show only active (not completed) tasks by default
       filtered = tasks.filter(task => !task.completed_at);
     } else if (filter === 'done') {
       filtered = tasks.filter(task => !!task.completed_at);
@@ -286,7 +286,7 @@ export const TasksScreen: React.FC = () => {
     );
 
     return {
-      all: tasks.length,
+      all: openTasks.length, // Only count active tasks for 'all'
       open: openTasks.length,
       done: completedTasks.length,
       overdue: overdueTasks.length,
@@ -366,77 +366,28 @@ export const TasksScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Equipment Filter */}
-        {equipment.length > 0 && (
-          <View style={styles.equipmentFilterSection}>
-            <Text style={styles.sectionTitle}>Filter by Equipment</Text>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.equipmentFilterContainer}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.equipmentFilterChip,
-                  !equipmentFilter && styles.equipmentFilterChipActive
-                ]}
-                onPress={() => setEquipmentFilter(null)}
-              >
-                <Text style={[
-                  styles.equipmentFilterText,
-                  !equipmentFilter && styles.equipmentFilterTextActive
-                ]}>
-                  All Equipment
-                </Text>
-              </TouchableOpacity>
-              
-              {equipment.map((eq) => (
-                <TouchableOpacity
-                  key={eq.id}
-                  style={[
-                    styles.equipmentFilterChip,
-                    equipmentFilter === eq.id && styles.equipmentFilterChipActive
-                  ]}
-                  onPress={() => setEquipmentFilter(eq.id)}
-                >
-                  <Icon 
-                    name={getEquipmentIcon(eq.category)} 
-                    size="xs" 
-                    color={equipmentFilter === eq.id ? Colors.white : Colors.primary} 
-                  />
-                  <Text style={[
-                    styles.equipmentFilterText,
-                    equipmentFilter === eq.id && styles.equipmentFilterTextActive
-                  ]}>
-                    {eq.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Current Filter Indicator */}
-        <View style={styles.filterIndicatorSection}>
-          <Text style={styles.filterIndicatorText}>
-            Showing: {filter === 'all' ? 'All Tasks' : filter === 'open' ? 'Open Tasks' : filter === 'done' ? 'Completed Tasks' : 'Overdue Tasks'}
-            {equipmentFilter && ` for ${equipmentMap[equipmentFilter]?.name}`} ({filteredTasks.length})
-          </Text>
-          {(filter !== 'all' || equipmentFilter) && (
-            <TouchableOpacity 
-              onPress={() => {
-                setFilter('all');
-                setEquipmentFilter(null);
-              }} 
-              style={styles.showAllButton}
-            >
-              <Text style={styles.showAllText}>Show All</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
         {/* Tasks List */}
         <View style={styles.tasksSection}>
+          {/* Equipment Filter - Secondary/Optional */}
+          {equipment.length > 0 && (
+            <View style={styles.equipmentFilterSection}>
+              <DropdownPicker
+                label="Filter by Equipment (Optional)"
+                placeholder="All Equipment"
+                options={equipment.map((eq): DropdownOption => ({
+                  id: eq.id,
+                  label: eq.name,
+                  value: eq,
+                }))}
+                selectedId={equipmentFilter}
+                onSelect={setEquipmentFilter}
+                accessibilityLabel="Filter tasks by equipment"
+                accessibilityHint="Select equipment to filter tasks, or choose All Equipment to show all tasks"
+                testID="equipment-filter-dropdown"
+              />
+            </View>
+          )}
+
           {filteredTasks.length === 0 && (
             <View style={styles.emptyContainer}>
               <Icon name="tasks" size="xl" color={Colors.textTertiary} />
@@ -469,6 +420,7 @@ export const TasksScreen: React.FC = () => {
             </View>
           )}
         </View>
+
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -718,28 +670,6 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.textSecondary,
   },
-  filterIndicatorSection: {
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  filterIndicatorText: {
-    ...Typography.bodyMedium,
-    color: Colors.textPrimary,
-  },
-  showAllButton: {
-    padding: Spacing.sm,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primary,
-  },
-  showAllText: {
-    ...Typography.labelMedium,
-    color: Colors.white,
-  },
   equipmentBadge: {
     padding: Spacing.xs,
     borderRadius: 4,
@@ -753,33 +683,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   equipmentFilterSection: {
-    paddingHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-  },
-  equipmentFilterContainer: {
-    paddingRight: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  equipmentFilterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    backgroundColor: Colors.white,
-    gap: Spacing.xs,
-  },
-  equipmentFilterChipActive: {
-    backgroundColor: Colors.primary,
-  },
-  equipmentFilterText: {
-    ...Typography.labelMedium,
-    color: Colors.primary,
-  },
-  equipmentFilterTextActive: {
-    color: Colors.white,
+    marginBottom: Spacing.md,
   },
   moneySavedText: {
     color: Colors.success,

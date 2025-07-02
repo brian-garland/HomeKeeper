@@ -130,7 +130,7 @@ This is an accessibility issue that could prevent users with visual impairments 
 - **Device/Platform:** [To be specified]
 - **App Version:** [To be specified]
 - **Severity:** High
-- **Status:** New
+- **Status:** In Progress
 - **Category:** Functionality
 
 **Description:**
@@ -195,7 +195,7 @@ This affects the accuracy of task organization and could lead to confusion when 
 
 ### By Status
 - **New:** 2
-- **In Progress:** 0
+- **In Progress:** 1
 - **Fixed:** 1
 - **Won't Fix:** 0
 - **Need More Info:** 0

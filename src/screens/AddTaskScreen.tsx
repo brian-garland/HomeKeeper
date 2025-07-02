@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -19,6 +20,7 @@ import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
 import { useEquipment } from '../hooks/useEquipment';
+import { TaskRecurrence, FREQUENCY_OPTIONS, DEFAULT_RECURRENCE } from '../types/preferences';
 
 interface TaskFormData {
   title: string;
@@ -67,8 +69,10 @@ export const AddTaskScreen: React.FC = () => {
     ? equipment.find(eq => eq.id === specificEquipmentId)
     : null;
 
+  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(
+    specificEquipmentId || null
+  );
 
-  
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
@@ -79,6 +83,8 @@ export const AddTaskScreen: React.FC = () => {
     due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
   });
 
+  const [recurrence, setRecurrence] = useState<TaskRecurrence>({ ...DEFAULT_RECURRENCE });
+
   // Update category when specific equipment is found (handles timing issues)
   React.useEffect(() => {
     if (specificEquipment && specificEquipment.category && formData.category === 'general') {
@@ -86,45 +92,20 @@ export const AddTaskScreen: React.FC = () => {
     }
   }, [specificEquipment, formData.category]);
 
-  const findMatchingEquipment = (taskCategory: string) => {
-    if (!equipment || equipment.length === 0) {
-      console.log('🔍 No equipment available for matching');
-      return null;
-    }
-    
-    console.log('🔍 Finding equipment for category:', taskCategory);
-    console.log('🔍 Available equipment:', equipment.map(eq => ({ id: eq.id, name: eq.name, category: eq.category, type: eq.type })));
-    
-    const matchingEquipment = equipment.find(eq => 
-      eq.category === taskCategory || 
-      eq.type === taskCategory ||
-      (taskCategory === 'hvac' && (eq.category === 'hvac' || eq.type === 'hvac' || eq.type === 'hvac_system' || eq.type === 'central_air' || eq.type === 'heat_pump' || eq.type === 'furnace')) ||
-      (taskCategory === 'plumbing' && (eq.category === 'plumbing' || eq.type === 'water_heater')) ||
-      (taskCategory === 'electrical' && (eq.category === 'electrical' || eq.type === 'electrical_panel')) ||
-      (taskCategory === 'appliances' && eq.category === 'appliance')
-    );
-    
-    console.log('🔍 Found matching equipment:', matchingEquipment ? { id: matchingEquipment.id, name: matchingEquipment.name } : 'None');
-    return matchingEquipment || null;
-  };
-
   const handleSave = async () => {
     if (!formData.title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
       return;
     }
-
     if (!formData.description.trim()) {
       Alert.alert('Error', 'Please enter a task description');
       return;
     }
-
     setLoading(true);
     try {
-      // Use specific equipment if navigated from equipment detail, otherwise try to find matching equipment
-      const targetEquipment = specificEquipment || findMatchingEquipment(formData.category);
+      // Use specific equipment if navigated from equipment detail, otherwise use selectedEquipmentId
+      const targetEquipment = specificEquipment || (selectedEquipmentId ? equipment.find(eq => eq.id === selectedEquipmentId) : null);
       console.log('💾 Creating task with equipment:', targetEquipment ? targetEquipment.name : 'No equipment');
-      
       const newTask = {
         id: `demo-task-${Date.now()}`,
         created_at: new Date().toISOString(),
@@ -132,7 +113,7 @@ export const AddTaskScreen: React.FC = () => {
         home_id: homes[0]?.id || 'demo-home-1',
         equipment_id: targetEquipment?.id || null,
         template_id: null,
-        title: formData.title, // Don't automatically append equipment name - let user control this
+        title: formData.title,
         description: formData.description + (targetEquipment && targetEquipment.location ? ` (${targetEquipment.location})` : ''),
         category: formData.category,
         due_date: formData.due_date,
@@ -149,23 +130,17 @@ export const AddTaskScreen: React.FC = () => {
         notes: null,
         tags: [],
         money_saved_estimate: null,
-        recurrence: null
+        recurrence: recurrence.enabled ? (recurrence as any) : null
       };
-
       addTask(newTask);
-      
       const successMessage = targetEquipment 
         ? `Task created and associated with ${targetEquipment.name}!`
         : 'Task created successfully!';
-        
       Alert.alert('Success', successMessage, [
         { 
           text: 'OK', 
           onPress: () => {
-            // If we came from equipment detail via Tasks navigation, go back to Equipment
-            // and reset Tasks stack to TasksList
             if (specificEquipmentId) {
-              // Reset Tasks stack to TasksList before navigating to Equipment
               (navigation as any).reset({
                 index: 0,
                 routes: [{ name: 'TasksList' }],
@@ -267,6 +242,45 @@ export const AddTaskScreen: React.FC = () => {
           </ScrollView>
         </View>
 
+        {/* Equipment Picker */}
+        {!specificEquipment && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Equipment</Text>
+            <View style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: 8, backgroundColor: Colors.white }}>
+              <TouchableOpacity
+                style={{ padding: Spacing.md }}
+                onPress={() => {}}
+                disabled
+              >
+                <Text style={{ color: Colors.textSecondary }}>
+                  Select the equipment this task is for (optional)
+                </Text>
+              </TouchableOpacity>
+              <ScrollView style={{ maxHeight: 150 }}>
+                <TouchableOpacity
+                  style={{ padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: selectedEquipmentId === null ? Colors.primary + '10' : Colors.white }}
+                  onPress={() => setSelectedEquipmentId(null)}
+                >
+                  <Text style={{ color: selectedEquipmentId === null ? Colors.primary : Colors.textPrimary }}>
+                    No equipment (general task)
+                  </Text>
+                </TouchableOpacity>
+                {equipment.map(eq => (
+                  <TouchableOpacity
+                    key={eq.id}
+                    style={{ padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: selectedEquipmentId === eq.id ? Colors.primary + '10' : Colors.white }}
+                    onPress={() => setSelectedEquipmentId(eq.id)}
+                  >
+                    <Text style={{ color: selectedEquipmentId === eq.id ? Colors.primary : Colors.textPrimary }}>
+                      {eq.name} {eq.location ? `(${eq.location})` : ''}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        )}
+
         {/* Priority Selection */}
         <View style={styles.section}>
           <Text style={styles.label}>Priority</Text>
@@ -352,6 +366,68 @@ export const AddTaskScreen: React.FC = () => {
           />
           <Text style={styles.helperText}>Format: YYYY-MM-DD</Text>
         </View>
+
+        {/* Recurring Task Section */}
+        <View style={styles.section}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={styles.label}>Recurring Task</Text>
+            <Switch
+              value={recurrence.enabled}
+              onValueChange={(enabled) =>
+                setRecurrence(prev => ({ ...DEFAULT_RECURRENCE, ...prev, enabled }))
+              }
+              trackColor={{ false: Colors.border, true: Colors.primary + '40' }}
+              thumbColor={recurrence.enabled ? Colors.primary : Colors.textSecondary}
+            />
+          </View>
+          {recurrence.enabled && (
+            <View style={{ marginTop: Spacing.md }}>
+              <Text style={styles.helperText}>Repeat every:</Text>
+              <View style={styles.frequencyWrapRow}>
+                {FREQUENCY_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.frequencyButton,
+                      recurrence.frequency_type === option.value && styles.frequencyButtonActive
+                    ]}
+                    onPress={() =>
+                      setRecurrence(prev => ({
+                        ...prev,
+                        frequency_type: option.value,
+                        frequency_months: option.months || prev.frequency_months || 3
+                      }))
+                    }
+                  >
+                    <Text style={[
+                      styles.frequencyButtonText,
+                      recurrence.frequency_type === option.value && styles.frequencyButtonTextActive
+                    ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {recurrence.frequency_type === 'custom' && (
+                <View style={{ marginTop: Spacing.md }}>
+                  <Text style={styles.helperText}>Custom frequency (months):</Text>
+                  <TextInput
+                    style={[styles.textInput, { marginTop: Spacing.xs, width: 100 }]}
+                    value={recurrence.frequency_months?.toString() || ''}
+                    onChangeText={(text) =>
+                      setRecurrence(prev => ({
+                        ...prev,
+                        frequency_months: parseInt(text) || 1
+                      }))
+                    }
+                    placeholder="3"
+                    keyboardType="numeric"
+                  />
+                </View>
+              )}
+            </View>
+          )}
+        </View>
         
         {/* Extra spacing to ensure form is scrollable above keyboard */}
         <View style={styles.keyboardSpacer} />
@@ -361,10 +437,7 @@ export const AddTaskScreen: React.FC = () => {
           <SecondaryButton
             title="Cancel"
             onPress={() => {
-              // If we came from equipment detail via Tasks navigation, go back to Equipment
-              // and reset Tasks stack to TasksList
               if (specificEquipmentId) {
-                // Reset Tasks stack to TasksList before navigating to Equipment
                 (navigation as any).reset({
                   index: 0,
                   routes: [{ name: 'TasksList' }],
@@ -545,5 +618,33 @@ const styles = StyleSheet.create({
     fontSize: Typography.labelMedium.fontSize,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  frequencyWrapRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  frequencyButton: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    marginRight: 0,
+    marginBottom: Spacing.sm,
+  },
+  frequencyButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  frequencyButtonText: {
+    fontFamily: Typography.labelMedium.fontFamily,
+    fontSize: Typography.labelMedium.fontSize,
+    color: Colors.textPrimary,
+  },
+  frequencyButtonTextActive: {
+    color: Colors.white,
   },
 }); 
