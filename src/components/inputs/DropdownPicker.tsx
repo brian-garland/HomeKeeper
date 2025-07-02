@@ -23,7 +23,7 @@ import { Typography } from '../../theme/typography';
 import { Spacing } from '../../theme/spacing';
 
 export interface DropdownOption {
-  id: string;
+  id: string | null;
   label: string;
   value?: any;
 }
@@ -74,15 +74,25 @@ export const DropdownPicker: React.FC<DropdownPickerProps> = ({
     if (disabled) return;
 
     dropdownRef.current?.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
-      setDropdownLayout({ x: pageX, y: pageY, width, height });
-      setIsVisible(true);
-      
-      Animated.spring(animatedRotation, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }).start();
+      // Validate measure callback parameters to prevent positioning errors
+      if (
+        x !== undefined && y !== undefined && 
+        width !== undefined && height !== undefined && 
+        pageX !== undefined && pageY !== undefined &&
+        width > 0 && height > 0
+      ) {
+        setDropdownLayout({ x: pageX, y: pageY, width, height });
+        setIsVisible(true);
+        
+        Animated.spring(animatedRotation, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }).start();
+      } else {
+        console.warn('DropdownPicker: Invalid measure parameters, skipping dropdown open');
+      }
     });
   };
 
@@ -226,7 +236,7 @@ export const DropdownPicker: React.FC<DropdownPickerProps> = ({
             ]}
           >
             <FlatList
-              data={[{ id: null, label: 'All Equipment' }, ...options]}
+              data={options}
               keyExtractor={(item) => item.id || 'all'}
               renderItem={({ item }) => (
                 <TouchableOpacity

@@ -130,9 +130,9 @@ export const AddTaskScreen: React.FC = () => {
         notes: null,
         tags: [],
         money_saved_estimate: null,
-        recurrence: recurrence.enabled ? (recurrence as any) : null
+        recurrence: recurrence.enabled ? recurrence : null
       };
-      addTask(newTask);
+      addTask(newTask as any); // Type assertion needed due to database vs local type mismatch
       const successMessage = targetEquipment 
         ? `Task created and associated with ${targetEquipment.name}!`
         : 'Task created successfully!';
@@ -246,32 +246,32 @@ export const AddTaskScreen: React.FC = () => {
         {!specificEquipment && (
           <View style={styles.section}>
             <Text style={styles.label}>Equipment</Text>
-            <View style={{ borderWidth: 1, borderColor: Colors.border, borderRadius: 8, backgroundColor: Colors.white }}>
+            <View style={styles.equipmentPickerContainer}>
               <TouchableOpacity
-                style={{ padding: Spacing.md }}
+                style={styles.equipmentPickerHeader}
                 onPress={() => {}}
                 disabled
               >
-                <Text style={{ color: Colors.textSecondary }}>
+                <Text style={styles.equipmentPickerHeaderText}>
                   Select the equipment this task is for (optional)
                 </Text>
               </TouchableOpacity>
-              <ScrollView style={{ maxHeight: 150 }}>
+              <ScrollView style={styles.equipmentPickerScroll}>
                 <TouchableOpacity
-                  style={{ padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: selectedEquipmentId === null ? Colors.primary + '10' : Colors.white }}
+                  style={[styles.equipmentOption, selectedEquipmentId === null && styles.equipmentOptionSelected]}
                   onPress={() => setSelectedEquipmentId(null)}
                 >
-                  <Text style={{ color: selectedEquipmentId === null ? Colors.primary : Colors.textPrimary }}>
+                  <Text style={[styles.equipmentOptionText, selectedEquipmentId === null && styles.equipmentOptionTextSelected]}>
                     No equipment (general task)
                   </Text>
                 </TouchableOpacity>
                 {equipment.map(eq => (
                   <TouchableOpacity
                     key={eq.id}
-                    style={{ padding: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: selectedEquipmentId === eq.id ? Colors.primary + '10' : Colors.white }}
+                    style={[styles.equipmentOption, selectedEquipmentId === eq.id && styles.equipmentOptionSelected]}
                     onPress={() => setSelectedEquipmentId(eq.id)}
                   >
-                    <Text style={{ color: selectedEquipmentId === eq.id ? Colors.primary : Colors.textPrimary }}>
+                    <Text style={[styles.equipmentOptionText, selectedEquipmentId === eq.id && styles.equipmentOptionTextSelected]}>
                       {eq.name} {eq.location ? `(${eq.location})` : ''}
                     </Text>
                   </TouchableOpacity>
@@ -646,5 +646,35 @@ const styles = StyleSheet.create({
   },
   frequencyButtonTextActive: {
     color: Colors.white,
+  },
+  equipmentPickerContainer: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    backgroundColor: Colors.white,
+  },
+  equipmentPickerHeader: {
+    padding: Spacing.md,
+  },
+  equipmentPickerHeaderText: {
+    color: Colors.textSecondary,
+  },
+  equipmentPickerScroll: {
+    maxHeight: 150,
+  },
+  equipmentOption: {
+    padding: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.white,
+  },
+  equipmentOptionSelected: {
+    backgroundColor: Colors.primary + '10',
+  },
+  equipmentOptionText: {
+    color: Colors.textPrimary,
+  },
+  equipmentOptionTextSelected: {
+    color: Colors.primary,
   },
 }); 

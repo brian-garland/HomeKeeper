@@ -255,8 +255,8 @@ export const TasksScreen: React.FC = () => {
   const getFilteredTasks = () => {
     let filtered: any[] = [];
     
-    if (filter === 'all' || filter === 'open') {
-      // Show only active (not completed) tasks by default
+    if (filter === 'open') {
+      // Show only active (not completed) tasks
       filtered = tasks.filter(task => !task.completed_at);
     } else if (filter === 'done') {
       filtered = tasks.filter(task => !!task.completed_at);
@@ -286,7 +286,6 @@ export const TasksScreen: React.FC = () => {
     );
 
     return {
-      all: openTasks.length, // Only count active tasks for 'all'
       open: openTasks.length,
       done: completedTasks.length,
       overdue: overdueTasks.length,
@@ -374,11 +373,14 @@ export const TasksScreen: React.FC = () => {
               <DropdownPicker
                 label="Filter by Equipment (Optional)"
                 placeholder="All Equipment"
-                options={equipment.map((eq): DropdownOption => ({
-                  id: eq.id,
-                  label: eq.name,
-                  value: eq,
-                }))}
+                options={[
+                  { id: null, label: 'All Equipment', value: null },
+                  ...equipment.map((eq): DropdownOption => ({
+                    id: eq.id,
+                    label: eq.name,
+                    value: eq,
+                  }))
+                ]}
                 selectedId={equipmentFilter}
                 onSelect={setEquipmentFilter}
                 accessibilityLabel="Filter tasks by equipment"
@@ -392,16 +394,14 @@ export const TasksScreen: React.FC = () => {
             <View style={styles.emptyContainer}>
               <Icon name="tasks" size="xl" color={Colors.textTertiary} />
               <Text style={styles.emptyTitle}>
-                {filter === 'all' ? 'No Tasks Yet' : filter === 'open' ? 'No Open Tasks' : filter === 'done' ? 'No Completed Tasks' : 'No Overdue Tasks'}
+                {filter === 'open' ? 'No Open Tasks' : filter === 'done' ? 'No Completed Tasks' : 'No Overdue Tasks'}
               </Text>
               <Text style={styles.emptySubtitle}>
-                {filter === 'all' 
-                  ? 'Add your first task to get started'
-                  : filter === 'open'
-                    ? 'All your tasks are completed! Great job!'
-                    : filter === 'done'
-                      ? 'Complete some tasks to see them here'
-                      : 'Great! No overdue tasks right now'
+                {filter === 'open'
+                  ? 'All your tasks are completed! Great job!'
+                  : filter === 'done'
+                    ? 'Complete some tasks to see them here'
+                    : 'Great! No overdue tasks right now'
                 }
               </Text>
             </View>
