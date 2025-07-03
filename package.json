@@ -1,6 +1,6 @@
 {
   "name": "homekeeper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Home maintenance management application",
   "main": "index.ts",
   "scripts": {
