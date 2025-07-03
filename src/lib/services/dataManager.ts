@@ -10,6 +10,8 @@ type Equipment = Tables<'equipment'>
 export interface DataManagerInterface {
   getHome(homeId: string): Promise<Home | null>
   getEquipment(homeId: string): Promise<Equipment[]>
+  saveEquipment(homeId: string, equipment: Equipment[]): Promise<void>
+  addEquipment(homeId: string, equipmentData: TablesInsert<'equipment'>): Promise<Equipment>
   getExistingTasks(homeId: string): Promise<{ template_id: string | null; due_date: string }[]>
   createTask(taskData: TaskInsert): Promise<Task | null>
 }
@@ -46,6 +48,57 @@ class LocalDataManager implements DataManagerInterface {
     
     console.log('📦 LocalDataManager: No saved equipment found, returning defaults')
     return this.getDefaultEquipmentForHomeType(home.home_type || 'single_family')
+  }
+
+  async saveEquipment(homeId: string, equipment: Equipment[]): Promise<void> {
+    try {
+      await AsyncStorage.setItem('homekeeper_equipment', JSON.stringify(equipment))
+      console.log('📦 LocalDataManager: Saved equipment to AsyncStorage:', equipment.length)
+    } catch (error) {
+      console.error('Failed to save equipment to AsyncStorage:', error)
+      throw error
+    }
+  }
+
+  async addEquipment(homeId: string, equipmentData: TablesInsert<'equipment'>): Promise<Equipment> {
+    // Get existing equipment
+    const existingEquipment = await this.getEquipment(homeId)
+    
+    // Create new equipment with generated ID
+    const newEquipment: Equipment = {
+      id: `local-equipment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      home_id: homeId,
+      type: equipmentData.type || equipmentData.name || 'general',
+      name: equipmentData.name,
+      category: equipmentData.category,
+      brand: equipmentData.brand || null,
+      model: equipmentData.model || null,
+      serial_number: equipmentData.serial_number || null,
+      install_date: equipmentData.install_date || null,
+      purchase_date: equipmentData.purchase_date || null,
+      warranty_expires: equipmentData.warranty_expires || null,
+      maintenance_frequency_months: equipmentData.maintenance_frequency_months || null,
+      location: equipmentData.location || null,
+      room: equipmentData.room || null,
+      notes: equipmentData.notes || null,
+      manual_url: null,
+      active: equipmentData.active !== false,
+      next_service_due: null,
+      last_service_date: null,
+      needs_attention: null,
+      photo_urls: null,
+      specifications: null
+    }
+    
+    // Add to existing equipment list
+    const updatedEquipment = [...existingEquipment, newEquipment]
+    
+    // Save updated list
+    await this.saveEquipment(homeId, updatedEquipment)
+    
+    return newEquipment
   }
 
   async getExistingTasks(homeId: string): Promise<{ template_id: string | null; due_date: string }[]> {
@@ -188,6 +241,26 @@ class DatabaseDataManager implements DataManagerInterface {
       .eq('active', true)
     
     return error ? [] : data || []
+  }
+
+  async saveEquipment(homeId: string, equipment: Equipment[]): Promise<void> {
+    // For database manager, this would involve bulk updates
+    // For now, throw an error since this is typically not used for database-backed equipment
+    throw new Error('saveEquipment not implemented for DatabaseDataManager')
+  }
+
+  async addEquipment(homeId: string, equipmentData: TablesInsert<'equipment'>): Promise<Equipment> {
+    const { data, error } = await supabase
+      .from('equipment')
+      .insert(equipmentData)
+      .select()
+      .single()
+    
+    if (error) {
+      throw new Error(`Failed to add equipment: ${error.message}`)
+    }
+    
+    return data
   }
 
   async getExistingTasks(homeId: string): Promise<{ template_id: string | null; due_date: string }[]> {

@@ -95,11 +95,10 @@ export const AddEquipmentScreen: React.FC<AddEquipmentScreenProps> = ({ navigati
         active: true
       }
 
-      // For now, we'll simulate saving - in the future this will be integrated with dataManager
+      // Save equipment using the data manager
       console.log('📝 Saving equipment:', equipmentData)
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const savedEquipment = await dataManager.addEquipment(currentHome.id, equipmentData)
+      console.log('✅ Equipment saved successfully:', savedEquipment.name)
       
       Alert.alert(
         'Equipment Added!', 

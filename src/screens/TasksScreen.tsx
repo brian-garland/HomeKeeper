@@ -273,6 +273,21 @@ export const TasksScreen: React.FC = () => {
       filtered = filtered.filter(task => task.equipment_id === equipmentFilter);
     }
 
+    // Sort tasks by date
+    filtered.sort((a, b) => {
+      if (filter === 'done') {
+        // For completed tasks, sort by completion date (most recent first)
+        const dateA = new Date(a.completed_at || 0);
+        const dateB = new Date(b.completed_at || 0);
+        return dateB.getTime() - dateA.getTime();
+      } else {
+        // For open/overdue tasks, sort by due date (earliest first)
+        const dateA = new Date(a.due_date || '9999-12-31');
+        const dateB = new Date(b.due_date || '9999-12-31');
+        return dateA.getTime() - dateB.getTime();
+      }
+    });
+
     return filtered;
   };
 

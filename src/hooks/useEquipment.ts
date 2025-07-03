@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getDataManager } from '../lib/services/dataManager'
 import { useDataContext } from '../contexts/DataContext'
 import type { Tables } from '../types/database.types'
@@ -15,8 +15,7 @@ export const useEquipment = (homeId?: string) => {
   // Use provided homeId or first home's ID
   const currentHomeId = homeId || homes[0]?.id
   
-  // Use ref to track if we've already synced to avoid infinite loops
-  const hasSyncedRef = useRef(false)
+
 
   const loadEquipment = useCallback(async () => {
     if (!currentHomeId) {
@@ -32,12 +31,9 @@ export const useEquipment = (homeId?: string) => {
       const equipmentData = await dataManager.getEquipment(currentHomeId)
       setEquipment(equipmentData)
       
-      // Only sync to DataContext once to avoid infinite loops
-      if (!hasSyncedRef.current) {
-        console.log('📦 useEquipment: Syncing equipment to DataContext:', equipmentData.length)
-        setDataContextEquipment(equipmentData)
-        hasSyncedRef.current = true
-      }
+      // Always sync to DataContext to ensure updates are reflected
+      console.log('📦 useEquipment: Syncing equipment to DataContext:', equipmentData.length)
+      setDataContextEquipment(equipmentData)
     } catch (err) {
       console.error('Failed to load equipment:', err)
       setError('Failed to load equipment')
@@ -51,8 +47,6 @@ export const useEquipment = (homeId?: string) => {
   }, [loadEquipment])
 
   const refreshEquipment = useCallback(() => {
-    // Reset sync flag when manually refreshing
-    hasSyncedRef.current = false
     loadEquipment()
   }, [loadEquipment])
 
