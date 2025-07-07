@@ -25,8 +25,25 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.bagn9c.homekeeper"
+      "package": "com.bagn9c.homekeeper",
+      "permissions": ["RECEIVE_BOOT_COMPLETED", "WAKE_LOCK"]
     },
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#2E7D32",
+      "androidMode": "default",
+      "androidCollapsedTitle": "HomeKeeper Tasks"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2E7D32",
+          "defaultChannel": "homekeeper-tasks"
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },

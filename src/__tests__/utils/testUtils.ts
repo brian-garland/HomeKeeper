@@ -1,7 +1,8 @@
-import { supabase } from '../../lib/supabase';
-import { User } from '@supabase/supabase-js';
+// Test utilities disabled - local-first architecture
+// Database testing utilities are not needed in local-first mode
 
-export interface TestUser extends User {
+export interface TestUser {
+  id: string;
   email: string;
 }
 
@@ -27,86 +28,44 @@ export interface TestEquipment {
 }
 
 export const createTestUser = async (): Promise<TestUser> => {
-  const email = `test-${Date.now()}@example.com`;
-  const password = 'test-password';
-  
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password
-  });
-  
-  if (error) throw error;
-  
-  // Sign in the user to set authentication context
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-  
-  if (signInError) throw signInError;
-  
-  // Create matching user profile
-  const { error: profileError } = await supabase
-    .from('user_profiles')
-    .insert([{
-      id: data.user!.id,
-      email: data.user!.email,
-      first_name: 'Test',
-      last_name: 'User'
-    }]);
-    
-  if (profileError) throw profileError;
-  
-  return data.user as TestUser;
+  // Mock test user for local-first testing
+  return {
+    id: `test-user-${Date.now()}`,
+    email: `test-${Date.now()}@example.com`
+  };
 };
 
 export const createTestHome = async (userId: string): Promise<TestHome> => {
-  const { data, error } = await supabase
-    .from('homes')
-    .insert([{
-      owner_id: userId,
-      name: 'Test Home',
-      address: '123 Test St',
-      city: 'Test City',
-      state: 'TS',
-      zip_code: '12345',
-      country: 'US',
-      home_type: 'house'
-    }])
-    .select()
-    .single();
-    
-  if (error) throw error;
-  return data as TestHome;
+  // Mock test home for local-first testing
+  return {
+    id: `test-home-${Date.now()}`,
+    owner_id: userId,
+    address: '123 Test St',
+    city: 'Test City',
+    state: 'TS',
+    zip_code: '12345',
+    created_at: new Date().toISOString()
+  };
 };
 
 export const createTestEquipment = async (
   homeId: string,
   category: string = 'HVAC'
 ): Promise<TestEquipment> => {
-  const { data, error } = await supabase
-    .from('equipment')
-    .insert([{
-      home_id: homeId,
-      name: 'Test Equipment',
-      category,
-      type: 'Test Type',
-      brand: 'Test Brand',
-      model: 'Test Model',
-      serial_number: `TEST-${Date.now()}`
-    }])
-    .select()
-    .single();
-    
-  if (error) throw error;
-  return data as TestEquipment;
+  // Mock test equipment for local-first testing
+  return {
+    id: `test-equipment-${Date.now()}`,
+    home_id: homeId,
+    name: 'Test Equipment',
+    category,
+    type: 'Test Type',
+    model: 'Test Model',
+    serial_number: `TEST-${Date.now()}`,
+    created_at: new Date().toISOString()
+  };
 };
 
 export const cleanupTestData = async () => {
-  await supabase.from('task_completions').delete().neq('id', 'dummy');
-  await supabase.from('tasks').delete().neq('id', 'dummy');
-  await supabase.from('equipment').delete().neq('id', 'dummy');
-  await supabase.from('homes').delete().neq('id', 'dummy');
-  await supabase.from('user_profiles').delete().neq('id', 'dummy');
-  // Note: Auth user cleanup might require admin privileges
+  // No cleanup needed for local-first testing
+  console.log('Test cleanup not needed in local-first mode');
 }; 

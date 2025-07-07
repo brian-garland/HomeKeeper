@@ -38,6 +38,20 @@ export interface UserPreferences {
     enabled: boolean
     reminderDays: number // Days before due date to remind
     style: 'gentle' | 'standard' | 'persistent'
+    quietHours: {
+      start: string // "21:00"
+      end: string   // "08:00"
+    }
+    frequency: {
+      taskReminders: boolean
+      equipmentAlerts: boolean
+      achievements: boolean
+      suggestions: boolean
+      weeklyLimit: number // max notifications per week
+    }
+    deliveryTiming: 'immediate' | 'batched' | 'smart'
+    soundEnabled: boolean
+    vibrationEnabled: boolean
   }
   maintenance: {
     style: 'reactive' | 'proactive' | 'preventive'
@@ -65,7 +79,21 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   notifications: {
     enabled: true,
     reminderDays: 3,
-    style: 'standard'
+    style: 'standard',
+    quietHours: {
+      start: "21:00",
+      end: "08:00"
+    },
+    frequency: {
+      taskReminders: true,
+      equipmentAlerts: true,
+      achievements: true,
+      suggestions: false, // Start conservative
+      weeklyLimit: 3
+    },
+    deliveryTiming: 'smart',
+    soundEnabled: true,
+    vibrationEnabled: true
   },
   maintenance: {
     style: 'proactive',

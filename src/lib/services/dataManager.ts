@@ -1,6 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { supabase } from '../supabase'
-import { createTask as dbCreateTask } from '../models/tasks'
 import type { Tables, TablesInsert } from '../../types/database.types'
 import type { Task, TaskInsert } from '../../types'
 
@@ -220,70 +218,11 @@ class LocalDataManager implements DataManagerInterface {
   }
 }
 
-class DatabaseDataManager implements DataManagerInterface {
-  async getHome(homeId: string): Promise<Home | null> {
-    if (homeId.startsWith('local-')) return null
-    
-    const { data, error } = await supabase
-      .from('homes')
-      .select('*')
-      .eq('id', homeId)
-      .single()
-    
-    return error ? null : data
-  }
-
-  async getEquipment(homeId: string): Promise<Equipment[]> {
-    const { data, error } = await supabase
-      .from('equipment')
-      .select('*')
-      .eq('home_id', homeId)
-      .eq('active', true)
-    
-    return error ? [] : data || []
-  }
-
-  async saveEquipment(homeId: string, equipment: Equipment[]): Promise<void> {
-    // For database manager, this would involve bulk updates
-    // For now, throw an error since this is typically not used for database-backed equipment
-    throw new Error('saveEquipment not implemented for DatabaseDataManager')
-  }
-
-  async addEquipment(homeId: string, equipmentData: TablesInsert<'equipment'>): Promise<Equipment> {
-    const { data, error } = await supabase
-      .from('equipment')
-      .insert(equipmentData)
-      .select()
-      .single()
-    
-    if (error) {
-      throw new Error(`Failed to add equipment: ${error.message}`)
-    }
-    
-    return data
-  }
-
-  async getExistingTasks(homeId: string): Promise<{ template_id: string | null; due_date: string }[]> {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('template_id, due_date')
-      .eq('home_id', homeId)
-      .in('status', ['pending', 'in_progress'])
-    
-    return error ? [] : data || []
-  }
-
-  async createTask(taskData: TaskInsert): Promise<Task | null> {
-    const result = await dbCreateTask(taskData as any) // Cast to handle type mismatch
-    return result.success ? result.data : null
-  }
-}
+// DatabaseDataManager removed - local-first architecture only
 
 // Factory function to get the appropriate data manager
 export function getDataManager(homeId: string): DataManagerInterface {
-  return homeId.startsWith('local-') 
-    ? new LocalDataManager() 
-    : new DatabaseDataManager()
+  return new LocalDataManager()
 }
 
 // Convenience function for common operations

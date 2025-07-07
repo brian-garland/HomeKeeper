@@ -8,7 +8,6 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
 
 interface AuthenticationPromptProps {
   visible: boolean;
@@ -24,80 +23,26 @@ export const AuthenticationPrompt: React.FC<AuthenticationPromptProps> = ({
   localHomeData,
 }) => {
   const handleEmailSignUp = async () => {
-    // Simple email/password flow
-    Alert.prompt(
-      'Save Your Progress',
-      'Enter your email to sync across devices:',
-      async (email) => {
-        if (email) {
-          try {
-            const { data, error } = await supabase.auth.signUp({
-              email,
-              password: `temp-${Date.now()}`, // Temporary password
-            });
-            
-            if (error) throw error;
-            
-            // Migrate local data to authenticated user
-            if (localHomeData && data.user) {
-              await migrateLocalDataToUser(data.user.id, localHomeData);
-            }
-            
-            onSuccess(data.user);
-            onClose();
-          } catch (error) {
-            console.error('Email signup error:', error);
-            Alert.alert('Error', 'Could not create account. Please try again.');
-          }
-        }
-      }
+    // Authentication disabled - continue with local only
+    Alert.alert(
+      'Feature Coming Soon',
+      'Cloud sync will be available in a future update. Your data is safely stored locally.',
+      [{ text: 'OK', onPress: onClose }]
     );
   };
 
   const handleAnonymousSignIn = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInAnonymously();
-      
-      if (error) throw error;
-      
-      // Migrate local data to anonymous user
-      if (localHomeData && data.user) {
-        await migrateLocalDataToUser(data.user.id, localHomeData);
-      }
-      
-      onSuccess(data.user);
-      onClose();
-    } catch (error) {
-      console.error('Anonymous signin error:', error);
-      // Fallback: continue with local storage
-      Alert.alert(
-        'Continue Locally',
-        'We\'ll keep your data on this device for now. You can sync later in Settings.',
-        [{ text: 'OK', onPress: onClose }]
-      );
-    }
+    // Authentication disabled - continue with local only
+    Alert.alert(
+      'Continue Locally',
+      'Your data will be kept safe on this device. Cloud sync coming soon!',
+      [{ text: 'OK', onPress: onClose }]
+    );
   };
 
+  // Migration disabled - local-first architecture
   const migrateLocalDataToUser = async (userId: string, localHome: any) => {
-    try {
-      // Create home in database with authenticated user
-      const { createHome } = await import('../lib/models/homes');
-      const homeResult = await createHome({
-        ...localHome,
-        owner_id: userId,
-        id: undefined, // Let database generate new ID
-        is_local: false,
-      });
-
-      if (homeResult.success) {
-        // Clear local storage
-        await AsyncStorage.removeItem('homekeeper_local_home');
-        console.log('✅ Local data migrated to authenticated user');
-      }
-    } catch (error) {
-      console.error('Migration error:', error);
-      // Continue anyway - user can still use the app
-    }
+    console.log('Migration disabled in local-first mode');
   };
 
   return (

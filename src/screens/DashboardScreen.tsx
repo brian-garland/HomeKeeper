@@ -17,6 +17,7 @@ import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
 import { getCurrentWeather } from '../lib/services/weatherService';
+import NotificationTestPanel from '../components/NotificationTestPanel';
 
 interface QuickStat {
   id: string;
@@ -404,6 +405,9 @@ export const DashboardScreen: React.FC = () => {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Notification Test Panel - Remove this after testing */}
+      {__DEV__ && <NotificationTestPanel />}
 
       {/* Bottom Spacing */}
       <View style={styles.bottomSpacing} />

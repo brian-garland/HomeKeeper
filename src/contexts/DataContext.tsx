@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createRecurringTask } from '../lib/services/recurringTaskService';
 import { updateTasksWithMoneySaved } from '../lib/utils/updateTasksWithMoneySaved';
+import NotificationService from '../lib/services/notificationService';
+import NotificationScheduler from '../lib/services/notificationScheduler';
 import type { Home, Task, Equipment } from '../types';
 
 interface DataContextType {
@@ -53,6 +55,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // 🔧 FIX: Add storage operation queue to prevent race conditions
   const storageQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  // Notification services
+  const notificationService = NotificationService.getInstance();
+  const notificationScheduler = NotificationScheduler.getInstance();
 
   // 🔧 FIX: Queue storage operations to prevent race conditions
   const queueStorageOperation = async (operation: () => Promise<void>): Promise<void> => {
@@ -189,6 +195,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setTasksState(prevTasks => {
       const newTasks = [...prevTasks, task];
       saveTasks(newTasks);
+      
+      // Schedule notifications for the new task
+      setTimeout(async () => {
+        try {
+          await scheduleTaskNotifications(task);
+        } catch (error) {
+          console.log('Failed to schedule notifications for new task:', error);
+        }
+      }, 100); // Small delay to ensure state is updated
+      
       return newTasks;
     });
   };
@@ -209,6 +225,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     if (updatedTask && updates.status === 'completed' && updates.completed_at) {
       console.log('🔄 Task completed, checking for recurrence...');
+      
+      // Cancel any pending notifications for this task
+      try {
+        await cancelTaskNotifications(id);
+      } catch (error) {
+        console.log('Failed to cancel task notifications:', error);
+      }
+      
+      // Schedule achievement notification for task completion
+      try {
+        await scheduleAchievementNotification('completion', {
+          taskName: updatedTask.title,
+          moneySaved: updatedTask.money_saved_estimate || 0
+        });
+      } catch (error) {
+        console.log('Failed to schedule achievement notification:', error);
+      }
       
       // Log money saved if applicable
       if (updatedTask.money_saved_estimate && updatedTask.money_saved_estimate > 0) {
@@ -298,6 +331,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setEquipmentState(prevEquipment => {
       const newEquipment = [...prevEquipment, equipmentItem];
       saveEquipment(newEquipment);
+      
+      // Schedule notifications for the new equipment
+      setTimeout(async () => {
+        try {
+          await scheduleEquipmentNotifications(equipmentItem);
+        } catch (error) {
+          console.log('Failed to schedule notifications for new equipment:', error);
+        }
+      }, 100); // Small delay to ensure state is updated
+      
       return newEquipment;
     });
   };
@@ -332,6 +375,75 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const newTotal = getTotalMoneySaved();
     setTotalMoneySaved(newTotal);
   }, [tasks]);
+
+  // Notification helper functions
+  const scheduleTaskNotifications = async (task: Task) => {
+    try {
+      const preferences = await notificationService.getPreferences();
+      if (!preferences.enabled || !preferences.frequency.taskReminders) {
+        return;
+      }
+
+      // Schedule reminder notifications based on due date
+      const dueDate = new Date(task.due_date);
+      const now = new Date();
+      
+      // Skip if task is already overdue
+      if (dueDate <= now) {
+        return;
+      }
+
+      // Schedule different types of reminders
+      const threeDaysOut = new Date(dueDate.getTime() - (3 * 24 * 60 * 60 * 1000));
+      const oneDayOut = new Date(dueDate.getTime() - (24 * 60 * 60 * 1000));
+
+      if (threeDaysOut > now) {
+        await notificationService.scheduleTaskReminder(task, 'advance');
+      }
+      if (oneDayOut > now) {
+        await notificationService.scheduleTaskReminder(task, 'due');
+      }
+    } catch (error) {
+      console.error('Error scheduling task notifications:', error);
+    }
+  };
+
+  const cancelTaskNotifications = async (taskId: string) => {
+    try {
+      await notificationScheduler.cancelScheduledNotificationsForTask(taskId);
+    } catch (error) {
+      console.error('Error cancelling task notifications:', error);
+    }
+  };
+
+  const scheduleAchievementNotification = async (type: 'money_saved' | 'streak' | 'completion', data: any) => {
+    try {
+      await notificationService.scheduleAchievementNotification(type, data);
+    } catch (error) {
+      console.error('Error scheduling achievement notification:', error);
+    }
+  };
+
+  const scheduleEquipmentNotifications = async (equipmentItem: Equipment) => {
+    try {
+      const preferences = await notificationService.getPreferences();
+      if (!preferences.enabled || !preferences.frequency.equipmentAlerts) {
+        return;
+      }
+
+      // Schedule service due notification if applicable
+      if (equipmentItem.next_service_due) {
+        await notificationService.scheduleEquipmentAlert(equipmentItem, 'service_due');
+      }
+
+      // Schedule attention needed notification if applicable
+      if (equipmentItem.needs_attention) {
+        await notificationService.scheduleEquipmentAlert(equipmentItem, 'attention_needed');
+      }
+    } catch (error) {
+      console.error('Error scheduling equipment notifications:', error);
+    }
+  };
 
   const value: DataContextType = {
     // Homes

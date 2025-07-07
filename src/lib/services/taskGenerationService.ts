@@ -1,4 +1,4 @@
-import { getApplicableTaskTemplates, getSeasonalTaskTemplates, getTaskTemplatesByCategory } from '../models/taskTemplates'
+// Removed import for deleted taskTemplates model
 import * as LocalTemplateService from './localTemplateService'
 import { getCurrentWeather, getBestOutdoorTaskDays } from './weatherService'
 import { UnifiedDataManager, getDataManager } from './dataManager'

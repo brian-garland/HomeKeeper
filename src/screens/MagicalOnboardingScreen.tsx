@@ -19,13 +19,7 @@ import { PrimaryButton } from '../components/buttons/PrimaryButton';
 import { SecondaryButton } from '../components/buttons/SecondaryButton';
 import { Icon } from '../components/icons/Icon';
 import { TextInput } from '../components/inputs/TextInput';
-import { useSupabase } from '../hooks/useSupabase';
-import { createHome } from '../lib/models/homes';
-import { generateIntelligentTasks } from '../lib/services/taskGenerationService';
-import { geocodeAddress } from '../lib/services/geocodingService';
-import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useDataContext } from '../contexts/DataContext';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -176,7 +170,6 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
   const [homeType, setHomeType] = useState<string>('');
   const [yearBuilt, setYearBuilt] = useState<string>('');
   const [squareFootage, setSquareFootage] = useState<string>('');
-  const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<any>(null);
 
   const homeTypes = [
@@ -515,7 +508,7 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void; onboardingData: any
   const previewTasks = tasks.slice(0, 3);
 
   // Helper function to get task scheduling text
-  const getTaskSchedule = (task: any, index: number): string => {
+  const getTaskSchedule = (task: any): string => {
     const dueDate = new Date(task.due_date);
     const now = new Date();
     const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -609,7 +602,7 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void; onboardingData: any
                 />
                 <View style={styles.taskInfo}>
                   <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.taskDate}>{getTaskSchedule(task, index)}</Text>
+                  <Text style={styles.taskDate}>{getTaskSchedule(task)}</Text>
                 </View>
               </View>
             ))}
@@ -638,7 +631,6 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
   const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const scrollViewRef = useRef<ScrollView>(null);
-  const navigation = useNavigation();
   const { setTasks, setEquipment, setHomes } = useDataContext();
 
   const steps: OnboardingStep[] = [

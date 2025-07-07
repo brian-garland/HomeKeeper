@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { Tables } from '../types/database.types'
 import { generateIntelligentTasks, generateTasksForCategory, TaskGenerationOptions, TaskGenerationResult } from '../lib/services/taskGenerationService'
 import { getCurrentWeather, getWeatherTaskRecommendations, WeatherData } from '../lib/services/weatherService'
-import { getHomeTasks } from '../lib/models/tasks'
 
 type Task = Tables<'tasks'>
 type Home = Tables<'homes'>
@@ -140,34 +139,12 @@ export function useIntelligentTasks(): UseIntelligentTasksReturn {
   }, [])
 
   /**
-   * Refresh all tasks for a home
+   * Refresh all tasks for a home - disabled in local-first mode
    */
   const refreshTasks = useCallback(async (homeId: string): Promise<void> => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }))
-
-    try {
-      const result = await getHomeTasks(homeId)
-      
-      if (result.success) {
-        setState(prev => ({
-          ...prev,
-          tasks: result.data,
-          isLoading: false
-        }))
-      } else {
-        setState(prev => ({
-          ...prev,
-          error: result.error,
-          isLoading: false
-        }))
-      }
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'Failed to refresh tasks',
-        isLoading: false
-      }))
-    }
+    // Local-first mode: tasks are managed through DataContext
+    console.log('refreshTasks disabled in local-first mode for homeId:', homeId)
+    setState(prev => ({ ...prev, isLoading: false, error: null }))
   }, [])
 
   /**
