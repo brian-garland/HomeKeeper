@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../theme/colors';
 import { Typography } from '../theme/typography';
 import { Spacing } from '../theme/spacing';
@@ -19,8 +18,6 @@ import { PrimaryButton } from '../components/buttons/PrimaryButton';
 import { SecondaryButton } from '../components/buttons/SecondaryButton';
 import { Icon } from '../components/icons/Icon';
 import { TextInput } from '../components/inputs/TextInput';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useDataContext } from '../contexts/DataContext';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -37,11 +34,7 @@ interface OnboardingStep {
 // Welcome Screen Component
 const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
   <View style={styles.stepContainer}>
-    <ScrollView 
-      style={styles.scrollableContent}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <View>
       <View style={styles.heroSection}>
         <View style={styles.iconContainer}>
           <Icon name="home" size="xl" color={Colors.primary} />
@@ -77,16 +70,16 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
             <Text style={styles.trustText}>Secure</Text>
           </View>
           <View style={styles.trustItem}>
-            <Icon name="dollar" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Save Money</Text>
+            <Icon name="users" size="sm" color={Colors.primary} />
+            <Text style={styles.trustText}>Community</Text>
           </View>
           <View style={styles.trustItem}>
             <Icon name="favorite" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Confidence</Text>
+            <Text style={styles.trustText}>Expert Tips</Text>
           </View>
         </View>
       </View>
-    </ScrollView>
+    </View>
     
     <View style={styles.buttonContainer}>
       <PrimaryButton
@@ -102,7 +95,6 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => (
 const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }) => {
   const [address, setAddress] = useState('');
   const [isValidating, setIsValidating] = useState(false);
-  const insets = useSafeAreaInsets();
 
   const handleNext = async () => {
     if (!address.trim()) {
@@ -118,11 +110,7 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.stepContainer}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={insets.top + 50}
-    >
+    <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
         <Text style={styles.stepTitle}>Where's your home?</Text>
         <Text style={styles.stepSubtitle}>
@@ -130,38 +118,29 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
         </Text>
       </View>
       
-      <ScrollView 
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between', paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.inputSection}>
-          <TextInput
-            placeholder="Enter your home address"
-            value={address}
-            onChangeText={setAddress}
-            style={styles.addressInput}
-          />
-          
-          <View style={styles.privacyNote}>
-            <Icon name="settings" size="sm" color={Colors.textSecondary} />
-            <Text style={styles.privacyText}>
-              Your address is kept private and secure
-            </Text>
-          </View>
-        </View>
+      <View style={styles.inputSection}>
+        <TextInput
+          placeholder="Enter your home address"
+          value={address}
+          onChangeText={setAddress}
+          style={styles.addressInput}
+        />
         
-        <View style={styles.buttonContainer}>
-          <PrimaryButton
-            title={isValidating ? "Validating..." : "Continue"}
-            onPress={handleNext}
-            disabled={!address.trim() || isValidating}
-            style={styles.primaryButton}
-          />
+        <View style={styles.privacyNote}>
+          <Icon name="settings" size="sm" color={Colors.textSecondary} />
+          <Text style={styles.privacyText}>
+            Your address is kept private and secure
+          </Text>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+      
+      <PrimaryButton
+        title={isValidating ? "Validating..." : "Continue"}
+        onPress={handleNext}
+        disabled={!address.trim() || isValidating}
+        style={styles.primaryButton}
+      />
+    </View>
   );
 };
 
@@ -170,7 +149,6 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
   const [homeType, setHomeType] = useState<string>('');
   const [yearBuilt, setYearBuilt] = useState<string>('');
   const [squareFootage, setSquareFootage] = useState<string>('');
-  const scrollViewRef = useRef<any>(null);
 
   const homeTypes = [
     { id: 'single_family', label: 'Single Family Home' },
@@ -188,12 +166,6 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
     onNext(characteristics);
   };
 
-  const handleSquareFootageFocus = () => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
   return (
     <View style={styles.stepContainer}>
       <View style={styles.stepHeader}>
@@ -203,18 +175,7 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
         </Text>
       </View>
       
-      <KeyboardAwareScrollView 
-        ref={scrollViewRef}
-        style={styles.characteristicsForm} 
-        showsVerticalScrollIndicator={false}
-        enableOnAndroid={true}
-        extraScrollHeight={140}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 200 }}
-        enableResetScrollToCoords={false}
-        keyboardOpeningTime={250}
-        enableAutomaticScroll={true}
-      >
+      <ScrollView style={styles.characteristicsForm} showsVerticalScrollIndicator={false}>
         <View style={styles.formSection}>
           <Text style={styles.formLabel}>Home Type</Text>
           <View style={styles.homeTypeGrid}>
@@ -248,26 +209,23 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
           />
         </View>
         
-        <View style={[styles.formSection, { marginBottom: 40 }]}>
+        <View style={styles.formSection}>
           <Text style={styles.formLabel}>Square Footage (Optional)</Text>
           <TextInput
             placeholder="e.g., 2500"
             value={squareFootage}
             onChangeText={setSquareFootage}
-            onFocus={handleSquareFootageFocus}
             style={styles.formInput}
           />
         </View>
-        
-        <View style={{ height: 60 }} />
-        
-        <PrimaryButton
-          title="Continue"
-          onPress={handleNext}
-          disabled={!homeType}
-          style={styles.primaryButton}
-        />
-      </KeyboardAwareScrollView>
+      </ScrollView>
+      
+      <PrimaryButton
+        title="Continue"
+        onPress={handleNext}
+        disabled={!homeType}
+        style={styles.primaryButton}
+      />
     </View>
   );
 };
@@ -390,175 +348,46 @@ const PersonalizationStep: React.FC<{ onNext: (preferences: any) => void }> = ({
 };
 
 // Calendar Reveal Component
-const CalendarRevealStep: React.FC<{ onComplete: () => void; onboardingData: any }> = ({ onComplete, onboardingData }) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
-  const [scaleAnim] = useState(new Animated.Value(0.8));
+const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [isGenerating, setIsGenerating] = useState(true);
-  const { tasks, setTasks, setEquipment, setHomes } = useDataContext();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Generate tasks immediately when this step is reached
-    generateTasksForOnboarding();
+  React.useEffect(() => {
+    setTimeout(() => {
+      setIsGenerating(false);
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 3000);
   }, []);
 
-  const generateTasksForOnboarding = async () => {
-    try {
-      console.log('🎯 Step 5: Starting task generation with data:', onboardingData);
-      
-      // First, geocode the address to get coordinates
-      let latitude: number | undefined;
-      let longitude: number | undefined;
-      
-      if (onboardingData.address) {
-        console.log('🗺️ Geocoding address:', onboardingData.address);
-        const { geocodeAddress } = await import('../lib/services/geocodingService');
-        const geocodingResult = await geocodeAddress(onboardingData.address);
-        
-        if (geocodingResult.success) {
-          latitude = geocodingResult.data.latitude;
-          longitude = geocodingResult.data.longitude;
-          console.log(`✅ Address geocoded to: ${latitude}, ${longitude}`);
-        } else {
-          console.warn('Geocoding failed:', geocodingResult.error);
-        }
-      }
-      
-      // Create local home object
-      const localHome = {
-        id: `local-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        owner_id: null,
-        name: 'My Home',
-        address: onboardingData.address || '',
-        city: null,
-        state: null,
-        zip_code: null,
-        country: 'United States',
-        latitude: latitude || null,
-        longitude: longitude || null,
-        location: null,
-        home_type: onboardingData.characteristics?.homeType || 'single_family',
-        year_built: onboardingData.characteristics?.yearBuilt || null,
-        square_footage: onboardingData.characteristics?.squareFootage || null,
-        lot_size: null,
-        bedrooms: null,
-        bathrooms: null,
-        floors: 1,
-        heating_type: null,
-        cooling_type: null,
-        water_heater_type: null,
-        maintenance_season_start: 3,
-        high_maintenance_mode: false,
-        photo_url: null,
-        notes: null,
-        active: true,
-        is_local: true,
-      };
-
-      // Clear existing data and store new home
-      const AsyncStorage = await import('@react-native-async-storage/async-storage');
-      await AsyncStorage.default.removeItem('homekeeper_homes');
-      await AsyncStorage.default.removeItem('homekeeper_tasks');
-      await AsyncStorage.default.removeItem('homekeeper_equipment');
-      await AsyncStorage.default.setItem('homekeeper_local_home', JSON.stringify(localHome));
-      await AsyncStorage.default.setItem('homekeeper_onboarding_complete', 'true');
-
-      // Generate equipment
-      const { getDataManager } = await import('../lib/services/dataManager');
-      const dataManager = getDataManager(localHome.id);
-      const defaultEquipment = await dataManager.getEquipment(localHome.id);
-      
-      await AsyncStorage.default.setItem('homekeeper_equipment', JSON.stringify(defaultEquipment));
-      setEquipment(defaultEquipment);
-      setHomes([localHome as any]);
-
-      // Generate tasks
-      const { generateIntelligentTasks } = await import('../lib/services/taskGenerationService');
-      const tasksResult = await generateIntelligentTasks(localHome.id);
-
-      if (tasksResult.success && tasksResult.tasks.length > 0) {
-        await AsyncStorage.default.setItem('homekeeper_tasks', JSON.stringify(tasksResult.tasks));
-        setTasks(tasksResult.tasks);
-        console.log(`✅ Generated ${tasksResult.tasks.length} tasks for Step 5`);
-      }
-
-      setIsGenerating(false);
-    } catch (error) {
-      console.error('Error generating tasks in Step 5:', error);
-      setIsGenerating(false);
-    }
-  };
-
-  // Get the first 3 tasks to show in preview
-  const previewTasks = tasks.slice(0, 3);
-
-  // Helper function to get task scheduling text
-  const getTaskSchedule = (task: any): string => {
-    const dueDate = new Date(task.due_date);
-    const now = new Date();
-    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilDue <= 0) return 'Ready to start';
-    if (daysUntilDue <= 3) return 'This weekend';
-    if (daysUntilDue <= 7) return 'Next week';
-    if (daysUntilDue <= 14) return 'In 2 weeks';
-    if (daysUntilDue <= 21) return 'Later this month';
-    if (daysUntilDue <= 30) return 'End of month';
-    return 'Next month';
-  };
-
-  // Helper function to get icon based on task category
-  const getTaskIcon = (task: any): any => {
-    switch (task.category) {
-      case 'hvac': return 'maintenance';
-      case 'plumbing': return 'plumbing';
-      case 'safety': return 'electrical';
-      case 'cleaning': return 'maintenance';
-      case 'landscaping': return 'plumbing';
-      default: return 'maintenance';
-    }
-  };
-
-  // Helper function to get color based on task category
-  const getTaskColor = (task: any): string => {
-    switch (task.category) {
-      case 'hvac': return Colors.primary;
-      case 'plumbing': return Colors.info;
-      case 'safety': return Colors.warning;
-      case 'cleaning': return Colors.success;
-      case 'landscaping': return Colors.success;
-      default: return Colors.primary;
-    }
-  };
-
-  // Show loading state while generating tasks
-  if (isGenerating || tasks.length === 0) {
+  if (isGenerating) {
     return (
       <View style={styles.stepContainer}>
-        <View style={styles.revealContainer}>
-          <View style={styles.celebrationHeader}>
-            <View style={styles.celebrationIcon}>
-              <Icon name="settings" size="xl" color={Colors.primary} />
-            </View>
-            <Text style={styles.celebrationTitle}>Creating your schedule... 🔄</Text>
-            <Text style={styles.celebrationSubtitle}>
-              We're generating personalized maintenance tasks for your home
-            </Text>
+        <View style={styles.generatingContainer}>
+          <View style={styles.loadingIcon}>
+            <Icon name="settings" size="xl" color={Colors.primary} />
+          </View>
+          <Text style={styles.generatingTitle}>Creating your personalized schedule...</Text>
+          <Text style={styles.generatingSubtitle}>
+            Analyzing your home and preferences to build the perfect maintenance plan
+          </Text>
+          <View style={styles.generatingSteps}>
+            <Text style={styles.generatingStep}>✓ Analyzing home characteristics</Text>
+            <Text style={styles.generatingStep}>✓ Checking local weather patterns</Text>
+            <Text style={styles.generatingStep}>✓ Optimizing task timing</Text>
+            <Text style={styles.generatingStep}>⏳ Finalizing your schedule</Text>
           </View>
         </View>
       </View>
@@ -567,62 +396,62 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void; onboardingData: any
 
   return (
     <View style={styles.stepContainer}>
-      <ScrollView 
-        style={styles.scrollableContent}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <Animated.View 
+        style={[
+          styles.revealContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
       >
-        <Animated.View 
-          style={[
-            styles.revealContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
-        >
-          <View style={styles.celebrationHeader}>
-            <View style={styles.celebrationIcon}>
-              <Icon name="check" size="xl" color={Colors.success} />
+        <View style={styles.celebrationHeader}>
+          <View style={styles.celebrationIcon}>
+            <Icon name="check" size="xl" color={Colors.success} />
+          </View>
+          <Text style={styles.celebrationTitle}>Your schedule is ready! 🎉</Text>
+          <Text style={styles.celebrationSubtitle}>
+            We've created a personalized maintenance plan just for you
+          </Text>
+        </View>
+        
+        <View style={styles.schedulePreview}>
+          <Text style={styles.previewTitle}>Coming up this month:</Text>
+          <View style={styles.taskPreview}>
+            <Icon name="maintenance" size="md" color={Colors.primary} />
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>Check HVAC Filter</Text>
+              <Text style={styles.taskDate}>This Weekend</Text>
             </View>
-            <Text style={styles.celebrationTitle}>Your schedule is ready! 🎉</Text>
-            <Text style={styles.celebrationSubtitle}>
-              We've created a personalized maintenance plan just for you
-            </Text>
           </View>
-          
-          <View style={styles.schedulePreview}>
-            <Text style={styles.previewTitle}>Coming up this month:</Text>
-            {previewTasks.map((task, index) => (
-              <View key={task.id} style={styles.taskPreview}>
-                <Icon 
-                  name={getTaskIcon(task)} 
-                  size="md" 
-                  color={getTaskColor(task)} 
-                />
-                <View style={styles.taskInfo}>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.taskDate}>{getTaskSchedule(task)}</Text>
-                </View>
-              </View>
-            ))}
+          <View style={styles.taskPreview}>
+            <Icon name="plumbing" size="md" color={Colors.success} />
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>Clean Gutters</Text>
+              <Text style={styles.taskDate}>Next Week</Text>
+            </View>
           </View>
-          
-          <View style={styles.valueHighlight}>
-            <Text style={styles.valueHighlightText}>
-              You're all set to keep your home in perfect condition! 🏠
-            </Text>
+          <View style={styles.taskPreview}>
+            <Icon name="electrical" size="md" color={Colors.warning} />
+            <View style={styles.taskInfo}>
+              <Text style={styles.taskTitle}>Test Smoke Detectors</Text>
+              <Text style={styles.taskDate}>End of Month</Text>
+            </View>
           </View>
-        </Animated.View>
-      </ScrollView>
+        </View>
+        
+        <View style={styles.valueHighlight}>
+          <Text style={styles.valueHighlightText}>
+            You're all set to keep your home in perfect condition! 🏠
+          </Text>
+        </View>
+      </Animated.View>
       
-      <View style={styles.buttonContainer}>
-        <PrimaryButton
-          title="Start Using HomeKeeper"
-          onPress={onComplete}
-          style={styles.primaryButton}
-        />
-      </View>
+      <PrimaryButton
+        title="Start Using HomeKeeper"
+        onPress={onComplete}
+        style={styles.primaryButton}
+      />
     </View>
   );
 };
@@ -631,7 +460,6 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
   const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const scrollViewRef = useRef<ScrollView>(null);
-  const { setTasks, setEquipment, setHomes } = useDataContext();
 
   const steps: OnboardingStep[] = [
     { id: 'welcome', title: 'Welcome', subtitle: 'Get started with HomeKeeper' },
@@ -654,51 +482,68 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   const handleComplete = async () => {
     try {
-      console.log('✅ Onboarding completed successfully - immediate value provided');
+      // Here we would save the onboarding data to Supabase
+      console.log('Onboarding completed with data:', onboardingData);
+      
+      // Call the completion callback
       onComplete?.();
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      onComplete?.();
+      Alert.alert('Setup Error', 'There was an issue setting up your home. Please try again.');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Fixed Progress Indicator */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { width: `${((currentStep + 1) / steps.length) * 100}%` }
-            ]} 
-          />
+      <KeyboardAvoidingView 
+        style={styles.container} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Progress Indicator */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressFill, 
+                { width: `${((currentStep + 1) / steps.length) * 100}%` }
+              ]} 
+            />
+          </View>
+          <Text style={styles.progressText}>
+            {currentStep + 1} of {steps.length}
+          </Text>
         </View>
-        <Text style={styles.progressText}>
-          {currentStep + 1} of {steps.length}
-        </Text>
-      </View>
 
-      {/* Step Content */}
-      <View style={styles.stepsContainer}>
-        <View style={styles.stepWrapper}>
-          {currentStep === 0 && (
-            <WelcomeStep onNext={handleNext} />
-          )}
-          {currentStep === 1 && (
-            <AddressStep onNext={(address) => handleStepData('address', address)} />
-          )}
-          {currentStep === 2 && (
-            <HomeCharacteristicsStep onNext={(characteristics) => handleStepData('characteristics', characteristics)} />
-          )}
-          {currentStep === 3 && (
-            <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
-          )}
-          {currentStep === 4 && (
-            <CalendarRevealStep onComplete={handleComplete} onboardingData={onboardingData} />
-          )}
-        </View>
-      </View>
+        {/* Step Content */}
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          scrollEnabled={false}
+          showsHorizontalScrollIndicator={false}
+          style={styles.stepsContainer}
+        >
+          {steps.map((step, index) => (
+            <View key={step.id} style={styles.stepWrapper}>
+              {index === 0 && (
+                <WelcomeStep onNext={handleNext} />
+              )}
+              {index === 1 && (
+                <AddressStep onNext={(address) => handleStepData('address', address)} />
+              )}
+              {index === 2 && (
+                <HomeCharacteristicsStep onNext={(characteristics) => handleStepData('characteristics', characteristics)} />
+              )}
+              {index === 3 && (
+                <PersonalizationStep onNext={(preferences) => handleStepData('personalization', preferences)} />
+              )}
+              {index === 4 && (
+                <CalendarRevealStep onComplete={handleComplete} />
+              )}
+            </View>
+          ))}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -711,7 +556,6 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    paddingTop: Spacing.massive, // 64px - Maximum generous spacing for perfect visual balance
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -736,21 +580,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepWrapper: {
+    width: screenWidth,
     flex: 1,
-    width: '100%',
   },
   stepContainer: {
     flex: 1,
     paddingHorizontal: Spacing.lg,
+    justifyContent: 'space-between',
     paddingVertical: Spacing.lg,
     minHeight: 500,
-  },
-  scrollableContent: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: Spacing.lg,
   },
   
   // Welcome Step Styles
@@ -802,8 +640,7 @@ const styles = StyleSheet.create({
   },
   trustIndicators: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
+    justifyContent: 'space-around',
     width: '100%',
   },
   trustItem: {
@@ -830,10 +667,8 @@ const styles = StyleSheet.create({
   
   // Form Styles
   inputSection: {
-    paddingTop: Spacing.xl,
-    paddingBottom: Spacing.md,
-    justifyContent: 'center',
     flex: 1,
+    justifyContent: 'center',
   },
   addressInput: {
     marginBottom: Spacing.md,
@@ -913,7 +748,6 @@ const styles = StyleSheet.create({
   },
   celebrationHeader: {
     alignItems: 'center',
-    marginTop: Spacing.xl,
     marginBottom: Spacing.xl,
   },
   celebrationIcon: {
@@ -928,7 +762,6 @@ const styles = StyleSheet.create({
     ...Typography.bodyLarge,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: Spacing.md,
   },
   schedulePreview: {
     backgroundColor: Colors.surface,
@@ -961,7 +794,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.successLight,
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   valueHighlightText: {
     ...Typography.bodyLarge,
@@ -973,12 +806,9 @@ const styles = StyleSheet.create({
   // Button Styles
   buttonContainer: {
     paddingTop: Spacing.lg,
-    paddingBottom: Spacing.lg,
-    backgroundColor: Colors.background,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   primaryButton: {
-    width: '100%',
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
-}); 
+});
