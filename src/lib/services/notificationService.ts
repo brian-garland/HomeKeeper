@@ -52,8 +52,7 @@ class NotificationService {
             shouldPlaySound: preferences.style !== 'gentle',
             shouldSetBadge: true,
             shouldShowBanner: true,
-            shouldShowList: true,
-            priority: this.mapPriorityToExpo(notification.request.content.data?.priority as NotificationPriority || NotificationPriority.NORMAL)
+            shouldShowList: true
           };
         },
       });
@@ -274,9 +273,15 @@ class NotificationService {
   }
 
   async scheduleEquipmentAlert(equipment: Equipment, alertType: 'service_due' | 'attention_needed'): Promise<string> {
-    const scheduledFor = alertType === 'service_due' && equipment.next_service_due
-      ? new Date(new Date(equipment.next_service_due).getTime() - (7 * 24 * 60 * 60 * 1000)) // 1 week before
-      : new Date(); // Immediate for attention needed
+    let scheduledFor: Date;
+    
+    if (alertType === 'service_due' && equipment.next_service_due) {
+      scheduledFor = new Date(new Date(equipment.next_service_due).getTime() - (7 * 24 * 60 * 60 * 1000)); // 1 week before
+    } else {
+      // Schedule for 2 seconds in the future for immediate alerts
+      scheduledFor = new Date();
+      scheduledFor.setSeconds(scheduledFor.getSeconds() + 2);
+    }
 
     const content: NotificationContent = {
       title: alertType === 'service_due' 
@@ -306,10 +311,14 @@ class NotificationService {
   async scheduleAchievementNotification(achievementType: 'money_saved' | 'streak' | 'completion', data: any): Promise<string> {
     const content = this.generateAchievementContent(achievementType, data);
     
+    // Schedule for 2 seconds in the future to avoid iOS scheduling issues
+    const scheduleDate = new Date();
+    scheduleDate.setSeconds(scheduleDate.getSeconds() + 2);
+    
     return this.scheduleNotification(
       NotificationType.ACHIEVEMENT,
       content,
-      new Date(), // Immediate
+      scheduleDate,
       { priority: NotificationPriority.NORMAL, timing: NotificationTiming.OPTIMAL }
     );
   }

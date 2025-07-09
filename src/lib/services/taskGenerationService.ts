@@ -1,5 +1,6 @@
 // Removed import for deleted taskTemplates model
 import * as LocalTemplateService from './localTemplateService'
+const { getSeasonalTaskTemplates, getApplicableTaskTemplates, getTaskTemplatesByCategory } = LocalTemplateService
 import { getCurrentWeather, getBestOutdoorTaskDays } from './weatherService'
 import { UnifiedDataManager, getDataManager } from './dataManager'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -82,6 +83,7 @@ export async function generateIntelligentTasks(
     // 3. Generate general tasks (non-equipment specific)
     const generalResult = await generateGeneralTasks(
       home,
+      equipment || [],
       existingTasks || [],
       maxTasksPerCategory,
       usedTemplateIds
@@ -166,6 +168,7 @@ async function generateSeasonalTasks(
  */
 async function generateGeneralTasks(
   home: Home,
+  equipment: Equipment[],
   existingTasks: any[],
   maxTasks: number,
   usedTemplateIds: Set<string>
@@ -193,14 +196,27 @@ async function generateGeneralTasks(
   }
 
   // Filter to only general tasks (no equipment requirements)
-  const generalTemplates = templatesResult.data.filter(t => !t.applies_to_equipment_types)
+  const generalTemplates = templatesResult.data.filter((t: TaskTemplate) => !t.applies_to_equipment_types)
   console.log(`🏠 Found ${generalTemplates.length} general maintenance templates`)
+
+  // Check what equipment types we have to avoid duplicates
+  const hasEquipment = {
+    smokeDetectors: equipment.some(e => e.type === 'smoke_detector'),
+    securitySystem: equipment.some(e => e.type === 'security_system')
+  }
 
   for (const template of generalTemplates) {
     const templateKey = `${template.title}-${template.category}`
     
     // Skip if already used
     if (usedTemplateIds.has(templateKey)) {
+      continue
+    }
+
+    // Skip "Test All Safety Alarms" if we already have smoke detector equipment
+    // (since we'll have a specific smoke detector test task)
+    if (template.id === 'test-all-alarms' && hasEquipment.smokeDetectors) {
+      console.log(`🚫 Skipping "${template.title}" - smoke detector task already exists`)
       continue
     }
 

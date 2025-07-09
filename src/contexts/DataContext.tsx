@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createRecurringTask } from '../lib/services/recurringTaskService';
 import { updateTasksWithMoneySaved } from '../lib/utils/updateTasksWithMoneySaved';
 import NotificationService from '../lib/services/notificationService';
 import NotificationScheduler from '../lib/services/notificationScheduler';
@@ -212,7 +211,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateTask = async (id: string, updates: Partial<Task>) => {
     console.log('DataContext updateTask called with id:', id, 'updates:', updates);
     
-    const updatedTasks = tasks.map(task => 
+    // Create a new array with the updated task
+    let updatedTasks = tasks.map(task => 
       task.id === id ? { ...task, ...updates } : task
     );
     
@@ -284,33 +284,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
       }
       
-      if (updatedTask.recurrence?.enabled) {
-        console.log('🔄 Recurrence enabled, creating recurring task...');
-        try {
-          // Convert the task to the expected type for createRecurringTask
-          const taskForRecurring = {
-            ...updatedTask,
-            recurrence: updatedTask.recurrence
-          };
-          const recurringTask = createRecurringTask(taskForRecurring, new Date(updates.completed_at));
-          
-          if (recurringTask) {
-            console.log('✅ Created recurring task:', recurringTask.title);
-            console.log('📅 Next due date:', recurringTask.due_date);
-            updatedTasks.push(recurringTask);
-          } else {
-            console.log('❌ No recurring task created');
-          }
-        } catch (error) {
-          console.error('❌ Error creating recurring task:', error);
-        }
-      } else {
-        console.log('🚫 Recurrence not enabled for this task');
-      }
+      // Recurring task creation is handled in TaskDetailScreen to avoid duplicates
+      // This prevents the issue where completed tasks appear in both Open and Completed lists
     }
     
     console.log('Updated tasks array length:', updatedTasks.length);
-    setTasks(updatedTasks);
+    
+    // Use setTasksState to properly update and save
+    setTasksState(updatedTasks);
+    await saveTasks(updatedTasks);
   };
 
   const deleteTask = (id: string) => {

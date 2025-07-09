@@ -16,7 +16,8 @@ import { Spacing } from '../theme/spacing';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
-import { getCurrentWeather } from '../lib/services/weatherService';
+// Weather service import removed - can be re-added when location is collected
+// import { getCurrentWeather } from '../lib/services/weatherService';
 import NotificationTestPanel from '../components/NotificationTestPanel';
 
 interface QuickStat {
@@ -37,12 +38,13 @@ interface RecentActivity {
   status: 'completed' | 'pending' | 'overdue';
 }
 
-interface WeatherData {
-  temperature: number;
-  condition: string;
-  icon: string;
-  recommendation?: string;
-}
+// Weather data interface - kept for future use when location is collected
+// interface WeatherData {
+//   temperature: number;
+//   condition: string;
+//   icon: string;
+//   recommendation?: string;
+// }
 
 export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -114,18 +116,21 @@ export const DashboardScreen: React.FC = () => {
       return Math.round((completedThisMonth / totalTasksThisMonth) * 100);
     })(),
   };
-  const [weather, setWeather] = useState<WeatherData>({
-    temperature: 72,
-    condition: 'Partly Cloudy',
-    icon: 'partly-sunny',
-    recommendation: 'Great day for outdoor maintenance tasks!'
-  });
+  // Weather state removed - will be re-added when location is collected
+  // const [weather, setWeather] = useState<WeatherData>({
+  //   temperature: 72,
+  //   condition: 'Partly Cloudy',
+  //   icon: 'partly-sunny',
+  //   recommendation: 'Great day for outdoor maintenance tasks!'
+  // });
 
-  // Load real weather data when component mounts or homes change
-  useEffect(() => {
-    loadWeatherData();
-  }, [homes]);
+  // Weather loading removed - will be re-added when location is collected
+  // useEffect(() => {
+  //   loadWeatherData();
+  // }, [homes]);
 
+  // Weather function kept for future use when location is collected
+  /*
   const loadWeatherData = async () => {
     console.log('🌤️ Dashboard loadWeatherData called, homes:', homes.length);
     if (homes.length > 0) {
@@ -157,6 +162,7 @@ export const DashboardScreen: React.FC = () => {
       console.log('📍 No homes available yet');
     }
   };
+  */
 
   // Intelligence Dashboard Cards
   const quickStats: QuickStat[] = [
@@ -267,8 +273,8 @@ export const DashboardScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Refresh weather data
-    await loadWeatherData();
+    // Weather refresh removed - will be re-added when location is collected
+    // await loadWeatherData();
     // In development mode, we don't need to refresh from server
     // The data is already managed by the DataContext
     setRefreshing(false);
@@ -337,25 +343,12 @@ export const DashboardScreen: React.FC = () => {
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeTitle}>{getGreeting()} 🏠</Text>
         <Text style={styles.welcomeSubtitle}>
-          Here's what's happening with your properties today
+          Here's what's happening with your property today
         </Text>
       </View>
 
-      {/* Weather Card */}
-      <View style={styles.weatherCard}>
-        <View style={styles.weatherHeader}>
-          <Icon name="info" size="lg" color={Colors.info} />
-          <View style={styles.weatherInfo}>
-            <Text style={styles.weatherTemp}>{weather.temperature}°F</Text>
-            <Text style={styles.weatherCondition}>{weather.condition}</Text>
-          </View>
-        </View>
-        {weather.recommendation && (
-          <Text style={styles.weatherRecommendation}>
-            💡 {weather.recommendation}
-          </Text>
-        )}
-      </View>
+      {/* Weather Card removed - will be re-added when location is collected */}
+      {/* To re-enable: uncomment weather state, loadWeatherData function, and this card */}
 
       {/* Intelligence Dashboard */}
       <View style={styles.statsSection}>
@@ -453,48 +446,49 @@ const styles = StyleSheet.create({
     ...Typography.bodyLarge,
     color: Colors.textSecondary,
   },
-  weatherCard: {
-    backgroundColor: Colors.white,
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.lg,
-    padding: Spacing.lg,
-    borderRadius: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: Colors.gray900,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  weatherHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
-  },
-  weatherInfo: {
-    marginLeft: Spacing.md,
-  },
-  weatherTemp: {
-    ...Typography.headlineMedium,
-    color: Colors.textPrimary,
-  },
-  weatherCondition: {
-    ...Typography.bodyMedium,
-    color: Colors.textSecondary,
-  },
-  weatherRecommendation: {
-    ...Typography.bodyMedium,
-    color: Colors.info,
-    backgroundColor: Colors.infoLight,
-    padding: Spacing.md,
-    borderRadius: 8,
-    marginTop: Spacing.sm,
-  },
+  // Weather styles - kept for future use when location is collected
+  // weatherCard: {
+  //   backgroundColor: Colors.white,
+  //   marginHorizontal: Spacing.xl,
+  //   marginBottom: Spacing.lg,
+  //   padding: Spacing.lg,
+  //   borderRadius: 12,
+  //   ...Platform.select({
+  //     ios: {
+  //       shadowColor: Colors.gray900,
+  //       shadowOffset: { width: 0, height: 2 },
+  //       shadowOpacity: 0.1,
+  //       shadowRadius: 4,
+  //     },
+  //     android: {
+  //       elevation: 2,
+  //     },
+  //   }),
+  // },
+  // weatherHeader: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   marginBottom: Spacing.sm,
+  // },
+  // weatherInfo: {
+  //   marginLeft: Spacing.md,
+  // },
+  // weatherTemp: {
+  //   ...Typography.headlineMedium,
+  //   color: Colors.textPrimary,
+  // },
+  // weatherCondition: {
+  //   ...Typography.bodyMedium,
+  //   color: Colors.textSecondary,
+  // },
+  // weatherRecommendation: {
+  //   ...Typography.bodyMedium,
+  //   color: Colors.info,
+  //   backgroundColor: Colors.infoLight,
+  //   padding: Spacing.md,
+  //   borderRadius: 8,
+  //   marginTop: Spacing.sm,
+  // },
   statsSection: {
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
