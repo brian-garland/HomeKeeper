@@ -59,6 +59,7 @@ export async function generateIntelligentTasks(
       existingTasks || [],
       maxTasksPerCategory
     )
+    console.log(`📊 Seasonal tasks generated: ${seasonalResult.length}`)
     seasonalResult.forEach(task => {
       if (task.template_id && !usedTemplateIds.has(task.template_id)) {
         generatedTasks.push(task)
@@ -74,8 +75,19 @@ export async function generateIntelligentTasks(
       maxTasksPerCategory,
       usedTemplateIds // Pass used templates to prevent duplicates
     )
+    console.log(`📊 Equipment tasks generated: ${equipmentResult.length}`)
     // Add all equipment tasks (duplicate prevention already handled inside function)
     generatedTasks.push(...equipmentResult)
+    
+    // 3. Generate general tasks (non-equipment specific)
+    const generalResult = await generateGeneralTasks(
+      home,
+      existingTasks || [],
+      maxTasksPerCategory,
+      usedTemplateIds
+    )
+    console.log(`📊 General tasks generated: ${generalResult.length}`)
+    generatedTasks.push(...generalResult)
 
     // 4. Apply weather optimization if enabled
     if (includeWeatherOptimization) {
@@ -86,20 +98,9 @@ export async function generateIntelligentTasks(
       )
     }
 
-    // 5. Save all generated tasks
-    if (generatedTasks.length > 0) {
-      // Save to AsyncStorage for local homes
-      if (homeId.startsWith('local-')) {
-        await AsyncStorage.setItem('homekeeper_tasks', JSON.stringify(generatedTasks))
-        console.log(`💾 Saved ${generatedTasks.length} tasks to local storage`)
-      } else {
-        // For database homes, create tasks individually
-        for (const task of generatedTasks) {
-          await UnifiedDataManager.createTask(homeId, task)
-        }
-      }
-      console.log(`🔄 Updated DataContext with ${generatedTasks.length} tasks`)
-    }
+    // 5. Return the generated tasks - they'll be added via DataContext in the calling code
+    // Don't save directly to AsyncStorage here as that bypasses the DataContext
+    console.log(`✅ Returning ${generatedTasks.length} tasks to be added via DataContext`)
 
     console.log(`✅ Generated ${generatedTasks.length} initial tasks`)
 
@@ -161,6 +162,75 @@ async function generateSeasonalTasks(
 }
 
 /**
+ * Generate general maintenance tasks (not equipment-specific)
+ */
+async function generateGeneralTasks(
+  home: Home,
+  existingTasks: any[],
+  maxTasks: number,
+  usedTemplateIds: Set<string>
+): Promise<Task[]> {
+  const tasks: Task[] = []
+  const currentMonth = new Date().getMonth() + 1
+
+  // Get templates that don't require specific equipment
+  const templatesResult = home.id.startsWith('local-')
+    ? await LocalTemplateService.getApplicableTaskTemplates(
+        home.home_type || 'single_family',
+        [], // Empty equipment array to get general tasks
+        currentMonth
+      )
+    : await getApplicableTaskTemplates(
+        home.home_type || 'single_family',
+        [],
+        currentMonth
+      )
+
+  console.log(`🏠 General tasks query returned: ${templatesResult.success ? templatesResult.data.length : 'ERROR'}`)
+  
+  if (!templatesResult.success) {
+    return []
+  }
+
+  // Filter to only general tasks (no equipment requirements)
+  const generalTemplates = templatesResult.data.filter(t => !t.applies_to_equipment_types)
+  console.log(`🏠 Found ${generalTemplates.length} general maintenance templates`)
+
+  for (const template of generalTemplates) {
+    const templateKey = `${template.title}-${template.category}`
+    
+    // Skip if already used
+    if (usedTemplateIds.has(templateKey)) {
+      continue
+    }
+
+    // Check if task already exists
+    const existingTask = existingTasks.find(task => 
+      task.title === template.title
+    )
+
+    if (existingTask) {
+      continue
+    }
+
+    // Generate the task
+    const dueDate = calculateSeasonalDueDate(template, currentMonth, tasks.length)
+    const task = await createTaskFromTemplate(template, home.id, dueDate)
+    
+    if (task) {
+      task.template_id = templateKey
+      tasks.push(task)
+      usedTemplateIds.add(templateKey)
+      console.log(`✅ Generated general task: ${task.title}`)
+    }
+
+    if (tasks.length >= maxTasks) break
+  }
+
+  return tasks
+}
+
+/**
  * Generate tasks for specific equipment
  */
 async function generateEquipmentTasks(
@@ -172,76 +242,86 @@ async function generateEquipmentTasks(
 ): Promise<Task[]> {
   const tasks: Task[] = []
   const currentMonth = new Date().getMonth() + 1
+  
+  // Get ALL equipment types at once
+  const allEquipmentTypes = equipment.map(eq => eq.type)
+  console.log(`🔧 All equipment types: ${allEquipmentTypes.join(', ')}`)
 
-  for (const item of equipment) {
-    // Get templates for this specific equipment
-    const templatesResult = home.id.startsWith('local-')
-      ? await LocalTemplateService.getApplicableTaskTemplates(
-          home.home_type || 'single_family',
-          [item.type],
-          currentMonth
-        )
-      : await getApplicableTaskTemplates(
-          home.home_type || 'single_family',
-          [item.type],
-          currentMonth
-        )
+  // Get all templates that match ANY of our equipment
+  const templatesResult = home.id.startsWith('local-')
+    ? await LocalTemplateService.getApplicableTaskTemplates(
+        home.home_type || 'single_family',
+        allEquipmentTypes,
+        currentMonth
+      )
+    : await getApplicableTaskTemplates(
+        home.home_type || 'single_family',
+        allEquipmentTypes,
+        currentMonth
+      )
 
-    console.log(`🔍 Equipment: ${item.name} (type: ${item.type}, category: ${item.category})`)
+  if (!templatesResult.success) {
+    console.log(`❌ Failed to get templates: ${templatesResult.error}`)
+    return []
+  }
+
+  console.log(`📋 Found ${templatesResult.data.length} total templates matching equipment`)
+  
+  // Filter to only equipment-specific templates
+  const equipmentSpecificTemplates = templatesResult.data.filter((t: TaskTemplate) => 
+    t.applies_to_equipment_types && t.applies_to_equipment_types.length > 0
+  )
+  
+  console.log(`🔧 Equipment-specific templates: ${equipmentSpecificTemplates.length}`)
+
+  // Create a map of equipment by type for quick lookup
+  const equipmentByType = new Map<string, Equipment>()
+  equipment.forEach(eq => equipmentByType.set(eq.type, eq))
+
+  // Process each equipment-specific template
+  for (const template of equipmentSpecificTemplates) {
+    // Find which equipment this template applies to
+    const applicableEquipment = template.applies_to_equipment_types
+      ?.map(type => equipmentByType.get(type))
+      .filter(eq => eq !== undefined) || []
     
-    if (!templatesResult.success) {
-      console.log(`🔍 Templates found: 0 (error: ${templatesResult.error})`)
+    if (applicableEquipment.length === 0) {
+      console.log(`⚠️ No matching equipment for template: ${template.title}`)
       continue
     }
 
-    console.log(`🔍 Templates found: ${templatesResult.data.length}`)
-    console.log(`🔍 Available templates:`, templatesResult.data.map((t: TaskTemplate) => ({ 
-      title: t.title, 
-      category: t.category, 
-      applies_to: t.applies_to_equipment_types 
-    })))
+    // Generate task for the first matching equipment
+    const targetEquipment = applicableEquipment[0]!
+    
+    // Create template key for duplicate detection
+    const templateKey = `${template.title}-${template.category}`
+    
+    // Skip if already used
+    if (usedTemplateIds.has(templateKey)) {
+      console.log(`🚫 Skipping duplicate template: ${template.title}`)
+      continue
+    }
 
-    for (const template of templatesResult.data) {
-      // Create simple template key for duplicate detection (title + category)
-      const templateKey = `${template.title}-${template.category}`
-      
-      // Skip if this template has already been used
-      if (usedTemplateIds.has(templateKey)) {
-        console.log(`🚫 Skipping duplicate template: ${template.title} (${template.category})`)
-        continue
-      }
+    // Check if task already exists for this equipment
+    const existingTask = existingTasks.find(task => 
+      task.title === template.title && 
+      task.equipment_id === targetEquipment.id
+    )
 
-      // Check if task already exists
-      const existingTask = existingTasks.find(task => 
-        task.title === template.title && 
-        task.equipment_id === item.id
-      )
+    if (existingTask) {
+      console.log(`⏭️ Task already exists: ${template.title} for ${targetEquipment.name}`)
+      continue
+    }
 
-      if (existingTask) {
-        console.log(`⏭️ Task already exists: ${template.title} for ${item.name}`)
-        continue
-      }
-
-      // Generate the task - only link to equipment if template is equipment-specific
-      const dueDate = calculateEquipmentDueDate(template, item, tasks.length)
-      const isEquipmentSpecific = template.applies_to_equipment_types && template.applies_to_equipment_types.length > 0
-      const equipmentId = isEquipmentSpecific ? item.id : undefined
-      
-      const task = await createTaskFromTemplate(template, home.id, dueDate, equipmentId)
-      if (task) {
-        task.template_id = templateKey // Use simple key for tracking
-        tasks.push(task)
-        usedTemplateIds.add(templateKey) // Mark template as used
-        
-        // Log with correct association
-        if (isEquipmentSpecific) {
-          console.log(`✅ Generated equipment task: ${task.title} for ${item.name}`)
-        } else {
-          console.log(`✅ Generated general task: ${task.title} (found during ${item.name} equipment scan)`)
-        }
-      }
-
-      if (tasks.length >= maxTasks) break
+    // Generate the task
+    const dueDate = calculateEquipmentDueDate(template, targetEquipment, tasks.length)
+    const task = await createTaskFromTemplate(template, home.id, dueDate, targetEquipment.id)
+    
+    if (task) {
+      task.template_id = templateKey
+      tasks.push(task)
+      usedTemplateIds.add(templateKey)
+      console.log(`✅ Generated equipment task: ${task.title} for ${targetEquipment.name}`)
     }
 
     if (tasks.length >= maxTasks) break

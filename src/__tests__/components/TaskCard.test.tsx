@@ -75,7 +75,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress, testID })
       case 3: return 'HIGH';
       case 2: return 'MEDIUM';
       case 1: return 'LOW';
-      default: return 'NORMAL';
+      default: return 'MEDIUM';
     }
   };
 
@@ -675,7 +675,7 @@ describe('TaskCard - Comprehensive Test Suite', () => {
       );
       
       const priorityText = getByTestId('priority-text');
-      expect(priorityText.props.children).toBe('NORMAL');
+      expect(priorityText.props.children).toBe('MEDIUM');
     });
   });
 

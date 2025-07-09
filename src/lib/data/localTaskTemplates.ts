@@ -437,6 +437,79 @@ export const LOCAL_TASK_TEMPLATES: TaskTemplate[] = [
     money_saved_estimate: 400.00,
     system_template: true,
     active: true
+  },
+
+  // Basic Safety Checks (no equipment required)
+  {
+    id: 'test-all-alarms',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    title: 'Test All Safety Alarms',
+    description: 'Test smoke detectors, carbon monoxide detectors, and check fire extinguishers.',
+    category: 'safety',
+    frequency_type: 'monthly',
+    frequency_months: 1,
+    seasonal_months: null,
+    estimated_duration_minutes: 15,
+    difficulty_level: 1,
+    tools_needed: ['Step stool or ladder'],
+    materials_needed: ['9V batteries (if needed)'],
+    instructions: {
+      steps: [
+        'Test each smoke detector using test button',
+        'Test carbon monoxide detectors',
+        'Check fire extinguisher pressure gauge',
+        'Replace batteries if low',
+        'Note locations of any non-functioning units'
+      ],
+      safety_notes: ['Use ladder safely', 'Have spare batteries ready'],
+      tips: ['Do this on the first of each month', 'Keep a log of battery replacement dates']
+    },
+    applies_to_home_types: ['single_family', 'condo', 'townhouse', 'apartment'],
+    applies_to_equipment_types: null,
+    climate_conditions: null,
+    why_important: 'Early warning systems save lives and property.',
+    consequences_if_skipped: 'Risk of undetected fire or carbon monoxide.',
+    money_saved_estimate: 75.00,
+    system_template: true,
+    active: true
+  },
+
+  // Home Security Check
+  {
+    id: 'security-checkup',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    title: 'Home Security Checkup',
+    description: 'Check all locks, outdoor lighting, and security features.',
+    category: 'safety',
+    frequency_type: 'quarterly',
+    frequency_months: 3,
+    seasonal_months: null,
+    estimated_duration_minutes: 30,
+    difficulty_level: 1,
+    tools_needed: ['Flashlight', 'Screwdriver'],
+    materials_needed: ['Lubricant spray', 'Light bulbs'],
+    instructions: {
+      steps: [
+        'Test all door locks and deadbolts',
+        'Check window locks',
+        'Test outdoor motion lights',
+        'Replace any burnt out security lights',
+        'Trim bushes near windows',
+        'Check security system if installed'
+      ],
+      safety_notes: ['Check exterior at dusk for best lighting assessment'],
+      tips: ['Consider smart locks for keyless entry', 'Motion lights deter intruders']
+    },
+    applies_to_home_types: ['single_family', 'condo', 'townhouse', 'apartment'],
+    applies_to_equipment_types: null,
+    climate_conditions: null,
+    why_important: 'Prevents break-ins and improves home safety.',
+    consequences_if_skipped: 'Increased vulnerability to theft or intrusion.',
+    money_saved_estimate: 150.00,
+    system_template: true,
+    active: true
   }
 ]
 

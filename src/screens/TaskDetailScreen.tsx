@@ -20,6 +20,7 @@ import SecondaryButton from '../components/buttons/SecondaryButton';
 import { useDataContext } from '../contexts/DataContext';
 import { useEquipment } from '../hooks/useEquipment';
 import { TaskRecurrence, FREQUENCY_OPTIONS, DEFAULT_RECURRENCE } from '../types/preferences';
+import { createRecurringTask } from '../lib/services/recurringTaskService';
 
 const categories = [
   { id: 'hvac', label: 'HVAC', icon: 'wrench' as const },
@@ -52,7 +53,7 @@ export const TaskDetailScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { task: initialTask } = route.params as TaskDetailRouteParams;
-  const { updateTask, deleteTask, tasks } = useDataContext();
+  const { updateTask, deleteTask, addTask, tasks } = useDataContext();
   const { equipment } = useEquipment(); // Get equipment data
   
   // Get the current task from the global state (in case it was updated)
@@ -92,7 +93,7 @@ export const TaskDetailScreen: React.FC = () => {
       case 3: return 'HIGH';
       case 2: return 'MEDIUM';
       case 1: return 'LOW';
-      default: return 'NORMAL';
+      default: return 'MEDIUM';
     }
   };
 
@@ -118,15 +119,31 @@ export const TaskDetailScreen: React.FC = () => {
             setLoading(true);
             try {
               console.log('🔧 TaskDetailScreen: About to call updateTask for task:', task.id);
+              
+              // Mark the current task as complete
+              const completedDate = new Date().toISOString();
               await updateTask(task.id, {
                 status: 'completed',
-                completed_at: new Date().toISOString(),
+                completed_at: completedDate,
               });
               console.log('🔧 TaskDetailScreen: updateTask completed successfully');
+              
+              // Check if this is a recurring task and create the next one
+              if (task.recurrence?.enabled) {
+                console.log('🔄 TaskDetailScreen: Creating next recurring task');
+                const nextTask = createRecurringTask(task, new Date(completedDate));
+                
+                if (nextTask) {
+                  await addTask(nextTask);
+                  console.log('🔄 TaskDetailScreen: Next recurring task created:', nextTask.title, 'due:', nextTask.due_date);
+                }
+              }
+              
               Alert.alert('Success', 'Task marked as complete!', [
                 { text: 'OK', onPress: () => navigation.goBack() }
               ]);
             } catch (error) {
+              console.error('TaskDetailScreen: Error completing task:', error);
               Alert.alert('Error', 'Failed to mark task as complete');
             } finally {
               setLoading(false);

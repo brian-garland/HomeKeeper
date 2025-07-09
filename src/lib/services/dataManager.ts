@@ -18,10 +18,18 @@ class LocalDataManager implements DataManagerInterface {
   async getHome(homeId: string): Promise<Home | null> {
     if (!homeId.startsWith('local-')) return null
     
-    const localHomeData = await AsyncStorage.getItem('homekeeper_local_home')
-    if (localHomeData) {
-      return JSON.parse(localHomeData) as Home
+    // Look for homes in the correct storage key used by DataContext
+    const homesData = await AsyncStorage.getItem('homekeeper_homes')
+    if (homesData) {
+      const homes = JSON.parse(homesData) as Home[]
+      // Find the specific home by ID
+      const home = homes.find(h => h.id === homeId)
+      if (home) {
+        console.log('📦 LocalDataManager: Found home:', homeId)
+        return home
+      }
     }
+    console.log('📦 LocalDataManager: Home not found:', homeId)
     return null
   }
 

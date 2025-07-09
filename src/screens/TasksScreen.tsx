@@ -54,7 +54,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
       case 3: return 'HIGH';
       case 2: return 'MEDIUM';
       case 1: return 'LOW';
-      default: return 'NORMAL';
+      default: return 'MEDIUM';
     }
   };
 
@@ -148,7 +148,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
               styles.metaText,
               isCompleted && styles.metaTextCompleted
             ]}>
-              {task.estimated_duration_minutes || 'N/A'} min
+              {task.estimated_duration_minutes ? `${task.estimated_duration_minutes}` : 'N/A'} min
             </Text>
           </View>
           {/* Money Saved Display */}
@@ -160,7 +160,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, equipment, onPress }) => {
                 styles.moneySavedText,
                 isCompleted && styles.metaTextCompleted
               ]}>
-                ${task.money_saved_estimate.toFixed(0)} saved
+                ${task.money_saved_estimate ? task.money_saved_estimate.toFixed(0) : '0'} saved
               </Text>
             </View>
           )}

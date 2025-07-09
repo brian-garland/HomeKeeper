@@ -44,6 +44,31 @@ export const ProfileScreen: React.FC = () => {
     );
   };
 
+  const handleClearAllData = async () => {
+    Alert.alert(
+      'Clear All Data',
+      'This will delete ALL app data including homes, tasks, and equipment. This cannot be undone!',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear Everything',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              // Clear all AsyncStorage data
+              await AsyncStorage.clear();
+              Alert.alert('Success', 'All data cleared. Please restart the app.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to clear data.');
+            }
+            setIsLoading(false);
+          },
+        },
+      ]
+    );
+  };
+
   const profileSections = [
     {
       title: 'Account',
@@ -73,6 +98,7 @@ export const ProfileScreen: React.FC = () => {
       title: 'Development',
       items: [
         { icon: 'settings', label: 'Reset Onboarding', action: handleResetOnboarding },
+        { icon: 'trash', label: 'Clear All Data', action: handleClearAllData },
         { icon: 'bug', label: 'Debug Screen', action: () => setShowDebug(true) },
       ],
     },

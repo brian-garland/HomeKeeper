@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MagicalOnboardingScreen } from '../screens/MagicalOnboardingScreen';
+import { QuickStartScreen } from '../screens/QuickStartScreen';
 import { TabNavigator } from './TabNavigator';
+import { isFeatureEnabled } from '../config/featureFlags';
 
 export default function AppNavigator() {
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
@@ -21,8 +23,10 @@ export default function AppNavigator() {
   };
 
   const handleOnboardingComplete = async () => {
+    console.log('AppNavigator: handleOnboardingComplete called');
     try {
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+      console.log('AppNavigator: Setting isFirstLaunch to false');
       setIsFirstLaunch(false);
     } catch (error) {
       console.error('Error saving onboarding completion:', error);
@@ -36,9 +40,14 @@ export default function AppNavigator() {
     return null; // Or a loading screen
   }
 
-  return isFirstLaunch ? (
-    <MagicalOnboardingScreen onComplete={handleOnboardingComplete} />
-  ) : (
-    <TabNavigator />
-  );
+  // Determine which onboarding flow to use
+  if (isFirstLaunch) {
+    if (isFeatureEnabled('useProgressiveOnboarding')) {
+      return <QuickStartScreen onComplete={handleOnboardingComplete} />;
+    } else {
+      return <MagicalOnboardingScreen onComplete={handleOnboardingComplete} />;
+    }
+  }
+  
+  return <TabNavigator />;
 } 

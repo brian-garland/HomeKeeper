@@ -11,6 +11,7 @@ export async function getApplicableTaskTemplates(
 ): Promise<{ success: boolean; data: TaskTemplate[]; error?: string }> {
   try {
     console.log(`🔍 Local Templates: Getting templates for home type: ${homeType}, equipment: ${equipmentTypes.join(', ')}, month: ${currentMonth}`)
+    console.log(`🔍 Total templates available: ${LOCAL_TASK_TEMPLATES.length}`)
     
     const applicableTemplates = LOCAL_TASK_TEMPLATES.filter(template => {
       // Check home type compatibility
@@ -30,7 +31,22 @@ export async function getApplicableTaskTemplates(
                            template.seasonal_months.includes((currentMonth % 12) + 1) ||
                            template.seasonal_months.includes(((currentMonth + 1) % 12) + 1)
       
-      return homeTypeMatch && equipmentMatch && seasonalMatch && template.active
+      const isActive = template.active !== false // Default to true if not specified
+      
+      // Debug logging
+      if (!homeTypeMatch || !equipmentMatch || !seasonalMatch || !isActive) {
+        console.log(`❌ Template ${template.id} filtered out:`, {
+          homeTypeMatch,
+          equipmentMatch,
+          seasonalMatch,
+          isActive,
+          template_home_types: template.applies_to_home_types,
+          template_equipment: template.applies_to_equipment_types,
+          template_seasonal: template.seasonal_months
+        })
+      }
+      
+      return homeTypeMatch && equipmentMatch && seasonalMatch && isActive
     })
 
     console.log(`✅ Local Templates: Found ${applicableTemplates.length} applicable templates`)
