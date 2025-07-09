@@ -217,9 +217,9 @@ class NotificationService {
         sound: this.getSoundForType(type, preferences.style),
       },
       trigger: {
-        type: 'date' as const,
+        type: 'date',
         date: adjustedTime,
-      },
+      } as any,
     });
 
     // Store in local schedule
