@@ -262,9 +262,27 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
             <TextInput
               placeholder="e.g., 2010"
               value={yearBuilt}
-              onChangeText={setYearBuilt}
+              onChangeText={(text) => {
+                // Only allow numeric input for year
+                const numericText = text.replace(/[^0-9]/g, '');
+                // Limit to 4 digits for year
+                if (numericText.length <= 4) {
+                  // Additional validation: ensure year is reasonable (1800-current year + 1)
+                  if (numericText.length === 4) {
+                    const year = parseInt(numericText, 10);
+                    const currentYear = new Date().getFullYear();
+                    if (year >= 1800 && year <= currentYear + 1) {
+                      setYearBuilt(numericText);
+                    }
+                  } else {
+                    setYearBuilt(numericText);
+                  }
+                }
+              }}
               style={styles.formInput}
               allowFontScaling={true}
+              keyboardType="numeric"
+              maxLength={4}
             />
           </View>
           
@@ -275,9 +293,18 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
             <TextInput
               placeholder="e.g., 2500"
               value={squareFootage}
-              onChangeText={setSquareFootage}
+              onChangeText={(text) => {
+                // Only allow numeric input for square footage
+                const numericText = text.replace(/[^0-9]/g, '');
+                // Limit to reasonable square footage (up to 99999)
+                if (numericText.length <= 5) {
+                  setSquareFootage(numericText);
+                }
+              }}
               style={styles.formInput}
               allowFontScaling={true}
+              keyboardType="numeric"
+              maxLength={5}
             />
           </View>
         </View>
