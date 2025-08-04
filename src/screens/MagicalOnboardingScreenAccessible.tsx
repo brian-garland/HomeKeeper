@@ -18,6 +18,7 @@ import { SecondaryButton } from '../components/buttons/SecondaryButton';
 import { Icon } from '../components/icons/Icon';
 import { TextInput } from '../components/inputs/TextInput';
 import { useAccessibleStyles } from '../hooks/useAccessibleStyles';
+import { logger } from '../lib/services/logger';
 
 interface OnboardingScreenProps {
   onComplete?: () => void;
@@ -610,10 +611,34 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   const handleComplete = async () => {
     try {
-      console.log('Onboarding completed with data:', onboardingData);
+      // Log successful onboarding completion with full context
+      logger.navigation.info('Onboarding completed successfully', {
+        homeType: onboardingData.characteristics?.homeType,
+        hasAddress: !!onboardingData.address,
+        maintenanceStyle: onboardingData.personalization?.maintenanceStyle,
+        availableTime: onboardingData.personalization?.availableTime,
+        notifications: onboardingData.personalization?.notifications,
+        yearBuilt: onboardingData.characteristics?.yearBuilt,
+        squareFootage: onboardingData.characteristics?.squareFootage,
+      });
+      
       onComplete?.();
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      // Log error with full context for debugging
+      logger.navigation.error('Failed to complete onboarding', {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error,
+        onboardingStep: 'completion',
+        partialData: {
+          hasAddress: !!onboardingData.address,
+          hasCharacteristics: !!onboardingData.characteristics,
+          hasPersonalization: !!onboardingData.personalization,
+        }
+      });
+      
       Alert.alert('Setup Error', 'There was an issue setting up your home. Please try again.');
     }
   };
