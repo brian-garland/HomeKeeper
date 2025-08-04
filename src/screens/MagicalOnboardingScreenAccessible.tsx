@@ -20,8 +20,6 @@ import { Icon } from '../components/icons/Icon';
 import { TextInput } from '../components/inputs/TextInput';
 import { useAccessibleStyles } from '../hooks/useAccessibleStyles';
 
-const { width: screenWidth } = Dimensions.get('window');
-
 interface OnboardingScreenProps {
   onComplete?: () => void;
 }

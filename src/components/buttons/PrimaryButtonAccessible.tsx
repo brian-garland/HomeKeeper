@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { Colors } from '../../theme/colors';
 import { ButtonTypography } from '../../theme/typography';
-import { ComponentSpacing, AccessibilitySpacing } from '../../theme/spacing';
 import { useAccessibleStyles } from '../../hooks/useAccessibleStyles';
 
 interface PrimaryButtonProps {
@@ -130,8 +129,6 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     ...ButtonTypography.primary,
     fontSize: sizeStyles.fontSize,
     color: disabled ? Colors.textDisabled : Colors.white,
-    // Allow for text wrapping on very large font scales
-    ...(accessibleStyles.isExtraLargeTextMode && { flexWrap: 'wrap' }),
     ...textStyle,
   };
 
