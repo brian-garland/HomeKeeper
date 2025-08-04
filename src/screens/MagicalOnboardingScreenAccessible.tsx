@@ -37,62 +37,90 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
   const accessibleStyles = useAccessibleStyles();
   
   return (
-  <View style={styles.stepContainer}>
-    <View>
-      <View style={styles.heroSection}>
-        <View style={styles.iconContainer}>
-          <Icon name="home" size="xl" color={Colors.primary} />
+    <ScrollView 
+      style={styles.stepScrollContainer} 
+      contentContainerStyle={[
+        styles.stepContent,
+        { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+      ]} 
+      showsVerticalScrollIndicator={false}
+    >
+      <View>
+        <View style={styles.heroSection}>
+          <View style={[
+            styles.iconContainer,
+            { 
+              width: accessibleStyles.getDynamicHeight(80, false),
+              height: accessibleStyles.getDynamicHeight(80, false),
+              borderRadius: accessibleStyles.getDynamicHeight(40, false),
+            }
+          ]}>
+            <Icon name="home" size="xl" color={Colors.primary} />
+          </View>
+          <Text style={styles.heroTitle} allowFontScaling={true}>
+            Welcome to HomeKeeper
+          </Text>
+          <Text style={styles.heroSubtitle} allowFontScaling={true} numberOfLines={accessibleStyles.getTextLines(2)}>
+            Your home's personal maintenance assistant
+          </Text>
         </View>
-        <Text style={styles.heroTitle}>Welcome to HomeKeeper</Text>
-        <Text style={styles.heroSubtitle}>
-          Your home's personal maintenance assistant
-        </Text>
+        
+        <View style={styles.valueProposition}>
+          <View style={styles.valueItem}>
+            <Icon name="check" size="md" color={Colors.success} />
+            <Text style={styles.valueText} allowFontScaling={true}>
+              Know what maintenance you need
+            </Text>
+          </View>
+          <View style={styles.valueItem}>
+            <Icon name="clock" size="md" color={Colors.success} />
+            <Text style={styles.valueText} allowFontScaling={true}>
+              When you need to do it
+            </Text>
+          </View>
+          <View style={styles.valueItem}>
+            <Icon name="help" size="md" color={Colors.success} />
+            <Text style={styles.valueText} allowFontScaling={true}>
+              How to do it properly
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.socialProof}>
+          <Text style={styles.socialProofText} allowFontScaling={true}>
+            Join thousands of homeowners who've simplified their maintenance
+          </Text>
+          <View style={[
+            styles.trustIndicators,
+            accessibleStyles.useCompactLayout && styles.trustIndicatorsCompact
+          ]}>
+            <View style={styles.trustItem}>
+              <Icon name="settings" size="sm" color={Colors.primary} />
+              <Text style={styles.trustText} allowFontScaling={true}>Secure</Text>
+            </View>
+            <View style={styles.trustItem}>
+              <Icon name="users" size="sm" color={Colors.primary} />
+              <Text style={styles.trustText} allowFontScaling={true}>Community</Text>
+            </View>
+            <View style={styles.trustItem}>
+              <Icon name="favorite" size="sm" color={Colors.primary} />
+              <Text style={styles.trustText} allowFontScaling={true}>Expert Tips</Text>
+            </View>
+          </View>
+        </View>
       </View>
       
-      <View style={styles.valueProposition}>
-        <View style={styles.valueItem}>
-          <Icon name="check" size="md" color={Colors.success} />
-          <Text style={styles.valueText}>Know what maintenance you need</Text>
-        </View>
-        <View style={styles.valueItem}>
-          <Icon name="clock" size="md" color={Colors.success} />
-          <Text style={styles.valueText}>When you need to do it</Text>
-        </View>
-        <View style={styles.valueItem}>
-          <Icon name="help" size="md" color={Colors.success} />
-          <Text style={styles.valueText}>How to do it properly</Text>
-        </View>
+      <View style={[
+        styles.buttonContainer,
+        { paddingTop: accessibleStyles.getScaledSpacing(Spacing.lg) }
+      ]}>
+        <PrimaryButton
+          title="Get Started"
+          onPress={onNext}
+          style={styles.primaryButton}
+        />
       </View>
-      
-      <View style={styles.socialProof}>
-        <Text style={styles.socialProofText}>
-          Join thousands of homeowners who've simplified their maintenance
-        </Text>
-        <View style={styles.trustIndicators}>
-          <View style={styles.trustItem}>
-            <Icon name="settings" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Secure</Text>
-          </View>
-          <View style={styles.trustItem}>
-            <Icon name="users" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Community</Text>
-          </View>
-          <View style={styles.trustItem}>
-            <Icon name="favorite" size="sm" color={Colors.primary} />
-            <Text style={styles.trustText}>Expert Tips</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-    
-    <View style={styles.buttonContainer}>
-      <PrimaryButton
-        title="Get Started"
-        onPress={onNext}
-        style={styles.primaryButton}
-      />
-    </View>
-  </View>
+    </ScrollView>
   );
 };
 
@@ -100,6 +128,7 @@ const WelcomeStep: React.FC<{ onNext: () => void }> = ({ onNext }) => {
 const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }) => {
   const [address, setAddress] = useState('');
   const [isValidating, setIsValidating] = useState(false);
+  const accessibleStyles = useAccessibleStyles();
 
   const handleNext = async () => {
     if (!address.trim()) {
@@ -115,10 +144,19 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
   };
 
   return (
-    <View style={styles.stepContainer}>
+    <ScrollView 
+      style={styles.stepScrollContainer} 
+      contentContainerStyle={[
+        styles.stepContent,
+        { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+      ]} 
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.stepHeader}>
-        <Text style={styles.stepTitle}>Where's your home?</Text>
-        <Text style={styles.stepSubtitle}>
+        <Text style={styles.stepTitle} allowFontScaling={true}>
+          Where's your home?
+        </Text>
+        <Text style={styles.stepSubtitle} allowFontScaling={true}>
           We'll use this to provide local maintenance recommendations and weather-based scheduling
         </Text>
       </View>
@@ -129,11 +167,12 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
           value={address}
           onChangeText={setAddress}
           style={styles.addressInput}
+          allowFontScaling={true}
         />
         
         <View style={styles.privacyNote}>
           <Icon name="settings" size="sm" color={Colors.textSecondary} />
-          <Text style={styles.privacyText}>
+          <Text style={styles.privacyText} allowFontScaling={true}>
             Your address is kept private and secure
           </Text>
         </View>
@@ -145,7 +184,7 @@ const AddressStep: React.FC<{ onNext: (address: string) => void }> = ({ onNext }
         disabled={!address.trim() || isValidating}
         style={styles.primaryButton}
       />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -154,6 +193,7 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
   const [homeType, setHomeType] = useState<string>('');
   const [yearBuilt, setYearBuilt] = useState<string>('');
   const [squareFootage, setSquareFootage] = useState<string>('');
+  const accessibleStyles = useAccessibleStyles();
 
   const homeTypes = [
     { id: 'single_family', label: 'Single Family Home' },
@@ -172,58 +212,78 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
   };
 
   return (
-    <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Text style={styles.stepTitle}>Tell us about your home</Text>
-        <Text style={styles.stepSubtitle}>
-          This helps us create a personalized maintenance schedule
-        </Text>
-      </View>
-      
-      <ScrollView style={styles.characteristicsForm} showsVerticalScrollIndicator={false}>
-        <View style={styles.formSection}>
-          <Text style={styles.formLabel}>Home Type</Text>
-          <View style={styles.homeTypeGrid}>
-            {homeTypes.map((type) => (
-              <View key={type.id} style={styles.homeTypeOption}>
-                {homeType === type.id ? (
-                  <PrimaryButton
-                    title={type.label}
-                    onPress={() => setHomeType(type.id)}
-                    style={styles.homeTypeButton}
-                  />
-                ) : (
-                  <SecondaryButton
-                    title={type.label}
-                    onPress={() => setHomeType(type.id)}
-                    style={styles.homeTypeButton}
-                  />
-                )}
-              </View>
-            ))}
+    <ScrollView 
+      style={styles.stepScrollContainer} 
+      contentContainerStyle={[
+        styles.stepContent,
+        { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+      ]} 
+      showsVerticalScrollIndicator={false}
+    >
+      <View>
+        <View style={styles.stepHeader}>
+          <Text style={styles.stepTitle} allowFontScaling={true}>
+            Tell us about your home
+          </Text>
+          <Text style={styles.stepSubtitle} allowFontScaling={true}>
+            This helps us create a personalized maintenance schedule
+          </Text>
+        </View>
+        
+        <View style={styles.characteristicsForm}>
+          <View style={styles.formSection}>
+            <Text style={styles.formLabel} allowFontScaling={true}>Home Type</Text>
+            <View style={[
+              styles.homeTypeGrid,
+              accessibleStyles.useCompactLayout && styles.homeTypeGridCompact
+            ]}>
+              {homeTypes.map((type) => (
+                <View key={type.id} style={styles.homeTypeOption}>
+                  {homeType === type.id ? (
+                    <PrimaryButton
+                      title={type.label}
+                      onPress={() => setHomeType(type.id)}
+                      style={styles.homeTypeButton}
+                    />
+                  ) : (
+                    <SecondaryButton
+                      title={type.label}
+                      onPress={() => setHomeType(type.id)}
+                      style={styles.homeTypeButton}
+                    />
+                  )}
+                </View>
+              ))}
+            </View>
+          </View>
+          
+          <View style={styles.formSection}>
+            <Text style={styles.formLabel} allowFontScaling={true}>
+              Year Built (Optional)
+            </Text>
+            <TextInput
+              placeholder="e.g., 2010"
+              value={yearBuilt}
+              onChangeText={setYearBuilt}
+              style={styles.formInput}
+              allowFontScaling={true}
+            />
+          </View>
+          
+          <View style={styles.formSection}>
+            <Text style={styles.formLabel} allowFontScaling={true}>
+              Square Footage (Optional)
+            </Text>
+            <TextInput
+              placeholder="e.g., 2500"
+              value={squareFootage}
+              onChangeText={setSquareFootage}
+              style={styles.formInput}
+              allowFontScaling={true}
+            />
           </View>
         </View>
-        
-        <View style={styles.formSection}>
-          <Text style={styles.formLabel}>Year Built (Optional)</Text>
-          <TextInput
-            placeholder="e.g., 2010"
-            value={yearBuilt}
-            onChangeText={setYearBuilt}
-            style={styles.formInput}
-          />
-        </View>
-        
-        <View style={styles.formSection}>
-          <Text style={styles.formLabel}>Square Footage (Optional)</Text>
-          <TextInput
-            placeholder="e.g., 2500"
-            value={squareFootage}
-            onChangeText={setSquareFootage}
-            style={styles.formInput}
-          />
-        </View>
-      </ScrollView>
+      </View>
       
       <PrimaryButton
         title="Continue"
@@ -231,7 +291,7 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
         disabled={!homeType}
         style={styles.primaryButton}
       />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -240,6 +300,7 @@ const PersonalizationStep: React.FC<{ onNext: (preferences: any) => void }> = ({
   const [maintenanceStyle, setMaintenanceStyle] = useState<string>('');
   const [availableTime, setAvailableTime] = useState<string>('');
   const [notifications, setNotifications] = useState<string>('');
+  const accessibleStyles = useAccessibleStyles();
 
   const maintenanceStyles = [
     { id: 'proactive', label: 'Proactive', description: 'Stay ahead of issues' },
@@ -269,78 +330,95 @@ const PersonalizationStep: React.FC<{ onNext: (preferences: any) => void }> = ({
   };
 
   return (
-    <View style={styles.stepContainer}>
-      <View style={styles.stepHeader}>
-        <Text style={styles.stepTitle}>Personalize your experience</Text>
-        <Text style={styles.stepSubtitle}>
-          Help us tailor HomeKeeper to your lifestyle
-        </Text>
+    <ScrollView 
+      style={styles.stepScrollContainer} 
+      contentContainerStyle={[
+        styles.stepContent,
+        { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+      ]} 
+      showsVerticalScrollIndicator={false}
+    >
+      <View>
+        <View style={styles.stepHeader}>
+          <Text style={styles.stepTitle} allowFontScaling={true}>
+            Personalize your experience
+          </Text>
+          <Text style={styles.stepSubtitle} allowFontScaling={true}>
+            Help us tailor HomeKeeper to your lifestyle
+          </Text>
+        </View>
+        
+        <View style={styles.preferencesForm}>
+          <View style={styles.formSection}>
+            <Text style={styles.formLabel} allowFontScaling={true}>
+              Maintenance Approach
+            </Text>
+            {maintenanceStyles.map((style) => (
+              <View key={style.id} style={styles.preferenceOption}>
+                {maintenanceStyle === style.id ? (
+                  <PrimaryButton
+                    title={`${style.label} - ${style.description}`}
+                    onPress={() => setMaintenanceStyle(style.id)}
+                    style={styles.preferenceButton}
+                  />
+                ) : (
+                  <SecondaryButton
+                    title={`${style.label} - ${style.description}`}
+                    onPress={() => setMaintenanceStyle(style.id)}
+                    style={styles.preferenceButton}
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+          
+          <View style={styles.formSection}>
+            <Text style={styles.formLabel} allowFontScaling={true}>
+              When do you prefer to do maintenance?
+            </Text>
+            {timeOptions.map((option) => (
+              <View key={option.id} style={styles.preferenceOption}>
+                {availableTime === option.id ? (
+                  <PrimaryButton
+                    title={option.label}
+                    onPress={() => setAvailableTime(option.id)}
+                    style={styles.preferenceButton}
+                  />
+                ) : (
+                  <SecondaryButton
+                    title={option.label}
+                    onPress={() => setAvailableTime(option.id)}
+                    style={styles.preferenceButton}
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+          
+          <View style={styles.formSection}>
+            <Text style={styles.formLabel} allowFontScaling={true}>
+              Notification Style
+            </Text>
+            {notificationOptions.map((option) => (
+              <View key={option.id} style={styles.preferenceOption}>
+                {notifications === option.id ? (
+                  <PrimaryButton
+                    title={option.label}
+                    onPress={() => setNotifications(option.id)}
+                    style={styles.preferenceButton}
+                  />
+                ) : (
+                  <SecondaryButton
+                    title={option.label}
+                    onPress={() => setNotifications(option.id)}
+                    style={styles.preferenceButton}
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
       </View>
-      
-      <ScrollView style={styles.preferencesForm} showsVerticalScrollIndicator={false}>
-        <View style={styles.formSection}>
-          <Text style={styles.formLabel}>Maintenance Approach</Text>
-          {maintenanceStyles.map((style) => (
-            <View key={style.id} style={styles.preferenceOption}>
-              {maintenanceStyle === style.id ? (
-                <PrimaryButton
-                  title={`${style.label} - ${style.description}`}
-                  onPress={() => setMaintenanceStyle(style.id)}
-                  style={styles.preferenceButton}
-                />
-              ) : (
-                <SecondaryButton
-                  title={`${style.label} - ${style.description}`}
-                  onPress={() => setMaintenanceStyle(style.id)}
-                  style={styles.preferenceButton}
-                />
-              )}
-            </View>
-          ))}
-        </View>
-        
-        <View style={styles.formSection}>
-          <Text style={styles.formLabel}>When do you prefer to do maintenance?</Text>
-          {timeOptions.map((option) => (
-            <View key={option.id} style={styles.preferenceOption}>
-              {availableTime === option.id ? (
-                <PrimaryButton
-                  title={option.label}
-                  onPress={() => setAvailableTime(option.id)}
-                  style={styles.preferenceButton}
-                />
-              ) : (
-                <SecondaryButton
-                  title={option.label}
-                  onPress={() => setAvailableTime(option.id)}
-                  style={styles.preferenceButton}
-                />
-              )}
-            </View>
-          ))}
-        </View>
-        
-        <View style={styles.formSection}>
-          <Text style={styles.formLabel}>Notification Style</Text>
-          {notificationOptions.map((option) => (
-            <View key={option.id} style={styles.preferenceOption}>
-              {notifications === option.id ? (
-                <PrimaryButton
-                  title={option.label}
-                  onPress={() => setNotifications(option.id)}
-                  style={styles.preferenceButton}
-                />
-              ) : (
-                <SecondaryButton
-                  title={option.label}
-                  onPress={() => setNotifications(option.id)}
-                  style={styles.preferenceButton}
-                />
-              )}
-            </View>
-          ))}
-        </View>
-      </ScrollView>
       
       <PrimaryButton
         title="Continue"
@@ -348,7 +426,7 @@ const PersonalizationStep: React.FC<{ onNext: (preferences: any) => void }> = ({
         disabled={!maintenanceStyle || !availableTime || !notifications}
         style={styles.primaryButton}
       />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -357,6 +435,7 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
   const [isGenerating, setIsGenerating] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const accessibleStyles = useAccessibleStyles();
 
   React.useEffect(() => {
     setTimeout(() => {
@@ -379,28 +458,52 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
 
   if (isGenerating) {
     return (
-      <View style={styles.stepContainer}>
+      <ScrollView 
+        style={styles.stepScrollContainer} 
+        contentContainerStyle={[
+          styles.stepContent,
+          { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+        ]} 
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.generatingContainer}>
           <View style={styles.loadingIcon}>
             <Icon name="settings" size="xl" color={Colors.primary} />
           </View>
-          <Text style={styles.generatingTitle}>Creating your personalized schedule...</Text>
-          <Text style={styles.generatingSubtitle}>
+          <Text style={styles.generatingTitle} allowFontScaling={true}>
+            Creating your personalized schedule...
+          </Text>
+          <Text style={styles.generatingSubtitle} allowFontScaling={true}>
             Analyzing your home and preferences to build the perfect maintenance plan
           </Text>
           <View style={styles.generatingSteps}>
-            <Text style={styles.generatingStep}>✓ Analyzing home characteristics</Text>
-            <Text style={styles.generatingStep}>✓ Checking local weather patterns</Text>
-            <Text style={styles.generatingStep}>✓ Optimizing task timing</Text>
-            <Text style={styles.generatingStep}>⏳ Finalizing your schedule</Text>
+            <Text style={styles.generatingStep} allowFontScaling={true}>
+              ✓ Analyzing home characteristics
+            </Text>
+            <Text style={styles.generatingStep} allowFontScaling={true}>
+              ✓ Checking local weather patterns
+            </Text>
+            <Text style={styles.generatingStep} allowFontScaling={true}>
+              ✓ Optimizing task timing
+            </Text>
+            <Text style={styles.generatingStep} allowFontScaling={true}>
+              ⏳ Finalizing your schedule
+            </Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
   return (
-    <View style={styles.stepContainer}>
+    <ScrollView 
+      style={styles.stepScrollContainer} 
+      contentContainerStyle={[
+        styles.stepContent,
+        { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+      ]} 
+      showsVerticalScrollIndicator={false}
+    >
       <Animated.View 
         style={[
           styles.revealContainer,
@@ -414,39 +517,55 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
           <View style={styles.celebrationIcon}>
             <Icon name="check" size="xl" color={Colors.success} />
           </View>
-          <Text style={styles.celebrationTitle}>Your schedule is ready! 🎉</Text>
-          <Text style={styles.celebrationSubtitle}>
+          <Text style={styles.celebrationTitle} allowFontScaling={true}>
+            Your schedule is ready! 🎉
+          </Text>
+          <Text style={styles.celebrationSubtitle} allowFontScaling={true}>
             We've created a personalized maintenance plan just for you
           </Text>
         </View>
         
         <View style={styles.schedulePreview}>
-          <Text style={styles.previewTitle}>Coming up this month:</Text>
+          <Text style={styles.previewTitle} allowFontScaling={true}>
+            Coming up this month:
+          </Text>
           <View style={styles.taskPreview}>
             <Icon name="maintenance" size="md" color={Colors.primary} />
             <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>Check HVAC Filter</Text>
-              <Text style={styles.taskDate}>This Weekend</Text>
+              <Text style={styles.taskTitle} allowFontScaling={true}>
+                Check HVAC Filter
+              </Text>
+              <Text style={styles.taskDate} allowFontScaling={true}>
+                This Weekend
+              </Text>
             </View>
           </View>
           <View style={styles.taskPreview}>
             <Icon name="plumbing" size="md" color={Colors.success} />
             <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>Clean Gutters</Text>
-              <Text style={styles.taskDate}>Next Week</Text>
+              <Text style={styles.taskTitle} allowFontScaling={true}>
+                Clean Gutters
+              </Text>
+              <Text style={styles.taskDate} allowFontScaling={true}>
+                Next Week
+              </Text>
             </View>
           </View>
           <View style={styles.taskPreview}>
             <Icon name="electrical" size="md" color={Colors.warning} />
             <View style={styles.taskInfo}>
-              <Text style={styles.taskTitle}>Test Smoke Detectors</Text>
-              <Text style={styles.taskDate}>End of Month</Text>
+              <Text style={styles.taskTitle} allowFontScaling={true}>
+                Test Smoke Detectors
+              </Text>
+              <Text style={styles.taskDate} allowFontScaling={true}>
+                End of Month
+              </Text>
             </View>
           </View>
         </View>
         
         <View style={styles.valueHighlight}>
-          <Text style={styles.valueHighlightText}>
+          <Text style={styles.valueHighlightText} allowFontScaling={true}>
             You're all set to keep your home in perfect condition! 🏠
           </Text>
         </View>
@@ -457,7 +576,7 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
         onPress={onComplete}
         style={styles.primaryButton}
       />
-    </View>
+    </ScrollView>
   );
 };
 
@@ -465,6 +584,7 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
   const [currentStep, setCurrentStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState<any>({});
   const scrollViewRef = useRef<ScrollView>(null);
+  const accessibleStyles = useAccessibleStyles();
 
   const steps: OnboardingStep[] = [
     { id: 'welcome', title: 'Welcome', subtitle: 'Get started with HomeKeeper' },
@@ -477,7 +597,10 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
   const handleNext = () => {
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
-    scrollViewRef.current?.scrollTo({ x: nextStep * screenWidth, animated: true });
+    scrollViewRef.current?.scrollTo({ 
+      x: nextStep * accessibleStyles.getResponsiveWidth(100), 
+      animated: true 
+    });
   };
 
   const handleStepData = (stepId: string, data: any) => {
@@ -487,10 +610,7 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
 
   const handleComplete = async () => {
     try {
-      // Here we would save the onboarding data to Supabase
       console.log('Onboarding completed with data:', onboardingData);
-      
-      // Call the completion callback
       onComplete?.();
     } catch (error) {
       console.error('Error completing onboarding:', error);
@@ -505,7 +625,10 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
+        <View style={[
+          styles.progressContainer,
+          { paddingHorizontal: accessibleStyles.scaledScreenPadding }
+        ]}>
           <View style={styles.progressBar}>
             <View 
               style={[
@@ -514,7 +637,7 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
               ]} 
             />
           </View>
-          <Text style={styles.progressText}>
+          <Text style={styles.progressText} allowFontScaling={true}>
             {currentStep + 1} of {steps.length}
           </Text>
         </View>
@@ -529,7 +652,10 @@ export const MagicalOnboardingScreen: React.FC<OnboardingScreenProps> = ({ onCom
           style={styles.stepsContainer}
         >
           {steps.map((step, index) => (
-            <View key={step.id} style={styles.stepWrapper}>
+            <View key={step.id} style={[
+              styles.stepWrapper,
+              { width: accessibleStyles.getResponsiveWidth(100) }
+            ]}>
               {index === 0 && (
                 <WelcomeStep onNext={handleNext} />
               )}
@@ -585,14 +711,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepWrapper: {
-    width: screenWidth,
     flex: 1,
   },
-  stepContainer: {
+  stepScrollContainer: {
     flex: 1,
+  },
+  stepContent: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
-    // Removed fixed minHeight to allow dynamic sizing
+    justifyContent: 'space-between',
   },
   
   // Welcome Step Styles
@@ -601,9 +729,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
     backgroundColor: Colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -631,6 +756,7 @@ const styles = StyleSheet.create({
     ...Typography.bodyLarge,
     marginLeft: Spacing.md,
     flex: 1,
+    flexWrap: 'wrap',
   },
   socialProof: {
     alignItems: 'center',
@@ -647,8 +773,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     width: '100%',
   },
+  trustIndicatorsCompact: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
   trustItem: {
     alignItems: 'center',
+    marginVertical: Spacing.xs,
   },
   trustText: {
     ...Typography.labelSmall,
@@ -681,6 +812,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexWrap: 'wrap',
   },
   privacyText: {
     ...Typography.labelSmall,
@@ -699,6 +831,9 @@ const styles = StyleSheet.create({
   },
   homeTypeGrid: {
     gap: Spacing.sm,
+  },
+  homeTypeGridCompact: {
+    gap: Spacing.xs,
   },
   homeTypeOption: {
     marginBottom: Spacing.sm,

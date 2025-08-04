@@ -14,8 +14,9 @@ import { Colors } from './colors';
 export const getFontScale = () => {
   try {
     const scale = PixelRatio.getFontScale();
-    // Clamp the scale to prevent extreme sizes that break layouts
-    const maxScale = 2.0; // Maximum 200% scaling
+    // Support up to 3x scaling for better accessibility
+    // This ensures users with visual impairments can use the app
+    const maxScale = 3.0; // Maximum 300% scaling for accessibility
     const minScale = 0.85; // Minimum 85% scaling
     return Math.max(minScale, Math.min(maxScale, scale));
   } catch (error) {
