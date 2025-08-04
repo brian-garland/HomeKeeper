@@ -216,6 +216,7 @@ export const TextInput: React.FC<TextInputProps> = ({
         <RNTextInput
           ref={inputRef}
           style={inputTextStyle}
+          {...textInputProps}
           value={value}
           onChangeText={onChangeText}
           onFocus={handleFocus}
@@ -229,9 +230,11 @@ export const TextInput: React.FC<TextInputProps> = ({
           accessibilityState={{ disabled }}
           testID={testID}
           allowFontScaling={true}
-          multiline={accessibleStyles.isExtraLargeTextMode}
-          numberOfLines={accessibleStyles.isExtraLargeTextMode ? 2 : 1}
-          {...textInputProps}
+          multiline={textInputProps.multiline ?? accessibleStyles.isExtraLargeTextMode}
+          numberOfLines={
+            textInputProps.numberOfLines ?? 
+            (textInputProps.multiline || accessibleStyles.isExtraLargeTextMode ? 2 : 1)
+          }
         />
 
         {/* Right Icon */}
