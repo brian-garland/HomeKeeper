@@ -313,5 +313,3 @@ const styles = StyleSheet.create({
     // Dynamic sizing handled in component
   },
 });
-
-export default TextInput;

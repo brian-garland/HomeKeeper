@@ -188,5 +188,3 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
 });
-
-export default PrimaryButton;
