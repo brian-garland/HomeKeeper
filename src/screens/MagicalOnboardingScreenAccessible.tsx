@@ -435,7 +435,7 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
   const accessibleStyles = useAccessibleStyles();
 
   React.useEffect(() => {
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setIsGenerating(false);
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -451,7 +451,10 @@ const CalendarRevealStep: React.FC<{ onComplete: () => void }> = ({ onComplete }
         }),
       ]).start();
     }, 3000);
-  }, []);
+
+    // Cleanup function to clear timeout on unmount
+    return () => clearTimeout(timeoutId);
+  }, [fadeAnim, scaleAnim]);
 
   if (isGenerating) {
     return (
