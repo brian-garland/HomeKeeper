@@ -202,8 +202,8 @@ const HomeCharacteristicsStep: React.FC<{ onNext: (characteristics: any) => void
   const handleNext = () => {
     const characteristics = {
       homeType,
-      yearBuilt: yearBuilt ? parseInt(yearBuilt) : null,
-      squareFootage: squareFootage ? parseInt(squareFootage) : null,
+      yearBuilt: yearBuilt ? parseInt(yearBuilt, 10) : null,
+      squareFootage: squareFootage ? parseInt(squareFootage, 10) : null,
     };
     onNext(characteristics);
   };
